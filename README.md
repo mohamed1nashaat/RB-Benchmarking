@@ -1,323 +1,176 @@
-# Adintel - Ad Intelligence Platform
+# RB Benchmarks
 
-A production-ready SaaS platform for multi-tenant ad intelligence and analytics, built with Laravel 11, Vue 3, and MySQL 8.
+A comprehensive ad performance benchmarking platform for digital marketing agencies. Compare campaign metrics against industry standards, track client performance, and generate actionable insights across multiple advertising platforms.
 
-## 🚀 Features
+## Features
 
-### Core Features (MVP)
-- **Multi-tenant Architecture** - Complete tenant isolation with role-based access (Admin/Viewer)
-- **Objective-Aware Analytics** - Dynamic dashboards based on campaign objectives (Awareness, Leads, Sales, Calls)
-- **Platform Integrations** - Connect Facebook Ads, Google Ads, and TikTok Ads
-- **Real-time KPI Calculations** - Automatic computation of CPM, CPL, ROAS, CPA, and more
-- **Advanced Filtering** - Filter by date range, platform, account, and campaign
-- **Export Functionality** - CSV and Excel export with async processing
-- **Responsive Design** - Mobile-first design with TailwindCSS
+### Multi-Platform Integration
+- **Facebook Ads** - Full campaign sync with metrics and insights
+- **Google Ads** - Campaign performance tracking and analysis
+- **TikTok Ads** - Video campaign benchmarking
+- **LinkedIn Ads** - B2B campaign metrics
+- **Snapchat Ads** - Social campaign tracking
+- **Twitter Ads** - Engagement and conversion metrics
 
-### Advanced Features (Roadmap)
-- **Smart Alerts** - Automated notifications for performance anomalies
-- **AI-Powered Insights** - Predictive analytics and optimization suggestions
-- **Financial Intelligence** - Cost tracking and profitability analysis
-- **Market Intelligence** - Competitor analysis and industry benchmarks
-- **Collaboration Tools** - Team management and client portals
+### Industry Benchmarking
+- Compare performance against industry standards
+- Objective-based benchmarks (Awareness, Leads, Sales, Traffic, Engagement)
+- Regional benchmarks with GCC focus
+- Custom benchmark categories per industry
 
-## 🏗️ Architecture
+### Client Management
+- Multi-tenant architecture with client isolation
+- Client dashboards with logo and branding
+- Health scores and performance alerts
+- Automated client onboarding wizard
 
-### Backend (Laravel 11)
-- **Authentication**: Laravel Sanctum SPA tokens
-- **Multi-tenancy**: Global scopes and middleware
-- **Database**: MySQL 8 with optimized indexes
-- **Queues**: Redis for background job processing
-- **API**: RESTful API with comprehensive validation
-- **Testing**: PestPHP for unit and integration tests
+### Analytics & Reporting
+- Real-time KPI calculations (CPM, CPL, CPA, ROAS, CTR)
+- Objective-aware metric displays
+- Currency conversion support (USD, SAR, AED, etc.)
+- Scheduled PDF/Excel reports
+- Custom date range filtering
 
-### Frontend (Vue 3 + TypeScript)
-- **State Management**: Pinia stores
-- **Routing**: Vue Router with auth guards
-- **UI Components**: Headless UI + TailwindCSS
-- **Charts**: Chart.js for data visualization
-- **Internationalization**: Vue I18n (English/Arabic)
-- **Build Tool**: Vite for fast development
+### Alerts & Monitoring
+- Performance anomaly detection
+- Budget threshold alerts
+- Sync health monitoring
+- Email notifications
 
-### Database Schema
-```
-tenants (id, name, slug, status, settings)
-users (id, name, email, password, default_tenant_id)
-tenant_users (tenant_id, user_id, role)
-integrations (id, tenant_id, platform, app_config, status)
-ad_accounts (id, tenant_id, integration_id, external_account_id, account_name)
-ad_campaigns (id, tenant_id, ad_account_id, external_campaign_id, name, objective)
-ad_metrics (id, tenant_id, date, platform, spend, impressions, clicks, revenue, etc.)
-dashboards (id, tenant_id, user_id, title, objective, is_default)
-report_exports (id, tenant_id, user_id, format, status, file_path)
-```
+## Tech Stack
 
-## 🛠️ Installation
+### Backend
+- Laravel 11 (PHP 8.2+)
+- MySQL 8
+- Laravel Sanctum (Authentication)
+- Queue workers for background jobs
 
-### Prerequisites
-- Docker & Docker Compose
-- Git
+### Frontend
+- Vue 3 + TypeScript
+- Pinia (State Management)
+- TailwindCSS
+- Chart.js
+- Vue I18n (English/Arabic)
 
-### Quick Start
+### Integrations
+- Google Sheets API (Auto-sync)
+- Platform OAuth flows
+- CSV import/export
+
+## Installation
+
 ```bash
-# Clone the repository
-git clone <repository-url> RB benchmarks
-cd RB-benchmarks
-
-# Copy environment file
-cp .env.example .env
-
-# Setup the project (builds containers, installs dependencies, runs migrations, seeds data)
-make setup
-
-# Access the application
-open https://rb-benchmarks.redbananas.com
-```
-
-### Manual Setup
-```bash
-# Build and start containers
-make build
-make up
+# Clone repository
+git clone https://github.com/mohamed1nashaat/RB-Benchmarking.git
+cd RB-Benchmarking
 
 # Install dependencies
-make install
+composer install
+npm install
 
-# Generate application key
-make key
+# Configure environment
+cp .env.example .env
+php artisan key:generate
 
-# Run migrations and seed demo data
-make migrate
-make seed
+# Run migrations
+php artisan migrate
+
+# Seed industry data
+php artisan db:seed --class=IndustrySeeder
+php artisan db:seed --class=IndustryBenchmarkSeeder
+
+# Build assets
+npm run build
+
+# Start server
+php artisan serve
 ```
 
-## 🔧 Development
+## Configuration
 
-### Available Commands
-```bash
-make up          # Start all services
-make down        # Stop all services
-make logs        # View logs
-make test        # Run tests
-make lint        # Code formatting
-make analyze     # Static analysis
-make fresh       # Fresh migration with seed data
-make cache-clear # Clear all caches
-```
+### Platform API Keys
 
-### Demo Credentials
-- **Admin**: admin@demo.com / password
-- **Viewer**: viewer@demo.com / password
+Add to `.env`:
 
-### Development Servers
-- **Application**: https://rb-benchmarks.redbananas.com
-- **Frontend Dev**: https://rb-benchmarks.redbananas.com:5173 (Vite)
-- **API**: https://rb-benchmarks.redbananas.com/api
-
-## 📊 Objective-Based Analytics
-
-The platform adapts KPI calculations and dashboard layouts based on campaign objectives:
-
-### Awareness Campaigns
-- **Primary KPIs**: CPM (Cost per 1,000 impressions)
-- **Secondary KPIs**: Reach, Frequency, VTR (Video View Rate), CTR
-- **Charts**: Impressions over time, CPM by campaign
-
-### Lead Generation Campaigns
-- **Primary KPIs**: CPL (Cost per Lead), CVR (Conversion Rate)
-- **Secondary KPIs**: CTR, CPC
-- **Charts**: Leads over time, CPL by campaign
-
-### Sales Campaigns
-- **Primary KPIs**: ROAS (Return on Ad Spend), CPA (Cost per Acquisition)
-- **Secondary KPIs**: AOV (Average Order Value), CVR, CPC
-- **Charts**: Revenue over time, ROAS by campaign
-
-### Call Campaigns
-- **Primary KPIs**: Cost per Call
-- **Secondary KPIs**: CTR, Call Conversion Rate
-- **Charts**: Calls over time, Cost per Call by campaign
-
-## 🔌 Platform Integrations
-
-### Facebook Ads
-- App ID, App Secret, Access Token
-- Supports Facebook and Instagram campaigns
-- Automatic account and campaign discovery
-
-### Google Ads
-- Client ID, Client Secret, Developer Token, Refresh Token
-- Google Ads API integration
-- Campaign performance metrics
-
-### TikTok Ads
-- App ID, Secret, Access Token
-- TikTok for Business API
-- Video-focused metrics
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-make test
-
-# Run specific test suites
-make test-unit
-make test-feature
-
-# Run with coverage
-docker-compose exec app php artisan test --coverage
-```
-
-### Test Coverage
-- **Models**: Relationships, scopes, and business logic
-- **Controllers**: API endpoints and validation
-- **Services**: KPI calculations and data processing
-- **Middleware**: Tenant isolation and authentication
-- **Integration**: End-to-end API workflows
-
-## 🚀 Deployment
-
-### Production Setup
-```bash
-# Build production containers
-make prod-build
-
-# Start production services
-make prod-up
-
-# Run production migrations
-docker-compose -f docker-compose.prod.yml exec app php artisan migrate --force
-```
-
-### Environment Variables
 ```env
-APP_NAME=Adintel
-APP_ENV=production
-APP_URL=https://your-domain.com
+# Facebook
+FACEBOOK_APP_ID=
+FACEBOOK_APP_SECRET=
 
-DB_CONNECTION=mysql
-DB_HOST=mysql
-DB_DATABASE=adintel
-DB_USERNAME=adintel
-DB_PASSWORD=secure_password
+# Google Ads
+GOOGLE_ADS_CLIENT_ID=
+GOOGLE_ADS_CLIENT_SECRET=
+GOOGLE_ADS_DEVELOPER_TOKEN=
 
-SANCTUM_STATEFUL_DOMAINS=your-domain.com
+# TikTok
+TIKTOK_APP_ID=
+TIKTOK_APP_SECRET=
+
+# LinkedIn
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+
+# Snapchat
+SNAPCHAT_CLIENT_ID=
+SNAPCHAT_CLIENT_SECRET=
+
+# Google Sheets (for auto-sync)
+GOOGLE_SHEETS_CREDENTIALS_PATH=
 ```
 
-## 📈 Performance Optimization
+## Usage
 
-### Database Optimization
-- Composite indexes on (tenant_id, date, platform, ad_account_id)
-- Partitioning for large metrics tables
-- Query optimization for KPI calculations
+### Syncing Campaigns
 
-### Caching Strategy
-- Redis for session storage and queues
-- Application-level caching for KPI results
-- CDN for static assets
+```bash
+# Sync Facebook campaigns
+php artisan sync:facebook-campaigns
 
-### Queue Processing
-- Background jobs for data sync
-- Async export processing
-- Rate limiting for API calls
+# Sync Google Ads campaigns
+php artisan sync:google-ads-campaigns
 
-## 🔒 Security
+# Backfill historical metrics
+php artisan backfill:facebook-metrics --months=6
+```
 
-### Multi-tenancy Security
-- Global scopes ensure tenant isolation
-- Middleware validates tenant access
-- Policies enforce role-based permissions
+### Scheduled Tasks
 
-### API Security
-- Laravel Sanctum SPA authentication
-- Rate limiting on all endpoints
-- Input validation and sanitization
-- CORS configuration
+```bash
+# Check performance alerts
+php artisan alerts:check
 
-### Data Protection
-- Encrypted sensitive configuration
-- Secure credential storage
-- Audit logging for data access
+# Generate scheduled reports
+php artisan reports:generate
 
-## 📚 API Documentation
+# Detect anomalies
+php artisan detect:anomalies
+```
+
+## API Endpoints
 
 ### Authentication
-```bash
-POST /api/auth/login
-POST /api/auth/logout
-GET /api/me
-```
+- `POST /api/auth/login` - Login
+- `POST /api/auth/logout` - Logout
+- `GET /api/me` - Current user
 
 ### Metrics
-```bash
-GET /api/metrics/summary?from=2024-01-01&to=2024-01-31&objective=sales
-GET /api/metrics/timeseries?metric=roas&group_by=date
-```
+- `GET /api/metrics/summary` - Dashboard summary
+- `GET /api/metrics/timeseries` - Time-based metrics
+- `GET /api/benchmarks` - Industry benchmarks
 
-### Exports
-```bash
-POST /api/reports/export
-GET /api/reports/{id}
-```
+### Clients
+- `GET /api/clients` - List clients
+- `POST /api/clients` - Create client
+- `GET /api/clients/{id}/dashboard` - Client dashboard
 
-## 🤝 Contributing
+### Reports
+- `POST /api/reports/export` - Generate export
+- `GET /api/scheduled-reports` - Scheduled reports
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## License
 
-### Code Standards
-- PSR-12 coding standards
-- PHPStan level 8 analysis
-- Vue 3 Composition API
-- TypeScript strict mode
+Proprietary - Red Bananas Digital Agency
 
-## 📄 License
+## Support
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Check the documentation
-- Review the demo data and examples
-
-## 🗺️ Roadmap
-
-### Phase 1: MVP ✅
-- Multi-tenant architecture
-- Basic integrations
-- Objective-aware dashboards
-- Export functionality
-
-### Phase 2: Automation
-- Smart alerts and notifications
-- Automated reporting
-- Budget optimization suggestions
-
-### Phase 3: Financial Intelligence
-- Cost tracking and profitability
-- ROI analysis
-- Financial forecasting
-
-### Phase 4: AI & Predictive Analytics
-- Performance forecasting
-- Optimization recommendations
-- Anomaly detection
-
-### Phase 5: Market Intelligence
-- Competitor analysis
-- Industry benchmarks
-- Market trend analysis
-
-### Phase 6: Collaboration
-- Team management
-- Client portals
-- White-label solutions
-
----
-
-Built with ❤️ using Laravel, Vue.js, and modern web technologies.
+For support, contact the development team.
