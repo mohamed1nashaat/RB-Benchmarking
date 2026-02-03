@@ -2,10 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Public webhook endpoints (no authentication required)
-Route::post('/webhooks/leads/{slug}', [App\Http\Controllers\Api\WebhookController::class, 'handleLeadWebhook'])
-    ->name('webhooks.leads');
+// CSRF cookie route for Sanctum SPA authentication
+Route::get('/sanctum/csrf-cookie', function () {
+    return response()->json(['message' => 'CSRF cookie set']);
+});
 
+
+// Catch-all route for Vue SPA (must NOT match /api routes)
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '.*');
+})->where('any', '^(?!api).*$');

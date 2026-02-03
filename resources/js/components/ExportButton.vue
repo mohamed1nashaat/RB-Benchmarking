@@ -3,7 +3,7 @@
     <Menu as="div" class="relative inline-block text-left">
       <div>
         <MenuButton
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           <ArrowDownTrayIcon class="h-4 w-4 mr-2" aria-hidden="true" />
           {{ $t('dashboard.export') }}
@@ -33,7 +33,7 @@
                 ]"
               >
                 <DocumentIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" aria-hidden="true" />
-                Export as CSV
+                {{ $t('modals.export_as_csv') }}
               </button>
             </MenuItem>
             <MenuItem v-slot="{ active }">
@@ -46,7 +46,7 @@
                 ]"
               >
                 <TableCellsIcon class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" aria-hidden="true" />
-                Export as Excel
+                {{ $t('modals.export_as_excel') }}
               </button>
             </MenuItem>
           </div>
@@ -84,17 +84,17 @@
                 <div>
                   <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                     <CheckIcon v-if="exportStatus === 'completed'" class="h-6 w-6 text-green-600" aria-hidden="true" />
-                    <ArrowPathIcon v-else class="h-6 w-6 text-blue-600 animate-spin" aria-hidden="true" />
+                    <ArrowPathIcon v-else class="h-6 w-6 text-primary-600 animate-spin" aria-hidden="true" />
                   </div>
                   <div class="mt-3 text-center sm:mt-5">
                     <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-900">
-                      {{ exportStatus === 'completed' ? 'Export Ready' : 'Preparing Export' }}
+                      {{ exportStatus === 'completed' ? $t('modals.export_ready') : $t('modals.preparing_export') }}
                     </DialogTitle>
                     <div class="mt-2">
                       <p class="text-sm text-gray-500">
-                        {{ exportStatus === 'completed' 
-                          ? 'Your export is ready for download.' 
-                          : 'Please wait while we prepare your export...' 
+                        {{ exportStatus === 'completed'
+                          ? $t('modals.export_ready_message')
+                          : $t('modals.preparing_export_message')
                         }}
                       </p>
                     </div>
@@ -105,9 +105,9 @@
                     v-if="exportStatus === 'completed'"
                     @click="downloadExport"
                     type="button"
-                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    class="inline-flex w-full justify-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
-                    Download
+                    {{ $t('buttons.download') }}
                   </button>
                   <button
                     v-else
@@ -115,7 +115,7 @@
                     type="button"
                     class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                   >
-                    Cancel
+                    {{ $t('common.cancel') }}
                   </button>
                 </div>
               </DialogPanel>

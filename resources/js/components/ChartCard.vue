@@ -13,7 +13,7 @@
             :class="[
               'px-3 py-1 text-sm rounded-md',
               selectedPeriod === period.value
-                ? 'bg-indigo-100 text-indigo-700'
+                ? 'bg-primary-100 text-primary-700'
                 : 'text-gray-500 hover:text-gray-700'
             ]"
           >
@@ -24,7 +24,7 @@
       
       <div class="mt-5">
         <div v-if="loading" class="flex justify-center items-center h-64">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         </div>
         
         <div v-else-if="chartData.length === 0" class="flex justify-center items-center h-64 text-gray-500">
@@ -170,15 +170,15 @@ const createChart = () => {
 }
 
 const formatTooltipValue = (metric: string, value: number): string => {
-  if (['cpm', 'cpl', 'cpc', 'cpa', 'cost_per_call'].includes(metric)) {
+  if (['cpm', 'cpl', 'cpc', 'cpa', 'cost_per_call', 'spend'].includes(metric)) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'SAR'  // TODO: Make this dynamic based on data currency
     }).format(value)
   }
   
   if (['ctr', 'cvr', 'vtr'].includes(metric)) {
-    return `${(value * 100).toFixed(2)}%`
+    return `${value.toFixed(2)}%`  // Already multiplied by 100 in backend
   }
   
   if (metric === 'roas') {
@@ -189,12 +189,12 @@ const formatTooltipValue = (metric: string, value: number): string => {
 }
 
 const formatAxisValue = (metric: string, value: number): string => {
-  if (['cpm', 'cpl', 'cpc', 'cpa', 'cost_per_call'].includes(metric)) {
-    return `$${value}`
+  if (['cpm', 'cpl', 'cpc', 'cpa', 'cost_per_call', 'spend'].includes(metric)) {
+    return `﷼${value}`  // SAR currency symbol
   }
   
   if (['ctr', 'cvr', 'vtr'].includes(metric)) {
-    return `${(value * 100).toFixed(0)}%`
+    return `${value.toFixed(0)}%`  // Already multiplied by 100 in backend
   }
   
   if (metric === 'roas') {

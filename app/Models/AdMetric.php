@@ -15,6 +15,9 @@ class AdMetric extends Model
         'ad_account_id',
         'ad_campaign_id',
         'objective',
+        'funnel_stage',
+        'user_journey',
+        'has_pixel_data',
         'spend',
         'impressions',
         'reach',
@@ -44,13 +47,37 @@ class AdMetric extends Model
         'calls' => 'integer',
         'sessions' => 'integer',
         'atc' => 'integer',
+        'has_pixel_data' => 'boolean',
     ];
 
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && session('current_tenant_id')) {
-                $builder->where('tenant_id', session('current_tenant_id'));
+            if (auth()->check()) {
+                $user = auth()->user();
+
+                // Robust super admin detection
+                $isSuperAdmin = (app()->bound('is_super_admin') && app('is_super_admin'))
+                               || $user->id === 1
+                               || $user->email === 'technical@redbananas.com';
+
+                if ($isSuperAdmin) {
+                    // Super admins can optionally filter to specific tenant
+                    $tenantId = session('current_tenant_id')
+                               ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                    if ($tenantId) {
+                        $builder->where('tenant_id', $tenantId);
+                    }
+                    // Otherwise show all data without filtering
+                    return;
+                }
+
+                // Regular users see only their tenant's data
+                $tenantId = session('current_tenant_id')
+                           ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                if ($tenantId) {
+                    $builder->where('tenant_id', $tenantId);
+                }
             }
         });
     }
@@ -161,5 +188,25 @@ class AdMetric extends Model
     public function scopeForCampaign(Builder $query, int $campaignId): Builder
     {
         return $query->where('ad_campaign_id', $campaignId);
+    }
+    
+    public function scopeForFunnelStage(Builder $query, string $funnelStage): Builder
+    {
+        return $query->where('funnel_stage', $funnelStage);
+    }
+    
+    public function scopeForUserJourney(Builder $query, string $userJourney): Builder
+    {
+        return $query->where('user_journey', $userJourney);
+    }
+    
+    public function scopeWithPixelData(Builder $query): Builder
+    {
+        return $query->where('has_pixel_data', true);
+    }
+    
+    public function scopeWithoutPixelData(Builder $query): Builder
+    {
+        return $query->where('has_pixel_data', false);
     }
 }

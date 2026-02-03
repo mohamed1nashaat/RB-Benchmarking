@@ -24,8 +24,11 @@ class Dashboard extends Model
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && session('current_tenant_id')) {
-                $builder->where('tenant_id', session('current_tenant_id'));
+            if (auth()->check()) {
+                $tenantId = session('current_tenant_id') ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                if ($tenantId) {
+                    $builder->where('tenant_id', $tenantId);
+                }
             }
         });
     }
@@ -92,10 +95,15 @@ class Dashboard extends Model
     public function getObjectiveKpis(): array
     {
         return match ($this->objective) {
-            'awareness' => ['cpm', 'reach', 'vtr', 'ctr'],
-            'leads' => ['cpl', 'cvr', 'ctr', 'cpc'],
-            'sales' => ['roas', 'cpa', 'aov', 'revenue'],
-            'calls' => ['cost_per_call', 'calls', 'ctr'],
+            'awareness' => ['spend', 'cpm', 'reach', 'vtr', 'ctr'],
+            'engagement' => ['spend', 'ctr', 'frequency', 'reach', 'vtr'],
+            'traffic' => ['spend', 'cpc', 'ctr', 'impressions', 'clicks', 'cpm'],
+            'messages' => ['spend', 'cpc', 'ctr', 'conversations', 'impressions', 'clicks'],
+            'app_installs' => ['spend', 'cpa', 'ctr', 'cpc', 'cvr', 'cpm'],
+            'in_app_actions' => ['spend', 'cpa', 'ctr', 'atc', 'cpc', 'cvr'],
+            'leads' => ['spend', 'cpl', 'cvr', 'ctr', 'cpc'],
+            'website_sales' => ['spend', 'roas', 'cpa', 'revenue', 'aov', 'cvr'],
+            'retention' => ['spend', 'cpa', 'retention_rate', 'ltv', 'ctr', 'cpc'],
             default => [],
         };
     }

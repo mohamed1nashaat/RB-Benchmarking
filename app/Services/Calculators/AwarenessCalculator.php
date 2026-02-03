@@ -8,7 +8,7 @@ class AwarenessCalculator extends BaseObjectiveCalculator
 {
     public function getPrimaryKpis(): array
     {
-        return ['cpm'];
+        return ['spend', 'cpm'];
     }
 
     public function getSecondaryKpis(): array
@@ -26,7 +26,8 @@ class AwarenessCalculator extends BaseObjectiveCalculator
 
         $kpis = [];
 
-        // Primary KPI
+        // Primary KPIs
+        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['cpm'] = $this->calculateCpm($aggregated);
 
         // Secondary KPIs
@@ -36,7 +37,6 @@ class AwarenessCalculator extends BaseObjectiveCalculator
         $kpis['ctr'] = $this->calculateCtr($aggregated);
 
         // Health metrics
-        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['impressions'] = $aggregated['impressions'] ?? 0;
 
         return array_filter($kpis, fn($value) => $value !== null);

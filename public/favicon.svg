@@ -1,0 +1,8 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Red Banana Shape -->
+  <path d="M8 20C8 16 12 12 16 10C20 12 24 16 24 20C24 24 20 28 16 28C12 28 8 24 8 20Z" fill="#e53e3e"/>
+  <!-- Banana curve highlight -->
+  <path d="M10 18C10 15 13 13 16 12C19 13 22 15 22 18C22 21 19 24 16 24C13 24 10 21 10 18Z" fill="#f59e0b"/>
+  <!-- Small highlight -->
+  <ellipse cx="14" cy="16" rx="2" ry="3" fill="#fbbf24" opacity="0.8"/>
+</svg>

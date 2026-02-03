@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\CampaignCreated;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,15 +16,76 @@ class AdCampaign extends Model
         'external_campaign_id',
         'name',
         'objective',
+        'sub_industry',
+        'category',
+        'inherit_category_from_account',
+        'channel_type',
+        'linkedin_level',
+        'google_level',
+        'funnel_stage',
+        'user_journey',
+        'has_pixel_data',
+        'target_segment',
+        'age_group',
+        'geo_targeting',
+        'messaging_tone',
         'status',
+        'google_sheet_id',
+        'google_sheet_url',
+        'sheet_mapping',
+        'sheets_integration_enabled',
+        'last_sheet_sync',
+        'pixel_config',
+        'conversion_tracking_enabled',
+        'conversion_pixel_id',
+    ];
+
+    protected $casts = [
+        'has_pixel_data' => 'boolean',
+        'inherit_category_from_account' => 'boolean',
+        'sheets_integration_enabled' => 'boolean',
+        'conversion_tracking_enabled' => 'boolean',
+        'sheet_mapping' => 'array',
+        'pixel_config' => 'array',
+        'last_sheet_sync' => 'datetime',
     ];
 
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && session('current_tenant_id')) {
-                $builder->where('tenant_id', session('current_tenant_id'));
+            if (auth()->check()) {
+                $user = auth()->user();
+
+                // Robust super admin detection
+                $isSuperAdmin = (app()->bound('is_super_admin') && app('is_super_admin'))
+                               || $user->id === 1
+                               || $user->email === 'technical@redbananas.com';
+
+                if ($isSuperAdmin) {
+                    // Super admins can optionally filter to specific tenant
+                    $tenantId = session('current_tenant_id')
+                               ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                    if ($tenantId) {
+                        $builder->where('tenant_id', $tenantId);
+                    }
+                    // Otherwise show all data without filtering
+                    return;
+                }
+
+                // Regular users see only their tenant's data
+                $tenantId = session('current_tenant_id')
+                           ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                if ($tenantId) {
+                    $builder->where('tenant_id', $tenantId);
+                }
             }
+        });
+
+        // Fire event when a new campaign is created
+        static::created(function (AdCampaign $campaign) {
+            // Load relationships needed for sheet creation
+            $campaign->load('adAccount.integration');
+            event(new CampaignCreated($campaign));
         });
     }
 
@@ -56,10 +118,71 @@ class AdCampaign extends Model
     {
         return $query->where('ad_account_id', $accountId);
     }
+    
+    public function scopeForFunnelStage(Builder $query, string $funnelStage): Builder
+    {
+        return $query->where('funnel_stage', $funnelStage);
+    }
+    
+    public function scopeForUserJourney(Builder $query, string $userJourney): Builder
+    {
+        return $query->where('user_journey', $userJourney);
+    }
+    
+    public function scopeForSubIndustry(Builder $query, string $subIndustry): Builder
+    {
+        return $query->where('sub_industry', $subIndustry);
+    }
+    
+    public function scopeWithPixelData(Builder $query): Builder
+    {
+        return $query->where('has_pixel_data', true);
+    }
+    
+    public function scopeWithoutPixelData(Builder $query): Builder
+    {
+        return $query->where('has_pixel_data', false);
+    }
+
+    public function scopeForCategory(Builder $query, string $category): Builder
+    {
+        return $query->where('category', $category);
+    }
+
+    public function scopeForChannelType(Builder $query, string $channelType): Builder
+    {
+        return $query->where('channel_type', $channelType);
+    }
 
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Get the effective category for this campaign.
+     * Returns the campaign's category if set and not inheriting from account,
+     * otherwise returns the account's category.
+     *
+     * @return string|null
+     */
+    public function getEffectiveCategory(): ?string
+    {
+        if (!$this->inherit_category_from_account && $this->category) {
+            return $this->category;
+        }
+
+        return $this->adAccount?->category;
+    }
+
+    /**
+     * Get the effective industry for this campaign from the ad account.
+     *
+     * @return string|null
+     */
+    public function getEffectiveIndustry(): ?string
+    {
+        return $this->adAccount?->industry;
     }
 
     public function getPlatform(): string
@@ -74,7 +197,16 @@ class AdCampaign extends Model
             ->get();
     }
 
-    public function getAggregatedMetrics(string $startDate, string $endDate): array
+    /**
+     * Get aggregated metrics for a date range
+     * Note: Values are in the account's currency (not converted)
+     *
+     * @param string $startDate
+     * @param string $endDate
+     * @param bool $convertToSAR Whether to convert spend/revenue to SAR
+     * @return array
+     */
+    public function getAggregatedMetrics(string $startDate, string $endDate, bool $convertToSAR = false): array
     {
         $metrics = $this->adMetrics()
             ->whereBetween('date', [$startDate, $endDate])
@@ -94,6 +226,24 @@ class AdCampaign extends Model
             ')
             ->first();
 
-        return $metrics ? $metrics->toArray() : [];
+        if (!$metrics) {
+            return [];
+        }
+
+        $result = $metrics->toArray();
+
+        // Optionally convert to SAR
+        if ($convertToSAR && $this->adAccount) {
+            $currencyService = app(\App\Services\CurrencyConversionService::class);
+            $currency = $this->adAccount->currency ?? 'USD';
+
+            $result['total_spend'] = $currencyService->convertToSAR((float) $result['total_spend'], $currency);
+            $result['total_revenue'] = $currencyService->convertToSAR((float) $result['total_revenue'], $currency);
+            $result['currency'] = 'SAR';
+        } else {
+            $result['currency'] = $this->adAccount->currency ?? 'USD';
+        }
+
+        return $result;
     }
 }

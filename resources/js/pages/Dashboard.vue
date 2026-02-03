@@ -6,10 +6,12 @@
         <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
           {{ $t('dashboard.title') }}
         </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          {{ $t(`objectives.${dashboardStore.objective}`) }} • 
-          {{ formatDateRange(dashboardStore.dateRange) }}
-        </p>
+        <div class="mt-1 space-y-1">
+          <p class="text-sm text-gray-500">
+            {{ $t(`objectives.${dashboardStore.objective}`) }} • 
+            {{ formatDateRange(dashboardStore.dateRange) }}
+          </p>
+        </div>
       </div>
       <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
         <DateRangePicker />
@@ -17,7 +19,7 @@
         <button
           @click="refreshData"
           :disabled="dashboardStore.loading"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
         >
           <ArrowPathIcon 
             :class="['h-4 w-4 mr-2', dashboardStore.loading ? 'animate-spin' : '']" 
@@ -29,76 +31,12 @@
       </div>
     </div>
 
-    <!-- Phase 2 Features Quick Access -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <router-link to="/content" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <DocumentTextIcon class="h-8 w-8 text-blue-600" />
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-gray-900">Content Manager</p>
-            <p class="text-sm text-gray-500">{{ contentStats.total }} posts</p>
-          </div>
-        </div>
-      </router-link>
-
-      <router-link to="/leads" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <UserGroupIcon class="h-8 w-8 text-green-600" />
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-gray-900">Lead Management</p>
-            <p class="text-sm text-gray-500">{{ leadStats.total }} leads</p>
-          </div>
-        </div>
-      </router-link>
-
-      <router-link to="/communications" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <ChatBubbleLeftRightIcon class="h-8 w-8 text-purple-600" />
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-gray-900">Communications</p>
-            <p class="text-sm text-gray-500">{{ messageStats.unread }} unread</p>
-          </div>
-        </div>
-      </router-link>
-
-      <router-link to="/benchmarks" class="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <ChartBarIcon class="h-8 w-8 text-orange-600" />
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium text-gray-900">Benchmarks</p>
-            <p class="text-sm text-gray-500">GCC Market Data</p>
-          </div>
-        </div>
-      </router-link>
-    </div>
-
-    <!-- Social Platform Overview -->
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">Social Platform Performance</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-        <div v-for="platform in socialPlatforms" :key="platform.name" class="text-center">
-          <div class="flex justify-center mb-2">
-            <component :is="platform.icon" class="h-8 w-8" :class="platform.color" />
-          </div>
-          <p class="text-sm font-medium text-gray-900">{{ platform.name }}</p>
-          <p class="text-xs text-gray-500">{{ platform.status }}</p>
-        </div>
-      </div>
-    </div>
 
     <!-- KPI Grid -->
     <KPIGrid />
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Primary Chart -->
       <ChartCard
         :title="getPrimaryChartTitle()"
@@ -116,87 +54,26 @@
         :metric="getPrimaryMetric()"
         chart-type="bar"
       />
+
+      <!-- Funnel Chart -->
+      <FunnelChart
+        :data="funnelData"
+        :loading="dashboardStore.loading"
+        :date-range="dashboardStore.dateRange"
+      />
     </div>
 
-    <!-- Phase 2 Features Dashboard -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Recent Content Posts -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900">Recent Posts</h3>
-          <router-link to="/content" class="text-sm text-blue-600 hover:text-blue-800">View all</router-link>
-        </div>
-        <div class="space-y-3">
-          <div v-for="post in recentPosts" :key="post.id" class="flex items-center space-x-3">
-            <div class="flex-shrink-0">
-              <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <component :is="getPlatformIcon(post.platform)" class="h-4 w-4" />
-              </div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 truncate">{{ post.title }}</p>
-              <p class="text-xs text-gray-500">{{ post.status }} • {{ formatDate(post.created_at) }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Leads -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900">Recent Leads</h3>
-          <router-link to="/leads" class="text-sm text-blue-600 hover:text-blue-800">View all</router-link>
-        </div>
-        <div class="space-y-3">
-          <div v-for="lead in recentLeads" :key="lead.id" class="flex items-center space-x-3">
-            <div class="flex-shrink-0">
-              <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                <UserIcon class="h-4 w-4 text-green-600" />
-              </div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900">{{ lead.name || lead.email }}</p>
-              <p class="text-xs text-gray-500">{{ lead.source }} • {{ formatDate(lead.created_at) }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Communication Summary -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium text-gray-900">Messages</h3>
-          <router-link to="/communications" class="text-sm text-blue-600 hover:text-blue-800">View all</router-link>
-        </div>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-600">WhatsApp</span>
-            <span class="text-sm font-medium text-gray-900">{{ messageStats.whatsapp }} unread</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-600">Facebook</span>
-            <span class="text-sm font-medium text-gray-900">{{ messageStats.facebook }} unread</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-600">Instagram</span>
-            <span class="text-sm font-medium text-gray-900">{{ messageStats.instagram }} unread</span>
-          </div>
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-600">Twitter</span>
-            <span class="text-sm font-medium text-gray-900">{{ messageStats.twitter }} unread</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Spend Table -->
+    <SpendTable :spend-data="spendData" :loading="dashboardStore.loading" />
 
     <!-- Data Table -->
     <div class="bg-white shadow overflow-hidden sm:rounded-md">
       <div class="px-4 py-5 sm:px-6">
         <h3 class="text-lg leading-6 font-medium text-gray-900">
-          Campaign Performance
+          {{ $t('dashboard.campaign_performance') }}
         </h3>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">
-          Detailed breakdown by campaign
+          {{ $t('dashboard.detailed_breakdown') }}
         </p>
       </div>
       <DataTable :data="tableData" :loading="dashboardStore.loading" />
@@ -205,21 +82,31 @@
 </template>
 
 <script setup lang="ts">
-import ChartCard from '@/components/ChartCard.vue'
-import DataTable from '@/components/DataTable.vue'
-import DateRangePicker from '@/components/DateRangePicker.vue'
-import ExportButton from '@/components/ExportButton.vue'
-import FilterBar from '@/components/FilterBar.vue'
-import KPIGrid from '@/components/KPIGrid.vue'
-import { useDashboardStore } from '@/stores/dashboard'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowPathIcon } from '@heroicons/vue/24/outline'
-import { onMounted, ref, watch } from 'vue'
+import { useDashboardStore } from '@/stores/dashboard'
+import KPIGrid from '@/components/KPIGrid.vue'
+import ChartCard from '@/components/ChartCard.vue'
+import DateRangePicker from '@/components/DateRangePicker.vue'
+import FilterBar from '@/components/FilterBar.vue'
+import ExportButton from '@/components/ExportButton.vue'
+import DataTable from '@/components/DataTable.vue'
+import SpendTable from '@/components/SpendTable.vue'
+import FunnelChart from '@/components/FunnelChart.vue'
 
+const { t } = useI18n()
 const dashboardStore = useDashboardStore()
 
 const timeseriesData = ref([])
 const campaignData = ref([])
 const tableData = ref([])
+const spendData = ref([])
+const funnelData = ref({
+  impressions: 0,
+  clicks: 0,
+  leads: 0
+})
 
 const formatDateRange = (dateRange: any) => {
   const from = new Date(dateRange.from).toLocaleDateString()
@@ -230,30 +117,30 @@ const formatDateRange = (dateRange: any) => {
 const getPrimaryChartTitle = () => {
   switch (dashboardStore.objective) {
     case 'awareness':
-      return 'Impressions Over Time'
+      return t('dashboard.impressions_over_time')
     case 'leads':
-      return 'Leads Over Time'
+      return t('dashboard.leads_over_time')
     case 'sales':
-      return 'Revenue Over Time'
+      return t('dashboard.revenue_over_time')
     case 'calls':
-      return 'Calls Over Time'
+      return t('dashboard.calls_over_time')
     default:
-      return 'Performance Over Time'
+      return t('dashboard.performance_over_time')
   }
 }
 
 const getSecondaryChartTitle = () => {
   switch (dashboardStore.objective) {
     case 'awareness':
-      return 'CPM by Campaign'
+      return t('dashboard.cpm_by_campaign')
     case 'leads':
-      return 'CPL by Campaign'
+      return t('dashboard.cpl_by_campaign')
     case 'sales':
-      return 'ROAS by Campaign'
+      return t('dashboard.roas_by_campaign')
     case 'calls':
-      return 'Cost per Call by Campaign'
+      return t('dashboard.cost_per_call_by_campaign')
     default:
-      return 'Performance by Campaign'
+      return t('dashboard.performance_by_campaign')
   }
 }
 
@@ -266,9 +153,12 @@ const refreshData = async () => {
     dashboardStore.fetchSummary(),
     fetchTimeseriesData(),
     fetchCampaignData(),
-    fetchTableData()
+    fetchTableData(),
+    fetchSpendData(),
+    fetchFunnelData()
   ])
 }
+
 
 const fetchTimeseriesData = async () => {
   try {
@@ -292,11 +182,81 @@ const fetchCampaignData = async () => {
 
 const fetchTableData = async () => {
   try {
-    // This would fetch detailed campaign data for the table
-    // For now, we'll use mock data
-    tableData.value = []
+    // Fetch detailed campaign data for the table
+    const metric = getPrimaryMetric()
+    const data = await dashboardStore.fetchTimeseries(metric, 'campaign')
+    // Transform data for table display
+    tableData.value = data.map((item: any) => {
+      const raw = item.raw_metrics || {}
+      const spend = parseFloat(raw.spend || 0)
+      const impressions = parseInt(raw.impressions || 0)
+      const clicks = parseInt(raw.clicks || 0)
+      const leads = parseInt(raw.leads || 0)
+      const revenue = parseFloat(raw.revenue || 0)
+      const calls = parseInt(raw.calls || 0)
+      
+      // Calculate KPIs
+      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
+      const cpc = clicks > 0 ? spend / clicks : 0
+      const cpl = leads > 0 ? spend / leads : 0
+      const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0
+      const roas = spend > 0 ? revenue / spend : 0
+      const costPerCall = calls > 0 ? spend / calls : 0
+      const cvr = clicks > 0 ? (leads / clicks) * 100 : 0
+      
+      return {
+        campaign_name: item.period,
+        metric_value: item.value,
+        spend,
+        impressions,
+        clicks,
+        revenue,
+        leads,
+        calls,
+        ctr,
+        cpc,
+        cpl,
+        cpm,
+        roas,
+        cost_per_call: costPerCall,
+        cvr
+      }
+    })
   } catch (error) {
     console.error('Error fetching table data:', error)
+    tableData.value = []
+  }
+}
+
+const fetchSpendData = async () => {
+  try {
+    const params = {
+      from: dashboardStore.dateRange.from,
+      to: dashboardStore.dateRange.to,
+      group_by: 'account',
+      ...dashboardStore.filters
+    }
+
+    const response = await window.axios.get('/api/metrics/spend-breakdown', { params })
+    spendData.value = response.data.data
+  } catch (error) {
+    console.error('Error fetching spend data:', error)
+    spendData.value = []
+  }
+}
+
+const fetchFunnelData = async () => {
+  try {
+    // Use the summary data for funnel metrics
+    await dashboardStore.fetchSummary()
+    funnelData.value = {
+      impressions: dashboardStore.kpis.impressions || 0,
+      clicks: dashboardStore.kpis.clicks || 0,
+      leads: dashboardStore.kpis.leads || 0
+    }
+  } catch (error) {
+    console.error('Error fetching funnel data:', error)
+    funnelData.value = { impressions: 0, clicks: 0, leads: 0 }
   }
 }
 
@@ -305,9 +265,13 @@ watch(() => dashboardStore.objective, () => {
   refreshData()
 })
 
-// Watch for date range changes and refresh data
-watch(() => dashboardStore.dateRange, () => {
-  refreshData()
+// Watch for date range changes and refresh data (only when user manually changes it)
+watch(() => dashboardStore.dateRange, (newRange, oldRange) => {
+  // Only refresh if both from and to are populated (not initial empty state)
+  // and if the change wasn't from an API update (which would have already refreshed data)
+  if (newRange.from && newRange.to && oldRange.from && oldRange.to) {
+    refreshData()
+  }
 }, { deep: true })
 
 // Watch for filter changes and refresh data
@@ -316,6 +280,7 @@ watch(() => dashboardStore.filters, () => {
 }, { deep: true })
 
 onMounted(() => {
+  // Date range will be fetched automatically by the store functions when needed
   refreshData()
 })
 </script>

@@ -15,7 +15,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: adintel_test
+          MYSQL_DATABASE: rb_benchmarks_test
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -59,14 +59,14 @@ jobs:
 
     - name: Create Database
       run: |
-        mysql --host 127.0.0.1 --port 3306 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS adintel_test;"
+        mysql --host 127.0.0.1 --port 3306 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS rb_benchmarks_test;"
 
     - name: Run Migrations
       env:
         DB_CONNECTION: mysql
         DB_HOST: 127.0.0.1
         DB_PORT: 3306
-        DB_DATABASE: adintel_test
+        DB_DATABASE: rb_benchmarks_test
         DB_USERNAME: root
         DB_PASSWORD: root
       run: php artisan migrate --force
@@ -82,7 +82,7 @@ jobs:
         DB_CONNECTION: mysql
         DB_HOST: 127.0.0.1
         DB_PORT: 3306
-        DB_DATABASE: adintel_test
+        DB_DATABASE: rb_benchmarks_test
         DB_USERNAME: root
         DB_PASSWORD: root
       run: php artisan test --coverage --min=80

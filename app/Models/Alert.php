@@ -11,23 +11,30 @@ class Alert extends Model
     protected $fillable = [
         'tenant_id',
         'user_id',
+        'name',
         'type',
-        'title',
-        'message',
-        'data',
-        'read_at',
+        'objective',
+        'conditions',
+        'notification_channels',
+        'is_active',
+        'last_triggered_at',
     ];
 
     protected $casts = [
-        'data' => 'array',
-        'read_at' => 'datetime',
+        'conditions' => 'array',
+        'notification_channels' => 'array',
+        'is_active' => 'boolean',
+        'last_triggered_at' => 'datetime',
     ];
 
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && session('current_tenant_id')) {
-                $builder->where('tenant_id', session('current_tenant_id'));
+            if (auth()->check()) {
+                $tenantId = session('current_tenant_id') ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                if ($tenantId) {
+                    $builder->where('tenant_id', $tenantId);
+                }
             }
         });
     }
@@ -42,14 +49,14 @@ class Alert extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function scopeUnread(Builder $query): Builder
+    public function scopeActive(Builder $query): Builder
     {
-        return $query->whereNull('read_at');
+        return $query->where('is_active', true);
     }
 
-    public function scopeRead(Builder $query): Builder
+    public function scopeInactive(Builder $query): Builder
     {
-        return $query->whereNotNull('read_at');
+        return $query->where('is_active', false);
     }
 
     public function scopeForType(Builder $query, string $type): Builder
@@ -57,22 +64,44 @@ class Alert extends Model
         return $query->where('type', $type);
     }
 
-    public function isRead(): bool
+    public function scopeForObjective(Builder $query, string $objective): Builder
     {
-        return $this->read_at !== null;
+        return $query->where('objective', $objective);
     }
 
-    public function markAsRead(): void
+    public function isActive(): bool
     {
-        if (!$this->isRead()) {
-            $this->update(['read_at' => now()]);
+        return $this->is_active === true;
+    }
+
+    public function activate(): void
+    {
+        if (!$this->isActive()) {
+            $this->update(['is_active' => true]);
         }
     }
 
-    public function markAsUnread(): void
+    public function deactivate(): void
     {
-        if ($this->isRead()) {
-            $this->update(['read_at' => null]);
+        if ($this->isActive()) {
+            $this->update(['is_active' => false]);
         }
+    }
+
+    public function markAsTriggered(): void
+    {
+        $this->update(['last_triggered_at' => now()]);
+    }
+
+    /**
+     * Check if this alert should be evaluated based on cooldown period
+     */
+    public function shouldEvaluate(int $cooldownMinutes = 60): bool
+    {
+        if (!$this->last_triggered_at) {
+            return true;
+        }
+
+        return $this->last_triggered_at->addMinutes($cooldownMinutes)->isPast();
     }
 }

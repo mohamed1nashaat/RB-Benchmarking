@@ -11,6 +11,7 @@ class Integration extends Model
 {
     protected $fillable = [
         'tenant_id',
+        'user_id',
         'platform',
         'app_config',
         'created_by',
@@ -24,8 +25,12 @@ class Integration extends Model
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && session('current_tenant_id')) {
-                $builder->where('tenant_id', session('current_tenant_id'));
+            if (auth()->check()) {
+                // Also scope by tenant if available
+                $tenantId = session('current_tenant_id') ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
+                if ($tenantId) {
+                    $builder->where('tenant_id', $tenantId);
+                }
             }
         });
     }
@@ -33,6 +38,11 @@ class Integration extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function creator(): BelongsTo

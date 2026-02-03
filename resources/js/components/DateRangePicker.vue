@@ -1,76 +1,135 @@
 <template>
   <div class="relative">
-    <Popover class="relative">
+    <Popover v-slot="{ open }">
+      <!-- Single Input Field -->
       <PopoverButton
-        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        class="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md text-xs bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
       >
-        <CalendarIcon class="h-4 w-4 mr-2" aria-hidden="true" />
-        {{ formatDateRange() }}
-        <ChevronDownIcon class="ml-2 -mr-1 h-4 w-4" aria-hidden="true" />
+        <div class="flex items-center space-x-2">
+          <CalendarIcon class="h-4 w-4 text-gray-400" />
+          <span class="text-gray-700 whitespace-nowrap">
+            {{ formattedDateRange }}
+          </span>
+        </div>
+        <ChevronDownIcon
+          :class="['h-4 w-4 text-gray-400 transition-transform', open ? 'transform rotate-180' : '']"
+        />
       </PopoverButton>
 
+      <!-- Popover Dropdown -->
       <transition
         enter-active-class="transition duration-200 ease-out"
-        enter-from-class="translate-y-1 opacity-0"
-        enter-to-class="translate-y-0 opacity-100"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
         leave-active-class="transition duration-150 ease-in"
-        leave-from-class="translate-y-0 opacity-100"
-        leave-to-class="translate-y-1 opacity-0"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
       >
         <PopoverPanel
-          class="absolute z-10 mt-3 w-80 max-w-sm bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+          class="absolute z-50 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-4"
         >
-          <div class="p-4">
-            <div class="space-y-4">
-              <!-- Quick Presets -->
-              <div>
-                <h4 class="text-sm font-medium text-gray-900 mb-2">Quick Select</h4>
-                <div class="grid grid-cols-2 gap-2">
+          <div class="flex space-x-4">
+            <!-- Quick Preset Buttons -->
+            <div class="flex flex-col space-y-2 pr-4 border-r border-gray-200">
+              <button
+                v-for="preset in presets"
+                :key="preset.label"
+                @click="applyPreset(preset)"
+                class="text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 transition-colors whitespace-nowrap"
+                :class="isPresetActive(preset) ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'"
+              >
+                {{ preset.label }}
+              </button>
+            </div>
+
+            <!-- Dual Calendar -->
+            <div class="flex space-x-4">
+              <!-- First Calendar (Current Month) -->
+              <div class="calendar-container">
+                <div class="flex items-center justify-between mb-3">
                   <button
-                    v-for="preset in presets"
-                    :key="preset.key"
-                    @click="selectPreset(preset)"
-                    :class="[
-                      'px-3 py-2 text-sm rounded-md border',
-                      isActivePreset(preset)
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                    ]"
+                    @click="previousMonth"
+                    class="p-1 hover:bg-gray-100 rounded transition-colors"
                   >
-                    {{ $t(preset.label) }}
+                    <ChevronLeftIcon class="h-4 w-4 text-gray-600" />
+                  </button>
+                  <span class="text-sm font-medium text-gray-900">
+                    {{ format(currentMonth, 'MMMM yyyy') }}
+                  </span>
+                  <button
+                    @click="nextMonth"
+                    class="p-1 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <ChevronRightIcon class="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+                <div class="calendar-grid">
+                  <div v-for="day in weekDays" :key="day" class="calendar-weekday">
+                    {{ day }}
+                  </div>
+                  <button
+                    v-for="day in getCalendarDays(currentMonth)"
+                    :key="day.date"
+                    @click="selectDate(day.date)"
+                    @mouseenter="hoverDate = day.date"
+                    @mouseleave="hoverDate = null"
+                    :disabled="!day.isCurrentMonth"
+                    class="calendar-day"
+                    :class="getDayClasses(day)"
+                  >
+                    {{ day.day }}
                   </button>
                 </div>
               </div>
 
-              <!-- Custom Date Range -->
-              <div>
-                <h4 class="text-sm font-medium text-gray-900 mb-2">Custom Range</h4>
-                <div class="space-y-2">
-                  <div>
-                    <label class="block text-xs font-medium text-gray-700">From</label>
-                    <input
-                      v-model="customRange.from"
-                      type="date"
-                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-medium text-gray-700">To</label>
-                    <input
-                      v-model="customRange.to"
-                      type="date"
-                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
+              <!-- Second Calendar (Next Month) -->
+              <div class="calendar-container">
+                <div class="flex items-center justify-between mb-3">
+                  <button
+                    @click="previousMonth"
+                    class="p-1 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <ChevronLeftIcon class="h-4 w-4 text-gray-600" />
+                  </button>
+                  <span class="text-sm font-medium text-gray-900">
+                    {{ format(nextMonthDate, 'MMMM yyyy') }}
+                  </span>
+                  <button
+                    @click="nextMonth"
+                    class="p-1 hover:bg-gray-100 rounded transition-colors"
+                  >
+                    <ChevronRightIcon class="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+                <div class="calendar-grid">
+                  <div v-for="day in weekDays" :key="day" class="calendar-weekday">
+                    {{ day }}
                   </div>
                   <button
-                    @click="applyCustomRange"
-                    class="w-full px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    v-for="day in getCalendarDays(nextMonthDate)"
+                    :key="day.date"
+                    @click="selectDate(day.date)"
+                    @mouseenter="hoverDate = day.date"
+                    @mouseleave="hoverDate = null"
+                    :disabled="!day.isCurrentMonth"
+                    class="calendar-day"
+                    :class="getDayClasses(day)"
                   >
-                    Apply Custom Range
+                    {{ day.day }}
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Footer with Clear Button -->
+          <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+            <button
+              @click="clearSelection"
+              class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              Clear
+            </button>
           </div>
         </PopoverPanel>
       </transition>
@@ -79,109 +138,277 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
-import { CalendarIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
-import { useDashboardStore } from '@/stores/dashboard'
+import { CalendarIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  addMonths,
+  subDays,
+  subMonths,
+  isSameDay,
+  isWithinInterval,
+  startOfYear,
+  parseISO,
+  isAfter,
+  isBefore
+} from 'date-fns'
 
-const dashboardStore = useDashboardStore()
+const props = defineProps<{
+  value?: {
+    from: string
+    to: string
+  }
+}>()
 
-const customRange = reactive({
-  from: dashboardStore.dateRange.from,
-  to: dashboardStore.dateRange.to
+const emit = defineEmits(['change'])
+
+// Date range state
+const localDateRange = ref({
+  from: props.value?.from || format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+  to: props.value?.to || format(new Date(), 'yyyy-MM-dd')
 })
 
+// Calendar navigation
+const currentMonth = ref(new Date())
+const nextMonthDate = computed(() => addMonths(currentMonth.value, 1))
+
+// Selection state
+const tempStartDate = ref<Date | null>(null)
+const tempEndDate = ref<Date | null>(null)
+const hoverDate = ref<Date | null>(null)
+
+// Week days
+const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+
+// Quick presets
 const presets = [
   {
-    key: 'today',
-    label: 'date.today',
-    days: 0
+    label: 'Last 7 days',
+    getValue: () => ({
+      from: format(subDays(new Date(), 6), 'yyyy-MM-dd'),
+      to: format(new Date(), 'yyyy-MM-dd')
+    })
   },
   {
-    key: 'yesterday',
-    label: 'date.yesterday',
-    days: 1
+    label: 'Last 30 days',
+    getValue: () => ({
+      from: format(subDays(new Date(), 29), 'yyyy-MM-dd'),
+      to: format(new Date(), 'yyyy-MM-dd')
+    })
   },
   {
-    key: 'last_7_days',
-    label: 'date.last_7_days',
-    days: 7
+    label: 'This month',
+    getValue: () => ({
+      from: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+      to: format(new Date(), 'yyyy-MM-dd')
+    })
   },
   {
-    key: 'last_30_days',
-    label: 'date.last_30_days',
-    days: 30
+    label: 'Last month',
+    getValue: () => {
+      const lastMonth = subMonths(new Date(), 1)
+      return {
+        from: format(startOfMonth(lastMonth), 'yyyy-MM-dd'),
+        to: format(endOfMonth(lastMonth), 'yyyy-MM-dd')
+      }
+    }
   },
   {
-    key: 'this_month',
-    label: 'date.this_month',
-    days: 'this_month'
+    label: 'This year',
+    getValue: () => ({
+      from: format(startOfYear(new Date()), 'yyyy-MM-dd'),
+      to: format(new Date(), 'yyyy-MM-dd')
+    })
   },
   {
-    key: 'last_month',
-    label: 'date.last_month',
-    days: 'last_month'
+    label: 'All time',
+    getValue: () => ({
+      from: '2010-01-01',
+      to: format(new Date(), 'yyyy-MM-dd')
+    })
   }
 ]
 
-const formatDateRange = () => {
-  const from = new Date(dashboardStore.dateRange.from)
-  const to = new Date(dashboardStore.dateRange.to)
-  
-  const fromStr = from.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  const toStr = to.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  
-  if (fromStr === toStr) {
-    return fromStr
-  }
-  
-  return `${fromStr} - ${toStr}`
-}
-
-const selectPreset = (preset: any) => {
-  let from: Date
-  let to: Date = new Date()
-
-  if (preset.days === 'this_month') {
-    from = new Date(to.getFullYear(), to.getMonth(), 1)
-  } else if (preset.days === 'last_month') {
-    from = new Date(to.getFullYear(), to.getMonth() - 1, 1)
-    to = new Date(to.getFullYear(), to.getMonth(), 0)
-  } else if (preset.days === 0) {
-    from = new Date()
-  } else if (preset.days === 1) {
-    from = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    to = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  } else {
-    from = new Date(Date.now() - preset.days * 24 * 60 * 60 * 1000)
+// Formatted date range display
+const formattedDateRange = computed(() => {
+  if (!localDateRange.value.from || !localDateRange.value.to) {
+    return 'Select date range'
   }
 
-  dashboardStore.setDateRange({
-    from: from.toISOString().split('T')[0],
-    to: to.toISOString().split('T')[0]
-  })
+  const fromDate = parseISO(localDateRange.value.from)
+  const toDate = parseISO(localDateRange.value.to)
 
-  // Update custom range inputs
-  customRange.from = from.toISOString().split('T')[0]
-  customRange.to = to.toISOString().split('T')[0]
+  return `${format(fromDate, 'MMM d, yy')} - ${format(toDate, 'MMM d, yy')}`
+})
+
+// Check if preset is active
+const isPresetActive = (preset: any) => {
+  const presetValue = preset.getValue()
+  return localDateRange.value.from === presetValue.from &&
+         localDateRange.value.to === presetValue.to
 }
 
-const applyCustomRange = () => {
-  if (customRange.from && customRange.to) {
-    dashboardStore.setDateRange({
-      from: customRange.from,
-      to: customRange.to
+// Get calendar days for a month
+const getCalendarDays = (monthDate: Date) => {
+  const start = startOfWeek(startOfMonth(monthDate))
+  const end = endOfWeek(endOfMonth(monthDate))
+  const days = []
+
+  let currentDate = start
+  while (currentDate <= end) {
+    const monthStart = startOfMonth(monthDate)
+    const monthEnd = endOfMonth(monthDate)
+
+    days.push({
+      date: currentDate,
+      day: currentDate.getDate(),
+      isCurrentMonth: currentDate >= monthStart && currentDate <= monthEnd
     })
+
+    currentDate = addDays(currentDate, 1)
+  }
+
+  return days
+}
+
+// Get day styling classes
+const getDayClasses = (day: any) => {
+  if (!day.isCurrentMonth) {
+    return 'text-gray-300 cursor-not-allowed'
+  }
+
+  const fromDate = localDateRange.value.from ? parseISO(localDateRange.value.from) : null
+  const toDate = localDateRange.value.to ? parseISO(localDateRange.value.to) : null
+
+  const isStart = fromDate && isSameDay(day.date, fromDate)
+  const isEnd = toDate && isSameDay(day.date, toDate)
+  const isInRange = fromDate && toDate && isWithinInterval(day.date, { start: fromDate, end: toDate })
+
+  // Handle hover preview during selection
+  let isHoverPreview = false
+  if (tempStartDate.value && !tempEndDate.value && hoverDate.value) {
+    // Ensure start is before end to prevent invalid interval error
+    const start = isBefore(hoverDate.value, tempStartDate.value) ? hoverDate.value : tempStartDate.value
+    const end = isBefore(hoverDate.value, tempStartDate.value) ? tempStartDate.value : hoverDate.value
+    isHoverPreview = isWithinInterval(day.date, { start, end })
+  }
+
+  const classes = []
+
+  if (isStart && isEnd) {
+    classes.push('bg-primary-600 text-white font-semibold rounded-md')
+  } else if (isStart) {
+    classes.push('bg-primary-600 text-white font-semibold rounded-l-md')
+  } else if (isEnd) {
+    classes.push('bg-primary-600 text-white font-semibold rounded-r-md')
+  } else if (isInRange) {
+    classes.push('bg-primary-100 text-primary-900')
+  } else if (isHoverPreview) {
+    classes.push('bg-primary-50 text-primary-700')
+  } else {
+    classes.push('hover:bg-gray-100 text-gray-900')
+  }
+
+  return classes.join(' ')
+}
+
+// Date selection logic
+const selectDate = (date: Date) => {
+  if (!tempStartDate.value) {
+    // First click - set start date
+    tempStartDate.value = date
+    tempEndDate.value = null
+  } else if (!tempEndDate.value) {
+    // Second click - set end date
+    if (isBefore(date, tempStartDate.value)) {
+      // If end is before start, swap them
+      tempEndDate.value = tempStartDate.value
+      tempStartDate.value = date
+    } else {
+      tempEndDate.value = date
+    }
+
+    // Apply the selection
+    localDateRange.value = {
+      from: format(tempStartDate.value, 'yyyy-MM-dd'),
+      to: format(tempEndDate.value, 'yyyy-MM-dd')
+    }
+
+    emit('change', { ...localDateRange.value })
+
+    // Reset temp selection
+    tempStartDate.value = null
+    tempEndDate.value = null
+  } else {
+    // Start new selection
+    tempStartDate.value = date
+    tempEndDate.value = null
   }
 }
 
-const isActivePreset = (preset: any) => {
-  // Simple check - could be more sophisticated
-  const currentDays = Math.ceil(
-    (new Date(dashboardStore.dateRange.to).getTime() - new Date(dashboardStore.dateRange.from).getTime()) 
-    / (1000 * 60 * 60 * 24)
-  )
-  
-  return preset.days === currentDays || (preset.days === 0 && currentDays === 0)
+// Apply preset
+const applyPreset = (preset: any) => {
+  const value = preset.getValue()
+  localDateRange.value = value
+  emit('change', { ...value })
+
+  // Reset temp selection
+  tempStartDate.value = null
+  tempEndDate.value = null
 }
+
+// Clear selection
+const clearSelection = () => {
+  localDateRange.value = {
+    from: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+    to: format(new Date(), 'yyyy-MM-dd')
+  }
+  emit('change', { ...localDateRange.value })
+  tempStartDate.value = null
+  tempEndDate.value = null
+}
+
+// Month navigation
+const previousMonth = () => {
+  currentMonth.value = subMonths(currentMonth.value, 1)
+}
+
+const nextMonth = () => {
+  currentMonth.value = addMonths(currentMonth.value, 1)
+}
+
+// Watch for external changes
+watch(() => props.value, (newValue) => {
+  if (newValue) {
+    localDateRange.value = { ...newValue }
+  }
+}, { deep: true })
 </script>
+
+<style scoped>
+.calendar-container {
+  @apply min-w-[280px];
+}
+
+.calendar-grid {
+  @apply grid grid-cols-7 gap-1;
+}
+
+.calendar-weekday {
+  @apply text-center text-xs font-medium text-gray-500 py-2;
+}
+
+.calendar-day {
+  @apply w-9 h-9 flex items-center justify-center text-sm rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500;
+}
+
+.calendar-day:disabled {
+  @apply cursor-not-allowed;
+}
+</style>

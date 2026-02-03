@@ -5,87 +5,69 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: adintel-app
+    container_name: rb-benchmarks-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
       - ./:/var/www
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
-      - adintel
+      - rb-benchmarks
     depends_on:
       - mysql
       - redis
 
   nginx:
     image: nginx:alpine
-    container_name: adintel-nginx
+    container_name: rb-benchmarks-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "8081:80"
+      - "8443:443"
     volumes:
       - ./:/var/www
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./docker/nginx/sites/:/etc/nginx/sites-available
       - ./docker/nginx/ssl/:/etc/ssl/certs
     networks:
-      - adintel
+      - rb-benchmarks
     depends_on:
       - app
 
   mysql:
     image: mysql:8.0
-    container_name: adintel-mysql
+    container_name: rb-benchmarks-mysql
     restart: unless-stopped
     tty: true
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
-      MYSQL_DATABASE: adintel
+      MYSQL_DATABASE: rb_benchmarks
       MYSQL_ROOT_PASSWORD: root
       MYSQL_PASSWORD: password
-      MYSQL_USER: adintel
+      MYSQL_USER: rb_benchmarks
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
-      - adintel-mysql:/var/lib/mysql
+      - rb-benchmarks-mysql:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     networks:
-      - adintel
+      - rb-benchmarks
 
   redis:
     image: redis:alpine
-    container_name: adintel-redis
+    container_name: rb-benchmarks-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - adintel-redis:/data
+      - rb-benchmarks-redis:/data
     networks:
-      - adintel
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: adintel-phpmyadmin
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: root
-      MYSQL_ROOT_PASSWORD: root
-      UPLOAD_LIMIT: 256M
-    networks:
-      - adintel
-    depends_on:
-      - mysql
+      - rb-benchmarks
 
   node:
     image: node:18-alpine
-    container_name: adintel-node
+    container_name: rb-benchmarks-node
     working_dir: /var/www
     volumes:
       - ./:/var/www
@@ -93,14 +75,14 @@ services:
     ports:
       - "5173:5173"
     networks:
-      - adintel
+      - rb-benchmarks
 
 networks:
-  adintel:
+  rb-benchmarks:
     driver: bridge
 
 volumes:
-  adintel-mysql:
+  rb-benchmarks-mysql:
     driver: local
-  adintel-redis:
+  rb-benchmarks-redis:
     driver: local

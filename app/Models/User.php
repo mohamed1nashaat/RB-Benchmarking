@@ -26,7 +26,10 @@ class User extends Authenticatable
         'email',
         'password',
         'default_tenant_id',
+        'avatar',
     ];
+
+    protected $appends = ['avatar_url'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -92,5 +95,14 @@ class User extends Authenticatable
     public function isAdminForTenant(Tenant $tenant): bool
     {
         return $this->getRoleForTenant($tenant) === 'admin';
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        return asset('storage/avatars/' . $this->avatar);
     }
 }

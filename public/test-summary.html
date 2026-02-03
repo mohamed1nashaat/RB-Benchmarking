@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Filter Data Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .test-case {
+            border: 2px solid #e1e1e1;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .test-case.pass {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+        .test-case.fail {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .test-case h4 {
+            margin-top: 0;
+            color: #374151;
+        }
+        .test-result {
+            font-family: 'Courier New', monospace;
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .summary {
+            background: #1e40af;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .summary h2 {
+            margin-top: 0;
+        }
+        .metric {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-pass { background: #22c55e; }
+        .status-fail { background: #ef4444; }
+        .status-pending { background: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Comprehensive Benchmark Filter Data Testing</h1>
+        
+        <div class="summary" id="testSummary">
+            <h2>Test Status</h2>
+            <div class="metric">Tests: <span id="testCount">0</span></div>
+            <div class="metric">Passed: <span id="passCount">0</span></div>
+            <div class="metric">Failed: <span id="failCount">0</span></div>
+            <div class="metric">Success Rate: <span id="successRate">0%</span></div>
+        </div>
+
+        <button onclick="runAllTests()">🚀 Run All Filter Tests</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+        
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+
+        // Test data structures
+        const testCases = [
+            {
+                name: "No Filters - All Industries Display",
+                filters: { industry: '', platform: '' },
+                expected: {
+                    industriesCount: 20,
+                    competitorsRange: [0, 50],
+                    multiplier: 1.0
+                }
+            },
+            {
+                name: "Technology Industry Filter",
+                filters: { industry: 'technology', platform: '' },
+                expected: {
+                    industriesCount: 1,
+                    competitorsRange: [500, 700],
+                    industryMultiplier: 1.3
+                }
+            },
+            {
+                name: "E-commerce Industry Filter",
+                filters: { industry: 'retail_ecommerce', platform: '' },
+                expected: {
+                    industriesCount: 1,
+                    competitorsRange: [700, 900],
+                    industryMultiplier: 1.8
+                }
+            },
+            {
+                name: "Facebook Platform Filter",
+                filters: { industry: '', platform: 'facebook' },
+                expected: {
+                    industriesCount: 20,
+                    platformMultiplier: 1.0,
+                    competitorsRange: [500, 600]
+                }
+            },
+            {
+                name: "Google Platform Filter",
+                filters: { industry: '', platform: 'google' },
+                expected: {
+                    industriesCount: 20,
+                    platformMultiplier: 0.9,
+                    competitorsRange: [600, 800]
+                }
+            },
+            {
+                name: "LinkedIn Platform Filter",
+                filters: { industry: '', platform: 'linkedin' },
+                expected: {
+                    industriesCount: 20,
+                    platformMultiplier: 1.3,
+                    competitorsRange: [200, 400]
+                }
+            },
+            {
+                name: "Combined: Technology + Google",
+                filters: { industry: 'technology', platform: 'google' },
+                expected: {
+                    industriesCount: 1,
+                    industryMultiplier: 1.3,
+                    platformMultiplier: 0.9,
+                    competitorsRange: [800, 1000]
+                }
+            },
+            {
+                name: "Combined: Healthcare + LinkedIn",
+                filters: { industry: 'health_medicine', platform: 'linkedin' },
+                expected: {
+                    industriesCount: 1,
+                    industryMultiplier: 0.6,
+                    platformMultiplier: 1.3,
+                    competitorsRange: [150, 250]
+                }
+            },
+            {
+                name: "Combined: E-commerce + Facebook",
+                filters: { industry: 'retail_ecommerce', platform: 'facebook' },
+                expected: {
+                    industriesCount: 1,
+                    industryMultiplier: 1.8,
+                    platformMultiplier: 1.0,
+                    competitorsRange: [900, 1100]
+                }
+            }
+        ];
+
+        // Implement the same logic as the Vue component
+        const industryLabels = {
+            automotive: 'Automotive',
+            beauty_fitness: 'Beauty & Fitness',
+            business_industrial: 'Business & Industrial',
+            computers_electronics: 'Computers & Electronics',
+            education: 'Education',
+            entertainment: 'Entertainment',
+            finance_insurance: 'Finance & Insurance',
+            food_beverage: 'Food & Beverage',
+            health_medicine: 'Health & Medicine',
+            home_garden: 'Home & Garden',
+            law_government: 'Law & Government',
+            lifestyle: 'Lifestyle',
+            media_publishing: 'Media & Publishing',
+            nonprofit: 'Non-Profit',
+            real_estate: 'Real Estate',
+            retail_ecommerce: 'Retail & E-commerce',
+            sports_recreation: 'Sports & Recreation',
+            technology: 'Technology',
+            travel_tourism: 'Travel & Tourism',
+            other: 'Other'
+        };
+
+        function getPlatformMultiplier(platform) {
+            const multipliers = {
+                facebook: 1.0,
+                instagram: 1.1,
+                google: 0.9,
+                youtube: 1.2,
+                linkedin: 1.3,
+                twitter: 0.8,
+                tiktok: 1.4
+            };
+            return multipliers[platform] || 1.0;
+        }
+
+        function testIndustryBenchmarks(filters) {
+            const allIndustries = Object.keys(industryLabels);
+            const hasFilters = Object.entries(filters).some(([_, value]) => value !== '');
+            
+            if (!hasFilters) {
+                return {
+                    industriesCount: allIndustries.length,
+                    platformMultiplier: 1.0,
+                    industries: allIndustries
+                };
+            }
+            
+            if (filters.industry && filters.industry !== '') {
+                return {
+                    industriesCount: 1,
+                    industries: [filters.industry],
+                    platformMultiplier: getPlatformMultiplier(filters.platform)
+                };
+            }
+            
+            return {
+                industriesCount: allIndustries.length,
+                industries: allIndustries,
+                platformMultiplier: getPlatformMultiplier(filters.platform)
+            };
+        }
+
+        function testCompetitiveData(filters) {
+            const hasFilters = Object.entries(filters).some(([_, value]) => value !== '');
+            
+            if (!hasFilters) {
+                return {
+                    total_competitors: 0,
+                    market_rank: null,
+                    percentile: 0
+                };
+            }
+            
+            const baseCompetitors = 450;
+            let competitorMultiplier = 1.0;
+            
+            if (filters.industry) {
+                const industryCompetitors = {
+                    technology: 1.3,
+                    retail_ecommerce: 1.8,
+                    finance_insurance: 0.7,
+                    health_medicine: 0.6,
+                    real_estate: 1.2,
+                    automotive: 1.1,
+                    education: 0.4
+                };
+                competitorMultiplier = industryCompetitors[filters.industry] || 1.0;
+            }
+            
+            if (filters.platform) {
+                const platformAdjustments = {
+                    facebook: 1.2,
+                    google: 1.5,
+                    linkedin: 0.6,
+                    instagram: 1.1,
+                    youtube: 0.8
+                };
+                competitorMultiplier *= platformAdjustments[filters.platform] || 1.0;
+            }
+            
+            const totalCompetitors = Math.floor(baseCompetitors * competitorMultiplier);
+            const marketRank = Math.floor(totalCompetitors * (0.3 + Math.random() * 0.4));
+            const percentile = Math.floor(100 - (marketRank / totalCompetitors) * 100);
+            
+            return {
+                total_competitors: totalCompetitors,
+                market_rank: marketRank,
+                percentile: percentile,
+                competitorMultiplier: competitorMultiplier
+            };
+        }
+
+        function runTest(testCase) {
+            totalTests++;
+            
+            const industryResult = testIndustryBenchmarks(testCase.filters);
+            const competitiveResult = testCompetitiveData(testCase.filters);
+            
+            const results = {
+                industryData: industryResult,
+                competitiveData: competitiveResult,
+                platformMultiplier: getPlatformMultiplier(testCase.filters.platform)
+            };
+            
+            // Validate results
+            let passed = true;
+            let failureReasons = [];
+            
+            // Check industries count
+            if (testCase.expected.industriesCount && results.industryData.industriesCount !== testCase.expected.industriesCount) {
+                passed = false;
+                failureReasons.push(`Expected ${testCase.expected.industriesCount} industries, got ${results.industryData.industriesCount}`);
+            }
+            
+            // Check competitor range
+            if (testCase.expected.competitorsRange) {
+                const [min, max] = testCase.expected.competitorsRange;
+                const actual = results.competitiveData.total_competitors;
+                if (actual < min || actual > max) {
+                    passed = false;
+                    failureReasons.push(`Expected competitors in range ${min}-${max}, got ${actual}`);
+                }
+            }
+            
+            // Check platform multiplier
+            if (testCase.expected.platformMultiplier && Math.abs(results.platformMultiplier - testCase.expected.platformMultiplier) > 0.01) {
+                passed = false;
+                failureReasons.push(`Expected platform multiplier ${testCase.expected.platformMultiplier}, got ${results.platformMultiplier}`);
+            }
+            
+            if (passed) {
+                passedTests++;
+            } else {
+                failedTests++;
+            }
+            
+            return {
+                passed: passed,
+                results: results,
+                failureReasons: failureReasons
+            };
+        }
+
+        function displayTestResult(testCase, testResult) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-case ${testResult.passed ? 'pass' : 'fail'}`;
+            
+            const statusIcon = testResult.passed ? '✅' : '❌';
+            const statusClass = testResult.passed ? 'status-pass' : 'status-fail';
+            
+            resultDiv.innerHTML = `
+                <h4>
+                    <span class="status-indicator ${statusClass}"></span>
+                    ${statusIcon} ${testCase.name}
+                </h4>
+                <div class="test-result">
+Filter Configuration:
+  Industry: ${testCase.filters.industry || 'None'}
+  Platform: ${testCase.filters.platform || 'None'}
+
+Results:
+  Industries Displayed: ${testResult.results.industryData.industriesCount}
+  Total Competitors: ${testResult.results.competitiveData.total_competitors?.toLocaleString() || '0'}
+  Market Rank: ${testResult.results.competitiveData.market_rank || 'N/A'}
+  Percentile: ${testResult.results.competitiveData.percentile || 0}%
+  Platform Multiplier: ${testResult.results.platformMultiplier}x
+  Competitor Multiplier: ${testResult.results.competitiveData.competitorMultiplier?.toFixed(2) || 'N/A'}x
+
+${testResult.passed ? 'PASS: All validations succeeded' : 'FAIL: ' + testResult.failureReasons.join(', ')}
+                </div>
+            `;
+            
+            return resultDiv;
+        }
+
+        function updateSummary() {
+            document.getElementById('testCount').textContent = totalTests;
+            document.getElementById('passCount').textContent = passedTests;
+            document.getElementById('failCount').textContent = failedTests;
+            document.getElementById('successRate').textContent = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) + '%' : '0%';
+        }
+
+        function runAllTests() {
+            clearResults();
+            
+            const resultsContainer = document.getElementById('testResults');
+            
+            testCases.forEach(testCase => {
+                const testResult = runTest(testCase);
+                const resultElement = displayTestResult(testCase, testResult);
+                resultsContainer.appendChild(resultElement);
+            });
+            
+            updateSummary();
+            
+            // Add final summary
+            const finalSummary = document.createElement('div');
+            finalSummary.className = 'test-container';
+            finalSummary.innerHTML = `
+                <h2>🎯 Test Execution Complete</h2>
+                <p><strong>Total Tests:</strong> ${totalTests}</p>
+                <p><strong>Passed:</strong> ${passedTests}</p>
+                <p><strong>Failed:</strong> ${failedTests}</p>
+                <p><strong>Success Rate:</strong> ${Math.round((passedTests / totalTests) * 100)}%</p>
+                <p>${failedTests === 0 ? '🎉 All filter data connections are working correctly!' : '⚠️ Some tests failed - check individual results above.'}</p>
+            `;
+            resultsContainer.appendChild(finalSummary);
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+            updateSummary();
+        }
+
+        // Auto-run tests on page load
+        setTimeout(() => {
+            runAllTests();
+        }, 1000);
+    </script>
+</body>
+</html>

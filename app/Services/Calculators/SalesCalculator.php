@@ -8,7 +8,7 @@ class SalesCalculator extends BaseObjectiveCalculator
 {
     public function getPrimaryKpis(): array
     {
-        return ['roas', 'cpa'];
+        return ['spend', 'roas', 'cpa'];
     }
 
     public function getSecondaryKpis(): array
@@ -27,6 +27,7 @@ class SalesCalculator extends BaseObjectiveCalculator
         $kpis = [];
 
         // Primary KPIs
+        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['roas'] = $this->calculateRoas($aggregated);
         $kpis['cpa'] = $this->calculateCpa($aggregated);
 
@@ -36,7 +37,6 @@ class SalesCalculator extends BaseObjectiveCalculator
         $kpis['cpc'] = $this->calculateCpc($aggregated);
 
         // Health metrics
-        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['revenue'] = $aggregated['revenue'] ?? 0;
         $kpis['purchases'] = $aggregated['purchases'] ?? 0;
         $kpis['clicks'] = $aggregated['clicks'] ?? 0;

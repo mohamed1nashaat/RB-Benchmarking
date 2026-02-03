@@ -2,11 +2,11 @@
   <div class="relative">
     <Popover class="relative">
       <PopoverButton
-        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
       >
         <FunnelIcon class="h-4 w-4 mr-2" aria-hidden="true" />
         {{ $t('dashboard.filters') }}
-        <span v-if="activeFiltersCount > 0" class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+        <span v-if="activeFiltersCount > 0" class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
           {{ activeFiltersCount }}
         </span>
         <ChevronDownIcon class="ml-2 -mr-1 h-4 w-4" aria-hidden="true" />
@@ -32,7 +32,7 @@
                 </label>
                 <select
                   v-model="localFilters.platform"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 >
                   <option value="">All Platforms</option>
                   <option value="facebook">{{ $t('platforms.facebook') }}</option>
@@ -48,7 +48,7 @@
                 </label>
                 <select
                   v-model="localFilters.account_id"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   :disabled="loadingAccounts"
                 >
                   <option value="">All Accounts</option>
@@ -69,7 +69,7 @@
                 </label>
                 <select
                   v-model="localFilters.campaign_id"
-                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   :disabled="loadingCampaigns || !localFilters.account_id"
                 >
                   <option value="">All Campaigns</option>
@@ -87,13 +87,13 @@
               <div class="flex space-x-2 pt-4 border-t border-gray-200">
                 <button
                   @click="applyFilters"
-                  class="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  class="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   {{ $t('common.apply') }}
                 </button>
                 <button
                   @click="clearFilters"
-                  class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   {{ $t('common.clear') }}
                 </button>

@@ -31,7 +31,8 @@ class AuthTest extends TestCase
                 ->assertJsonStructure([
                     'user' => ['id', 'name', 'email'],
                     'token',
-                    'tenant' => ['id', 'name', 'slug']
+                    'tenants',
+                    'is_super_admin'
                 ]);
     }
 
@@ -79,8 +80,10 @@ class AuthTest extends TestCase
         $response->assertStatus(200)
                 ->assertJsonStructure([
                     'user' => ['id', 'name', 'email'],
-                    'tenant' => ['id', 'name', 'slug'],
-                    'role'
+                    'current_tenant',
+                    'role',
+                    'is_super_admin',
+                    'tenants'
                 ]);
     }
 }

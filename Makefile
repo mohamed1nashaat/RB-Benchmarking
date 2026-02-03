@@ -54,7 +54,7 @@ logs:
 # Setup project (first time)
 setup: build up install migrate seed
 	@echo "Project setup complete!"
-	@echo "Access the application at: http://localhost"
+	@echo "Access the application at: https://rb-benchmarks.redbananas.com"
 	@echo "Demo credentials:"
 	@echo "  Admin: admin@demo.com / password"
 	@echo "  Viewer: viewer@demo.com / password"

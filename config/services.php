@@ -36,53 +36,33 @@ return [
     ],
 
     'facebook' => [
-        'app_id' => env('FB_APP_ID'),
-        'app_secret' => env('FB_APP_SECRET'),
-        'redirect' => env('FB_REDIRECT_URI', 'http://127.0.0.1:8000/facebook-callback'),
-        'api_version' => env('FB_API_VERSION', 'v18.0'),
-        'page_access_token' => env('FB_PAGE_ACCESS_TOKEN'),
+        'client_id' => env('FB_APP_ID'),
+        'client_secret' => env('FB_APP_SECRET'),
+        'redirect_uri' => env('FB_REDIRECT_URI'),
         'default_access_token' => env('FB_DEFAULT_ACCESS_TOKEN'),
     ],
 
-    'google' => [
-        'client_id' => env('GOOGLE_CLIENT_ID'),
-        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8000/google-callback'),
+    'google_ads' => [
+        'client_id' => env('GOOGLE_ADS_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_ADS_CLIENT_SECRET'),
         'developer_token' => env('GOOGLE_ADS_DEVELOPER_TOKEN'),
-        'refresh_token' => env('GOOGLE_ADS_REFRESH_TOKEN'),
+    ],
+
+    'tiktok' => [
+        'client_id' => env('TIKTOK_CLIENT_ID'),
+        'client_key' => env('TIKTOK_CLIENT_KEY'),
+        'client_secret' => env('TIKTOK_CLIENT_SECRET'),
+        'redirect_uri' => env('TIKTOK_REDIRECT_URI', 'https://rb-benchmarks.redbananas.com/api/tiktok/oauth/callback'),
     ],
 
     'snapchat' => [
         'client_id' => env('SNAPCHAT_CLIENT_ID'),
         'client_secret' => env('SNAPCHAT_CLIENT_SECRET'),
-        'redirect' => env('SNAPCHAT_REDIRECT_URI', 'http://127.0.0.1:8000/snapchat-callback'),
-    ],
-
-    'tiktok' => [
-        'app_id' => env('TIKTOK_APP_ID'),
-        'app_secret' => env('TIKTOK_APP_SECRET'),
-        'client_id' => env('TIKTOK_CLIENT_ID'),
-        'client_secret' => env('TIKTOK_CLIENT_SECRET'),
-        'redirect' => env('TIKTOK_REDIRECT_URI', 'http://127.0.0.1:8000/tiktok-callback'),
-        'access_token' => env('TIKTOK_ACCESS_TOKEN'),
-    ],
-
-    'twitter' => [
-        'client_id' => env('TWITTER_CLIENT_ID'),
-        'client_secret' => env('TWITTER_CLIENT_SECRET'),
-        'redirect' => env('TWITTER_REDIRECT_URI', 'http://127.0.0.1:8000/twitter-callback'),
     ],
 
     'linkedin' => [
         'client_id' => env('LINKEDIN_CLIENT_ID'),
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
-        'redirect' => env('LINKEDIN_REDIRECT_URI', 'http://127.0.0.1:8000/linkedin-callback'),
-    ],
-
-    'pinterest' => [
-        'client_id' => env('PINTEREST_CLIENT_ID'),
-        'client_secret' => env('PINTEREST_CLIENT_SECRET'),
-        'redirect' => env('PINTEREST_REDIRECT_URI', 'http://127.0.0.1:8000/pinterest-callback'),
     ],
 
 ];

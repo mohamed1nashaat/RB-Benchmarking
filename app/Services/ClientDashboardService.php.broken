@@ -1,0 +1,346 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Tenant;
+use App\Models\AdAccount;
+use App\Models\AdMetric;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class ClientDashboardService
+{
+    /**
+     * Get aggregated statistics for a client
+     */
+    public function getClientStatistics(Tenant $client, array $filters = []): array
+    {
+        $adAccounts = $client->adAccounts()->with('integration')->get();
+
+        if ($adAccounts->isEmpty()) {
+            return $this->getEmptyStatistics();
+        }
+
+        // Apply platform filter
+        if (!empty($filters['platform'])) {
+            $adAccounts = $adAccounts->filter(function ($account) use ($filters) {
+                return $account->integration && $account->integration->platform === $filters['platform'];
+            });
+        }
+
+        if ($adAccounts->isEmpty()) {
+            return $this->getEmptyStatistics();
+        }
+
+        $accountIds = $adAccounts->pluck('id');
+
+        // Get metrics with filters
+        $metrics = $this->calculateMetrics($accountIds, $filters);
+
+        return [
+            'total_spend' => $metrics['total_spend'],
+            'total_impressions' => $metrics['total_impressions'],
+            'total_clicks' => $metrics['total_clicks'],
+            'total_conversions' => $metrics['total_conversions'],
+            'total_revenue' => $metrics['total_revenue'],
+            'ctr' => $metrics['ctr'],
+            'cvr' => $metrics['cvr'],
+            'cpc' => $metrics['cpc'],
+            'roas' => $metrics['roas'],
+        ];
+    }
+
+    /**
+     * Get performance trends over time
+     */
+    public function getPerformanceTrends(Tenant $client, int $days = 30, array $filters = []): array
+    {
+        $adAccounts = $client->adAccounts()->with('integration')->get();
+
+        if ($adAccounts->isEmpty()) {
+            return [
+                'spend' => [],
+                'impressions' => [],
+                'clicks' => [],
+                'conversions' => [],
+            ];
+        }
+
+        // Apply platform filter
+        if (!empty($filters['platform'])) {
+            $adAccounts = $adAccounts->filter(function ($account) use ($filters) {
+                return $account->integration && $account->integration->platform === $filters['platform'];
+            });
+        }
+
+        if ($adAccounts->isEmpty()) {
+            return [
+                'spend' => [],
+                'impressions' => [],
+                'clicks' => [],
+                'conversions' => [],
+            ];
+        }
+
+        $accountIds = $adAccounts->pluck('id');
+
+        // Calculate date range from filters
+        if (!empty($filters['from']) && !empty($filters['to'])) {
+            $startDate = Carbon::parse($filters['from'])->startOfDay();
+            $endDate = Carbon::parse($filters['to'])->endOfDay();
+        } else {
+            $startDate = Carbon::now()->subDays($days)->startOfDay();
+            $endDate = Carbon::now()->endOfDay();
+        }
+
+        $trends = DB::table('ad_metrics')
+            ->selectRaw('DATE(date) as date,
+                         SUM(spend) as spend,
+                         SUM(impressions) as impressions,
+                         SUM(clicks) as clicks,
+                         SUM(conversions) as conversions')
+            ->whereIn('ad_account_id', $accountIds)
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return [
+            'spend' => $trends->map(fn($t) => ['date' => $t->date, 'value' => (float) $t->spend])->toArray(),
+            'impressions' => $trends->map(fn($t) => ['date' => $t->date, 'value' => (int) $t->impressions])->toArray(),
+            'clicks' => $trends->map(fn($t) => ['date' => $t->date, 'value' => (int) $t->clicks])->toArray(),
+            'conversions' => $trends->map(fn($t) => ['date' => $t->date, 'value' => (int) $t->conversions])->toArray(),
+        ];
+    }
+
+    /**
+     * Get platform breakdown
+     */
+    public function getPlatformBreakdown(Tenant $client, array $filters = []): array
+    {
+        $adAccounts = $client->adAccounts()->with('integration')->get();
+
+        if ($adAccounts->isEmpty()) {
+            return [];
+        }
+
+        // Apply platform filter
+        if (!empty($filters['platform'])) {
+            $adAccounts = $adAccounts->filter(function ($account) use ($filters) {
+                return $account->integration && $account->integration->platform === $filters['platform'];
+            });
+        }
+
+        if ($adAccounts->isEmpty()) {
+            return [];
+        }
+
+        $breakdown = [];
+
+        foreach ($adAccounts->groupBy('integration.platform') as $platform => $accounts) {
+            $accountIds = $accounts->pluck('id');
+            $metrics = $this->calculateMetrics($accountIds, $filters);
+
+            $breakdown[] = [
+                'platform' => $platform,
+                'accounts_count' => $accounts->count(),
+                'spend' => $metrics['total_spend'],
+                'impressions' => $metrics['total_impressions'],
+                'clicks' => $metrics['total_clicks'],
+                'conversions' => $metrics['total_conversions'],
+            ];
+        }
+
+        // Sort by spend descending
+        usort($breakdown, fn($a, $b) => $b['spend'] <=> $a['spend']);
+
+        return $breakdown;
+    }
+
+    /**
+     * Get ad accounts with status
+     */
+    public function getAdAccountsWithStatus(Tenant $client): array
+    {
+        return $client->adAccounts()
+            ->with('integration')
+            ->get()
+            ->map(function ($account) {
+                // Calculate last 7 days spend for health indicator
+                $recentSpend = DB::table('ad_metrics')
+                    ->where('ad_account_id', $account->id)
+                    ->where('date', '>=', Carbon::now()->subDays(7))
+                    ->sum('spend');
+
+                $totalSpend = DB::table('ad_metrics')
+                    ->where('ad_account_id', $account->id)
+                    ->sum('spend');
+
+                return [
+                    'id' => $account->id,
+                    'name' => $account->account_name,
+                    'platform' => $account->integration->platform ?? 'Unknown',
+                    'status' => $account->status,
+                    'total_spend' => (float) $totalSpend,
+                    'recent_spend' => (float) $recentSpend,
+                    'health' => $this->determineAccountHealth($recentSpend, $account->status),
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get top performing campaigns
+     */
+    public function getTopCampaigns(Tenant $client, int $limit = 5, array $filters = []): array
+    {
+        $adAccounts = $client->adAccounts()->with('integration')->get();
+
+        if ($adAccounts->isEmpty()) {
+            return [];
+        }
+
+        // Apply platform filter
+        if (!empty($filters['platform'])) {
+            $adAccounts = $adAccounts->filter(function ($account) use ($filters) {
+                return $account->integration && $account->integration->platform === $filters['platform'];
+            });
+        }
+
+        if ($adAccounts->isEmpty()) {
+            return [];
+        }
+
+        $accountIds = $adAccounts->pluck('id');
+
+        $query = DB::table('ad_campaigns')
+            ->join('ad_accounts', 'ad_campaigns.ad_account_id', '=', 'ad_accounts.id')
+            ->leftJoin('ad_metrics', 'ad_campaigns.id', '=', 'ad_metrics.ad_campaign_id')
+            ->select(
+                'ad_campaigns.id',
+                'ad_campaigns.name',
+                'ad_accounts.account_name',
+                DB::raw('SUM(ad_metrics.spend) as total_spend'),
+                DB::raw('SUM(ad_metrics.impressions) as total_impressions'),
+                DB::raw('SUM(ad_metrics.clicks) as total_clicks'),
+                DB::raw('SUM(ad_metrics.conversions) as total_conversions'),
+                DB::raw('SUM(ad_metrics.revenue) as total_revenue')
+            )
+            ->whereIn('ad_campaigns.ad_account_id', $accountIds);
+
+        // Apply date filters
+        if (!empty($filters['from']) && !empty($filters['to'])) {
+            $query->where('ad_metrics.date', '>=', Carbon::parse($filters['from'])->startOfDay())
+                  ->where('ad_metrics.date', '<=', Carbon::parse($filters['to'])->endOfDay());
+        } elseif (!empty($filters['period'])) {
+            $query->where('ad_metrics.date', '>=', Carbon::now()->subDays($filters['period'])->startOfDay());
+        }
+
+        return $query->groupBy('ad_campaigns.id', 'ad_campaigns.name', 'ad_accounts.account_name')
+            ->orderByDesc('total_spend')
+            ->limit($limit)
+            ->get()
+            ->map(function ($campaign) {
+                $spend = (float) $campaign->total_spend;
+                $revenue = (float) $campaign->total_revenue;
+
+                return [
+                    'id' => $campaign->id,
+                    'name' => $campaign->name,
+                    'account_name' => $campaign->account_name,
+                    'spend' => $spend,
+                    'impressions' => (int) $campaign->total_impressions,
+                    'clicks' => (int) $campaign->total_clicks,
+                    'conversions' => (int) $campaign->total_conversions,
+                    'roas' => $spend > 0 ? round($revenue / $spend, 2) : 0,
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Calculate metrics from account IDs
+     */
+    private function calculateMetrics($accountIds, array $filters = []): array
+    {
+        $query = DB::table('ad_metrics')
+            ->selectRaw('
+                SUM(spend) as total_spend,
+                SUM(impressions) as total_impressions,
+                SUM(clicks) as total_clicks,
+                SUM(conversions) as total_conversions,
+                SUM(revenue) as total_revenue
+            ')
+            ->whereIn('ad_account_id', $accountIds);
+
+        // Apply date filters
+        if (!empty($filters['from']) && !empty($filters['to'])) {
+            $query->where('date', '>=', Carbon::parse($filters['from'])->startOfDay())
+                  ->where('date', '<=', Carbon::parse($filters['to'])->endOfDay());
+        } elseif (!empty($filters['period'])) {
+            $query->where('date', '>=', Carbon::now()->subDays($filters['period'])->startOfDay());
+        }
+
+        $metrics = $query->first();
+
+        $spend = (float) ($metrics->total_spend ?? 0);
+        $impressions = (int) ($metrics->total_impressions ?? 0);
+        $clicks = (int) ($metrics->total_clicks ?? 0);
+        $conversions = (int) ($metrics->total_conversions ?? 0);
+        $revenue = (float) ($metrics->total_revenue ?? 0);
+
+        $ctr = $impressions > 0 ? round(($clicks / $impressions) * 100, 2) : 0;
+        $cvr = $clicks > 0 ? round(($conversions / $clicks) * 100, 2) : 0;
+        $cpc = $clicks > 0 ? round($spend / $clicks, 2) : 0;
+        $roas = $spend > 0 ? round($revenue / $spend, 2) : 0;
+
+        return [
+            'total_spend' => $spend,
+            'total_impressions' => $impressions,
+            'total_clicks' => $clicks,
+            'total_conversions' => $conversions,
+            'total_revenue' => $revenue,
+            'ctr' => $ctr,
+            'cvr' => $cvr,
+            'cpc' => $cpc,
+            'roas' => $roas,
+        ];
+    }
+
+    /**
+     * Get empty statistics structure
+     */
+    private function getEmptyStatistics(): array
+    {
+        return [
+            'total_spend' => 0,
+            'total_impressions' => 0,
+            'total_clicks' => 0,
+            'total_conversions' => 0,
+            'total_revenue' => 0,
+            'ctr' => 0,
+            'cvr' => 0,
+            'cpc' => 0,
+            'roas' => 0,
+        ];
+    }
+
+    /**
+     * Determine account health based on recent activity
+     */
+    private function determineAccountHealth(float $recentSpend, string $status): string
+    {
+        if ($status !== 'active') {
+            return 'inactive';
+        }
+
+        if ($recentSpend >= 100) {
+            return 'healthy';
+        } elseif ($recentSpend > 0) {
+            return 'warning';
+        } else {
+            return 'critical';
+        }
+    }
+}

@@ -8,7 +8,7 @@ class CallsCalculator extends BaseObjectiveCalculator
 {
     public function getPrimaryKpis(): array
     {
-        return ['cost_per_call'];
+        return ['spend', 'cost_per_call'];
     }
 
     public function getSecondaryKpis(): array
@@ -26,7 +26,8 @@ class CallsCalculator extends BaseObjectiveCalculator
 
         $kpis = [];
 
-        // Primary KPI
+        // Primary KPIs
+        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['cost_per_call'] = $this->calculateCostPerCall($aggregated);
 
         // Secondary KPIs
@@ -34,7 +35,6 @@ class CallsCalculator extends BaseObjectiveCalculator
         $kpis['call_conversion_rate'] = $this->safePercentage($aggregated['calls'], $aggregated['clicks']);
 
         // Health metrics
-        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['calls'] = $aggregated['calls'] ?? 0;
         $kpis['clicks'] = $aggregated['clicks'] ?? 0;
         $kpis['impressions'] = $aggregated['impressions'] ?? 0;

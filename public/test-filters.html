@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Data Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        select {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .results {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Benchmark Filter Data Testing</h1>
+    
+    <div class="test-section">
+        <h3>Filter Controls</h3>
+        <label>Industry: 
+            <select id="industryFilter">
+                <option value="">All Industries</option>
+                <option value="technology">Technology</option>
+                <option value="retail_ecommerce">Retail & E-commerce</option>
+                <option value="finance_insurance">Finance & Insurance</option>
+                <option value="healthcare">Health & Medicine</option>
+                <option value="real_estate">Real Estate</option>
+                <option value="automotive">Automotive</option>
+                <option value="education">Education</option>
+            </select>
+        </label>
+        
+        <label>Platform: 
+            <select id="platformFilter">
+                <option value="">All Platforms</option>
+                <option value="facebook">Facebook</option>
+                <option value="google">Google</option>
+                <option value="instagram">Instagram</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="youtube">YouTube</option>
+            </select>
+        </label>
+        
+        <button onclick="testFilters()">Test Filter Impact</button>
+        <button onclick="resetFilters()">Reset Filters</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test Results</h3>
+        <div id="testResults" class="results">
+            Click "Test Filter Impact" to see how filters affect the data...
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Industry Benchmarks Test</h3>
+        <div id="industryResults" class="results">
+            Industry data will appear here...
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Competitive Data Test</h3>
+        <div id="competitiveResults" class="results">
+            Competitive intelligence data will appear here...
+        </div>
+    </div>
+
+    <script>
+        // Simulate the filter logic from the Vue component
+        const filters = {
+            industry: '',
+            platform: '',
+            objective: '',
+            funnel_stage: '',
+            user_journey: '',
+            sub_industry: '',
+            has_pixel_data: '',
+            target_segment: '',
+            age_group: '',
+            geo_targeting: ''
+        };
+
+        const industryLabels = {
+            automotive: 'Automotive',
+            beauty_fitness: 'Beauty & Fitness',
+            business_industrial: 'Business & Industrial',
+            computers_electronics: 'Computers & Electronics',
+            education: 'Education',
+            entertainment: 'Entertainment',
+            finance_insurance: 'Finance & Insurance',
+            food_beverage: 'Food & Beverage',
+            health_medicine: 'Health & Medicine',
+            home_garden: 'Home & Garden',
+            law_government: 'Law & Government',
+            lifestyle: 'Lifestyle',
+            media_publishing: 'Media & Publishing',
+            nonprofit: 'Non-Profit',
+            real_estate: 'Real Estate',
+            retail_ecommerce: 'Retail & E-commerce',
+            sports_recreation: 'Sports & Recreation',
+            technology: 'Technology',
+            travel_tourism: 'Travel & Tourism',
+            other: 'Other'
+        };
+
+        // Helper functions from the Vue component
+        function getPlatformMultiplier(platform) {
+            const multipliers = {
+                facebook: 1.0,
+                instagram: 1.1,
+                google: 0.9,
+                youtube: 1.2,
+                linkedin: 1.3,
+                twitter: 0.8,
+                tiktok: 1.4
+            };
+            return multipliers[platform] || 1.0;
+        }
+
+        function getObjectiveMultiplier(objective) {
+            const multipliers = {
+                awareness: 1.2,
+                consideration: 1.0,
+                conversion: 0.8,
+                retention: 0.9,
+                advocacy: 1.1
+            };
+            return multipliers[objective] || 1.0;
+        }
+
+        function getDefaultCompetitiveData() {
+            const hasFilters = Object.entries(filters).some(([_, value]) => value !== '');
+            
+            if (!hasFilters) {
+                return {
+                    market_rank: null,
+                    percentile: 0,
+                    total_competitors: 0,
+                    opportunity_score: 75,
+                    insights: [{
+                        type: 'opportunity',
+                        title: 'Data Collection Opportunity',
+                        description: 'Select filters to see competitive intelligence data.',
+                        impact_level: 'High'
+                    }]
+                };
+            }
+            
+            const baseCompetitors = 450;
+            let competitorMultiplier = 1.0;
+            let opportunityScore = 75;
+            
+            if (filters.industry) {
+                const industryCompetitors = {
+                    technology: 1.3,
+                    retail_ecommerce: 1.8,
+                    finance_insurance: 0.7,
+                    healthcare: 0.6,
+                    real_estate: 1.2,
+                    automotive: 1.1,
+                    education: 0.4
+                };
+                competitorMultiplier = industryCompetitors[filters.industry] || 1.0;
+            }
+            
+            if (filters.platform) {
+                const platformAdjustments = {
+                    facebook: 1.2,
+                    google: 1.5,
+                    linkedin: 0.6,
+                    instagram: 1.1,
+                    youtube: 0.8
+                };
+                competitorMultiplier *= platformAdjustments[filters.platform] || 1.0;
+            }
+            
+            const totalCompetitors = Math.floor(baseCompetitors * competitorMultiplier);
+            const marketRank = Math.floor(totalCompetitors * (0.3 + Math.random() * 0.4));
+            const percentile = Math.floor(100 - (marketRank / totalCompetitors) * 100);
+            
+            if (percentile >= 80) opportunityScore = 85 + Math.floor(Math.random() * 10);
+            else if (percentile >= 60) opportunityScore = 70 + Math.floor(Math.random() * 15);
+            else if (percentile >= 40) opportunityScore = 60 + Math.floor(Math.random() * 15);
+            else opportunityScore = 45 + Math.floor(Math.random() * 20);
+            
+            const industryName = industryLabels[filters.industry] || filters.industry;
+            const platformName = filters.platform?.charAt(0).toUpperCase() + filters.platform?.slice(1);
+            
+            return {
+                market_rank: marketRank,
+                percentile: percentile,
+                total_competitors: totalCompetitors,
+                opportunity_score: opportunityScore,
+                insights: [{
+                    type: percentile >= 60 ? 'success' : 'opportunity',
+                    title: percentile >= 60 ? 'Strong Market Position' : 'Growth Opportunity',
+                    description: percentile >= 60 
+                        ? `You rank in the top ${100 - percentile}% of ${industryName} advertisers${platformName ? ` on ${platformName}` : ''}.`
+                        : `Opportunity to improve ranking among ${totalCompetitors.toLocaleString()} ${industryName} competitors${platformName ? ` on ${platformName}` : ''}.`,
+                    impact_level: percentile >= 60 ? 'Medium' : 'High'
+                }]
+            };
+        }
+
+        function testIndustryBenchmarks() {
+            const allIndustries = Object.keys(industryLabels);
+            const hasFilters = Object.entries(filters).some(([_, value]) => value !== '');
+            
+            if (!hasFilters) {
+                return {
+                    message: `Showing all ${allIndustries.length} industries`,
+                    industries: allIndustries.map(key => industryLabels[key]),
+                    platformMultiplier: 1.0,
+                    industryMultiplier: 1.0
+                };
+            }
+            
+            if (filters.industry && filters.industry !== '') {
+                const platformMultiplier = getPlatformMultiplier(filters.platform);
+                return {
+                    message: `Showing only ${industryLabels[filters.industry]} industry`,
+                    industries: [industryLabels[filters.industry]],
+                    platformMultiplier: platformMultiplier,
+                    industryMultiplier: 1.0,
+                    platformEffect: filters.platform ? `${filters.platform} platform applies ${platformMultiplier}x multiplier` : 'No platform filter'
+                };
+            }
+            
+            const platformMultiplier = getPlatformMultiplier(filters.platform);
+            return {
+                message: `Showing all industries with platform adjustments`,
+                industries: allIndustries.map(key => industryLabels[key]),
+                platformMultiplier: platformMultiplier,
+                platformEffect: filters.platform ? `${filters.platform} platform applies ${platformMultiplier}x multiplier to all industries` : 'No platform filter'
+            };
+        }
+
+        function testFilters() {
+            // Update filters from form
+            filters.industry = document.getElementById('industryFilter').value;
+            filters.platform = document.getElementById('platformFilter').value;
+            
+            console.log('Testing filters:', filters);
+            
+            // Test competitive data
+            const competitiveData = getDefaultCompetitiveData();
+            
+            // Test industry benchmarks
+            const industryData = testIndustryBenchmarks();
+            
+            // Display results
+            const results = `
+Filter Test Results:
+===================
+
+Selected Filters:
+- Industry: ${filters.industry || 'All Industries'}
+- Platform: ${filters.platform || 'All Platforms'}
+
+Platform Multiplier Impact:
+- Current multiplier: ${getPlatformMultiplier(filters.platform)}x
+- ${filters.platform ? `${filters.platform.charAt(0).toUpperCase() + filters.platform.slice(1)} platform effect` : 'No platform selected'}
+
+Summary Impact:
+- ${industryData.message}
+- Platform effect: ${industryData.platformEffect || 'None'}
+            `;
+            
+            document.getElementById('testResults').textContent = results;
+            
+            // Display industry results
+            const industryResults = `
+Industry Benchmarks Results:
+===========================
+
+Industries Displayed: ${industryData.industries.length}
+${industryData.industries.map((industry, index) => `${index + 1}. ${industry}`).join('\n')}
+
+Multipliers Applied:
+- Platform: ${industryData.platformMultiplier}x
+- Industry: ${industryData.industryMultiplier}x
+${industryData.platformEffect ? '\n' + industryData.platformEffect : ''}
+            `;
+            
+            document.getElementById('industryResults').textContent = industryResults;
+            
+            // Display competitive results
+            const competitiveResults = `
+Competitive Intelligence Results:
+================================
+
+Market Rank: ${competitiveData.market_rank || 'N/A'}
+Percentile: ${competitiveData.percentile}%
+Total Competitors: ${competitiveData.total_competitors?.toLocaleString() || '0'}
+Opportunity Score: ${competitiveData.opportunity_score}%
+
+Insights:
+${competitiveData.insights.map(insight => `
+- Type: ${insight.type}
+- Title: ${insight.title}
+- Description: ${insight.description}
+- Impact: ${insight.impact_level}
+`).join('\n')}
+            `;
+            
+            document.getElementById('competitiveResults').textContent = competitiveResults;
+        }
+
+        function resetFilters() {
+            document.getElementById('industryFilter').value = '';
+            document.getElementById('platformFilter').value = '';
+            filters.industry = '';
+            filters.platform = '';
+            
+            document.getElementById('testResults').textContent = 'Filters reset. Click "Test Filter Impact" to see default state...';
+            document.getElementById('industryResults').textContent = 'Industry data will appear here...';
+            document.getElementById('competitiveResults').textContent = 'Competitive intelligence data will appear here...';
+        }
+
+        // Run initial test
+        setTimeout(() => {
+            testFilters();
+        }, 500);
+    </script>
+</body>
+</html>

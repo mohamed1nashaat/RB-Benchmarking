@@ -14,14 +14,62 @@ class AdAccount extends Model
         'integration_id',
         'external_account_id',
         'account_name',
+        'currency',
         'status',
+        'industry',
+        'category',
+        'account_config',
+        'data_verification_status',
+        'verification_notes',
+        'verified_at',
+        'verified_by',
+        'last_metrics_sync_at',
+    ];
+
+    protected $casts = [
+        'account_config' => 'array',
+        'last_metrics_sync_at' => 'datetime',
     ];
 
     protected static function booted()
     {
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && session('current_tenant_id')) {
-                $builder->where('tenant_id', session('current_tenant_id'));
+            if (auth()->check()) {
+                $user = auth()->user();
+
+                // Super admin detection
+                $isSuperAdmin = (app()->bound('is_super_admin') && app('is_super_admin'))
+                               || $user->id === 1
+                               || $user->email === 'technical@redbananas.com';
+
+                // Check if user has admin role in any tenant
+                $hasAdminRole = $user->tenants()
+                    ->wherePivot('role', 'admin')
+                    ->exists();
+
+                // Skip tenant filtering for super admins OR users with admin role
+                if ($isSuperAdmin || $hasAdminRole) {
+                    \Log::info('AdAccount global scope: Admin detected - skipping tenant filter', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'is_super_admin' => $isSuperAdmin,
+                        'has_admin_role' => $hasAdminRole,
+                    ]);
+                    return; // Skip tenant filtering entirely
+                }
+
+                // For regular users (viewers): filter by current tenant
+                $tenantId = (app()->bound('current_tenant_id') ? app('current_tenant_id') : null)
+                           ?? session('current_tenant_id');
+
+                \Log::info('AdAccount global scope: Viewer tenant filtering', [
+                    'user_id' => $user->id,
+                    'tenant_id' => $tenantId,
+                ]);
+
+                if ($tenantId) {
+                    $builder->where('tenant_id', $tenantId);
+                }
             }
         });
     }
@@ -57,6 +105,12 @@ class AdAccount extends Model
             $q->where('platform', $platform);
         });
     }
+    
+    public function scopeForIndustry(Builder $query, string $industry): Builder
+    {
+        return $query->where('industry', $industry);
+    }
+    
 
     public function isActive(): bool
     {

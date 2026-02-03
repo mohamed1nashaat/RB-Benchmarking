@@ -8,7 +8,7 @@ class LeadsCalculator extends BaseObjectiveCalculator
 {
     public function getPrimaryKpis(): array
     {
-        return ['cpl', 'cvr'];
+        return ['spend', 'cpl', 'cvr'];
     }
 
     public function getSecondaryKpis(): array
@@ -27,6 +27,7 @@ class LeadsCalculator extends BaseObjectiveCalculator
         $kpis = [];
 
         // Primary KPIs
+        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['cpl'] = $this->calculateCpl($aggregated);
         $kpis['cvr'] = $this->safePercentage($aggregated['leads'], $aggregated['clicks']);
 
@@ -35,7 +36,6 @@ class LeadsCalculator extends BaseObjectiveCalculator
         $kpis['cpc'] = $this->calculateCpc($aggregated);
 
         // Health metrics
-        $kpis['spend'] = $aggregated['spend'] ?? 0;
         $kpis['leads'] = $aggregated['leads'] ?? 0;
         $kpis['clicks'] = $aggregated['clicks'] ?? 0;
         $kpis['impressions'] = $aggregated['impressions'] ?? 0;

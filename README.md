@@ -1,390 +1,266 @@
-# 🚀 Adintel - Multi-Platform Ad Intelligence Platform
+# Adintel - Ad Intelligence Platform
 
-A production-ready SaaS platform for multi-tenant ad intelligence and analytics with **one-click OAuth integration** for Facebook, Google Ads, Snapchat, and TikTok.
+A production-ready SaaS platform for multi-tenant ad intelligence and analytics, built with Laravel 11, Vue 3, and MySQL 8.
 
-[![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
-[![Vue.js](https://img.shields.io/badge/Vue.js-3.x-green.svg)](https://vuejs.org)
-[![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange.svg)](https://mysql.com)
+## 🚀 Features
 
-## ✨ Key Features
+### Core Features (MVP)
+- **Multi-tenant Architecture** - Complete tenant isolation with role-based access (Admin/Viewer)
+- **Objective-Aware Analytics** - Dynamic dashboards based on campaign objectives (Awareness, Leads, Sales, Calls)
+- **Platform Integrations** - Connect Facebook Ads, Google Ads, and TikTok Ads
+- **Real-time KPI Calculations** - Automatic computation of CPM, CPL, ROAS, CPA, and more
+- **Advanced Filtering** - Filter by date range, platform, account, and campaign
+- **Export Functionality** - CSV and Excel export with async processing
+- **Responsive Design** - Mobile-first design with TailwindCSS
 
-### 🎯 **One-Click Platform Integration**
-- **Facebook Ads** - ✅ **Pre-configured with working credentials**
-- **Google Ads** - Ready for your credentials
-- **Snapchat Ads** - Ready for your credentials  
-- **TikTok Ads** - Ready for your credentials
-- **Auto-OAuth Flow** - Seamless authentication for all platforms
+### Advanced Features (Roadmap)
+- **Smart Alerts** - Automated notifications for performance anomalies
+- **AI-Powered Insights** - Predictive analytics and optimization suggestions
+- **Financial Intelligence** - Cost tracking and profitability analysis
+- **Market Intelligence** - Competitor analysis and industry benchmarks
+- **Collaboration Tools** - Team management and client portals
 
-### 🏢 **Multi-Tenant Architecture**
-- Complete tenant isolation with role-based access
-- Admin and Viewer roles with different permissions
-- Secure data separation between tenants
+## 🏗️ Architecture
 
-### 📊 **Objective-Aware Analytics**
-- **Awareness Campaigns**: CPM, Reach, Frequency, VTR
-- **Lead Generation**: CPL, CVR, Lead tracking
-- **Sales Campaigns**: ROAS, CPA, Revenue analysis
-- **Call Campaigns**: Cost per Call, Call conversion rates
+### Backend (Laravel 11)
+- **Authentication**: Laravel Sanctum SPA tokens
+- **Multi-tenancy**: Global scopes and middleware
+- **Database**: MySQL 8 with optimized indexes
+- **Queues**: Redis for background job processing
+- **API**: RESTful API with comprehensive validation
+- **Testing**: PestPHP for unit and integration tests
 
-### 🔧 **Production-Ready Features**
-- RESTful API with comprehensive validation
-- Real-time KPI calculations
-- Advanced filtering and date range selection
-- CSV/Excel export functionality
-- Responsive design with TailwindCSS
-- Multi-language support (English/Arabic)
+### Frontend (Vue 3 + TypeScript)
+- **State Management**: Pinia stores
+- **Routing**: Vue Router with auth guards
+- **UI Components**: Headless UI + TailwindCSS
+- **Charts**: Chart.js for data visualization
+- **Internationalization**: Vue I18n (English/Arabic)
+- **Build Tool**: Vite for fast development
 
-## 🚀 **Quick Start (Any Hosting)**
+### Database Schema
+```
+tenants (id, name, slug, status, settings)
+users (id, name, email, password, default_tenant_id)
+tenant_users (tenant_id, user_id, role)
+integrations (id, tenant_id, platform, app_config, status)
+ad_accounts (id, tenant_id, integration_id, external_account_id, account_name)
+ad_campaigns (id, tenant_id, ad_account_id, external_campaign_id, name, objective)
+ad_metrics (id, tenant_id, date, platform, spend, impressions, clicks, revenue, etc.)
+dashboards (id, tenant_id, user_id, title, objective, is_default)
+report_exports (id, tenant_id, user_id, format, status, file_path)
+```
 
-### **Option 1: Automated Deployment (Recommended)**
+## 🛠️ Installation
+
+### Prerequisites
+- Docker & Docker Compose
+- Git
+
+### Quick Start
+```bash
+# Clone the repository
+git clone <repository-url> RB benchmarks
+cd RB-benchmarks
+
+# Copy environment file
+cp .env.example .env
+
+# Setup the project (builds containers, installs dependencies, runs migrations, seeds data)
+make setup
+
+# Access the application
+open https://rb-benchmarks.redbananas.com
+```
+
+### Manual Setup
+```bash
+# Build and start containers
+make build
+make up
+
+# Install dependencies
+make install
+
+# Generate application key
+make key
+
+# Run migrations and seed demo data
+make migrate
+make seed
+```
+
+## 🔧 Development
+
+### Available Commands
+```bash
+make up          # Start all services
+make down        # Stop all services
+make logs        # View logs
+make test        # Run tests
+make lint        # Code formatting
+make analyze     # Static analysis
+make fresh       # Fresh migration with seed data
+make cache-clear # Clear all caches
+```
+
+### Demo Credentials
+- **Admin**: admin@demo.com / password
+- **Viewer**: viewer@demo.com / password
+
+### Development Servers
+- **Application**: https://rb-benchmarks.redbananas.com
+- **Frontend Dev**: https://rb-benchmarks.redbananas.com:5173 (Vite)
+- **API**: https://rb-benchmarks.redbananas.com/api
+
+## 📊 Objective-Based Analytics
+
+The platform adapts KPI calculations and dashboard layouts based on campaign objectives:
+
+### Awareness Campaigns
+- **Primary KPIs**: CPM (Cost per 1,000 impressions)
+- **Secondary KPIs**: Reach, Frequency, VTR (Video View Rate), CTR
+- **Charts**: Impressions over time, CPM by campaign
+
+### Lead Generation Campaigns
+- **Primary KPIs**: CPL (Cost per Lead), CVR (Conversion Rate)
+- **Secondary KPIs**: CTR, CPC
+- **Charts**: Leads over time, CPL by campaign
+
+### Sales Campaigns
+- **Primary KPIs**: ROAS (Return on Ad Spend), CPA (Cost per Acquisition)
+- **Secondary KPIs**: AOV (Average Order Value), CVR, CPC
+- **Charts**: Revenue over time, ROAS by campaign
+
+### Call Campaigns
+- **Primary KPIs**: Cost per Call
+- **Secondary KPIs**: CTR, Call Conversion Rate
+- **Charts**: Calls over time, Cost per Call by campaign
+
+## 🔌 Platform Integrations
+
+### Facebook Ads
+- App ID, App Secret, Access Token
+- Supports Facebook and Instagram campaigns
+- Automatic account and campaign discovery
+
+### Google Ads
+- Client ID, Client Secret, Developer Token, Refresh Token
+- Google Ads API integration
+- Campaign performance metrics
+
+### TikTok Ads
+- App ID, Secret, Access Token
+- TikTok for Business API
+- Video-focused metrics
+
+## 🧪 Testing
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-repo/adintel.git
-cd adintel
-
-# 2. Make deployment script executable
-chmod +x deploy.sh
-
-# 3. Run automated deployment
-./deploy.sh
-```
-
-The script will:
-- ✅ Check system requirements
-- ✅ Install all dependencies
-- ✅ Build frontend assets
-- ✅ Setup database and migrations
-- ✅ Configure environment
-- ✅ Optimize for production
-- ✅ Setup web server (if root access)
-
-### **Option 2: Manual Deployment**
-
-```bash
-# 1. Install PHP dependencies
-composer install --no-dev --optimize-autoloader
-
-# 2. Install Node.js dependencies and build assets
-npm install
-npm run build
-
-# 3. Setup environment
-cp .env.production .env
-php artisan key:generate
-
-# 4. Setup database
-php artisan migrate --force
-php artisan db:seed --force
-
-# 5. Optimize for production
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-# 6. Set permissions
-chmod -R 755 storage bootstrap/cache
-```
-
-## 🌐 **Hosting Compatibility**
-
-### ✅ **Shared Hosting (cPanel/DirectAdmin)**
-- Upload files to `public_html/`
-- Point domain to `public/` directory
-- Works with most shared hosting providers
-
-### ✅ **VPS/Cloud Servers**
-- Ubuntu, CentOS, Debian supported
-- Nginx/Apache configuration included
-- SSL certificate automation with Let's Encrypt
-
-### ✅ **Docker Deployment**
-- Complete Docker Compose setup
-- Production-ready containers
-- One-command deployment
-
-### ✅ **Platform-as-a-Service**
-- Heroku ready
-- DigitalOcean App Platform
-- AWS Elastic Beanstalk
-
-## 🔑 **Platform Integration Setup**
-
-### **Facebook Ads (✅ Pre-configured)**
-The platform comes with **working Facebook credentials**:
-- **App ID**: `1090833026335549`
-- **App Secret**: `6b960b5a6ea8fcd303608790bd422dd0`
-- **Access Token**: Pre-configured and working
-- **Permissions**: `ads_read`, `ads_management`, `business_management`
-
-**Just update your domain in `.env`:**
-```env
-FB_REDIRECT_URI=https://yourdomain.com/facebook-callback
-```
-
-### **Google Ads Setup**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create project → Enable Google Ads API
-3. Create OAuth 2.0 credentials
-4. Update `.env`:
-```env
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_REDIRECT_URI=https://yourdomain.com/google-callback
-```
-
-### **Snapchat Ads Setup**
-1. Go to [Snapchat Business](https://business.snapchat.com/)
-2. Create developer account → Register app
-3. Update `.env`:
-```env
-SNAPCHAT_CLIENT_ID=your_snapchat_client_id
-SNAPCHAT_CLIENT_SECRET=your_snapchat_client_secret
-SNAPCHAT_REDIRECT_URI=https://yourdomain.com/snapchat-callback
-```
-
-### **TikTok Ads Setup**
-1. Go to [TikTok for Business](https://business.tiktok.com/)
-2. Apply for developer access → Create app
-3. Update `.env`:
-```env
-TIKTOK_CLIENT_ID=your_tiktok_client_id
-TIKTOK_CLIENT_SECRET=your_tiktok_client_secret
-TIKTOK_REDIRECT_URI=https://yourdomain.com/tiktok-callback
-```
-
-## 🎮 **Demo & Testing**
-
-### **Live Demo**
-- **URL**: `https://yourdomain.com` (after deployment)
-- **Admin**: `admin@demo.com` / `password`
-- **Viewer**: `viewer@demo.com` / `password`
-
-### **Facebook Integration Test**
-1. Login to the platform
-2. Go to **Integrations** page
-3. Click **"Connect with Facebook"**
-4. Complete OAuth flow
-5. ✅ **Should work immediately with pre-configured credentials**
-
-### **API Testing**
-```bash
-# Test authentication
-curl -X POST "https://yourdomain.com/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@demo.com","password":"password"}'
-
-# Test metrics endpoint (with token from above)
-curl -X GET "https://yourdomain.com/api/metrics/summary" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-## 📁 **Project Structure**
-
-```
-adintel/
-├── app/
-│   ├── Http/Controllers/Api/          # API Controllers
-│   │   ├── FacebookIntegrationController.php
-│   │   ├── GoogleIntegrationController.php
-│   │   ├── SnapchatIntegrationController.php
-│   │   └── TikTokIntegrationController.php
-│   ├── Services/                      # OAuth Services
-│   │   ├── FacebookOAuthService.php
-│   │   ├── GoogleOAuthService.php
-│   │   ├── SnapchatOAuthService.php
-│   │   └── TikTokOAuthService.php
-│   └── Models/                        # Database Models
-├── resources/js/                      # Vue.js Frontend
-│   ├── components/                    # Vue Components
-│   ├── pages/                         # Page Components
-│   └── stores/                        # Pinia Stores
-├── database/migrations/               # Database Schema
-├── routes/api.php                     # API Routes
-├── .env.production                    # Production Environment Template
-├── deploy.sh                          # Automated Deployment Script
-├── DEPLOYMENT_GUIDE.md               # Detailed Deployment Guide
-└── docker-compose.yml                # Docker Configuration
-```
-
-## 🔧 **Configuration**
-
-### **Environment Variables**
-Key configuration options in `.env`:
-
-```env
-# Application
-APP_URL=https://yourdomain.com
-APP_ENV=production
-APP_DEBUG=false
-
-# Database
-DB_HOST=localhost
-DB_DATABASE=adintel_production
-DB_USERNAME=your_db_user
-DB_PASSWORD=your_secure_password
-
-# Facebook (Pre-configured)
-FB_APP_ID=1090833026335549
-FB_APP_SECRET=6b960b5a6ea8fcd303608790bd422dd0
-FB_REDIRECT_URI=https://yourdomain.com/facebook-callback
-
-# Security
-SANCTUM_STATEFUL_DOMAINS=yourdomain.com
-SESSION_SECURE_COOKIE=true
-```
-
-### **Web Server Configuration**
-
-#### **Nginx**
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-    root /path/to/adintel/public;
-    index index.php;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-}
-```
-
-#### **Apache (.htaccess)**
-```apache
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
-```
-
-## 🔒 **Security Features**
-
-- ✅ **CSRF Protection** - All forms protected
-- ✅ **SQL Injection Prevention** - Eloquent ORM
-- ✅ **XSS Protection** - Input sanitization
-- ✅ **Rate Limiting** - API endpoint protection
-- ✅ **Secure Headers** - Security headers configured
-- ✅ **HTTPS Enforcement** - SSL/TLS support
-- ✅ **Multi-tenant Isolation** - Complete data separation
-
-## 📊 **Performance Optimization**
-
-### **Caching Strategy**
-```bash
-# Enable all Laravel caches
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
-
-### **Database Optimization**
-- Optimized indexes for multi-tenant queries
-- Efficient KPI calculation queries
-- Database connection pooling
-
-### **Frontend Optimization**
-- Vite for fast builds and HMR
-- Code splitting and lazy loading
-- Optimized asset bundling
-
-## 🛠️ **Development**
-
-### **Local Development**
-```bash
-# Start development servers
-php artisan serve              # Laravel API (http://127.0.0.1:8000)
-npm run dev                   # Vite dev server (http://localhost:5173)
-```
-
-### **Testing**
-```bash
-# Run PHP tests
-php artisan test
+# Run all tests
+make test
 
 # Run specific test suites
-php artisan test --testsuite=Feature
-php artisan test --testsuite=Unit
+make test-unit
+make test-feature
+
+# Run with coverage
+docker-compose exec app php artisan test --coverage
 ```
 
-### **Code Quality**
+### Test Coverage
+- **Models**: Relationships, scopes, and business logic
+- **Controllers**: API endpoints and validation
+- **Services**: KPI calculations and data processing
+- **Middleware**: Tenant isolation and authentication
+- **Integration**: End-to-end API workflows
+
+## 🚀 Deployment
+
+### Production Setup
 ```bash
-# PHP formatting
-./vendor/bin/pint
+# Build production containers
+make prod-build
 
-# Static analysis
-./vendor/bin/phpstan analyse
+# Start production services
+make prod-up
+
+# Run production migrations
+docker-compose -f docker-compose.prod.yml exec app php artisan migrate --force
 ```
 
-## 📈 **Scaling & Production**
+### Environment Variables
+```env
+APP_NAME=Adintel
+APP_ENV=production
+APP_URL=https://your-domain.com
 
-### **Database Scaling**
-- Read replicas for analytics queries
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_DATABASE=adintel
+DB_USERNAME=adintel
+DB_PASSWORD=secure_password
+
+SANCTUM_STATEFUL_DOMAINS=your-domain.com
+```
+
+## 📈 Performance Optimization
+
+### Database Optimization
+- Composite indexes on (tenant_id, date, platform, ad_account_id)
 - Partitioning for large metrics tables
-- Connection pooling
+- Query optimization for KPI calculations
 
-### **Application Scaling**
-- Horizontal scaling with load balancers
-- Redis for session storage and caching
-- Queue workers for background processing
+### Caching Strategy
+- Redis for session storage and queues
+- Application-level caching for KPI results
+- CDN for static assets
 
-### **Monitoring**
-- Laravel Telescope for debugging
-- Application performance monitoring
-- Error tracking and logging
+### Queue Processing
+- Background jobs for data sync
+- Async export processing
+- Rate limiting for API calls
 
-## 🆘 **Troubleshooting**
+## 🔒 Security
 
-### **Common Issues**
+### Multi-tenancy Security
+- Global scopes ensure tenant isolation
+- Middleware validates tenant access
+- Policies enforce role-based permissions
 
-#### **Facebook "Unauthenticated" Error**
+### API Security
+- Laravel Sanctum SPA authentication
+- Rate limiting on all endpoints
+- Input validation and sanitization
+- CORS configuration
+
+### Data Protection
+- Encrypted sensitive configuration
+- Secure credential storage
+- Audit logging for data access
+
+## 📚 API Documentation
+
+### Authentication
 ```bash
-# Clear Laravel caches
-php artisan config:clear
-php artisan cache:clear
-
-# Check environment variables
-php artisan tinker
->>> config('services.facebook.app_id')
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/me
 ```
 
-#### **Database Connection Issues**
+### Metrics
 ```bash
-# Test database connection
-php artisan tinker
->>> DB::connection()->getPdo()
+GET /api/metrics/summary?from=2024-01-01&to=2024-01-31&objective=sales
+GET /api/metrics/timeseries?metric=roas&group_by=date
 ```
 
-#### **Permission Issues**
+### Exports
 ```bash
-# Fix storage permissions
-chmod -R 755 storage bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache
+POST /api/reports/export
+GET /api/reports/{id}
 ```
 
-#### **Frontend Assets Not Loading**
-```bash
-# Rebuild assets
-npm run build
-php artisan view:clear
-```
-
-## 📚 **Documentation**
-
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Comprehensive deployment instructions
-- **[API Documentation](docs/api.md)** - Complete API reference
-- **[Integration Guide](docs/integrations.md)** - Platform integration setup
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
-
-## 🤝 **Contributing**
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -392,33 +268,56 @@ php artisan view:clear
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 **License**
+### Code Standards
+- PSR-12 coding standards
+- PHPStan level 8 analysis
+- Vue 3 Composition API
+- TypeScript strict mode
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🎉 **Success Stories**
+## 🆘 Support
 
-> "Deployed Adintel on shared hosting in under 10 minutes. Facebook integration worked immediately!" - *Happy User*
+For support and questions:
+- Create an issue on GitHub
+- Check the documentation
+- Review the demo data and examples
 
-> "The one-click OAuth flow saved us weeks of development time." - *Development Team*
+## 🗺️ Roadmap
 
-> "Perfect for agencies managing multiple client accounts across platforms." - *Digital Agency*
+### Phase 1: MVP ✅
+- Multi-tenant architecture
+- Basic integrations
+- Objective-aware dashboards
+- Export functionality
+
+### Phase 2: Automation
+- Smart alerts and notifications
+- Automated reporting
+- Budget optimization suggestions
+
+### Phase 3: Financial Intelligence
+- Cost tracking and profitability
+- ROI analysis
+- Financial forecasting
+
+### Phase 4: AI & Predictive Analytics
+- Performance forecasting
+- Optimization recommendations
+- Anomaly detection
+
+### Phase 5: Market Intelligence
+- Competitor analysis
+- Industry benchmarks
+- Market trend analysis
+
+### Phase 6: Collaboration
+- Team management
+- Client portals
+- White-label solutions
 
 ---
 
-## 🚀 **Get Started Now**
-
-```bash
-git clone https://github.com/your-repo/adintel.git
-cd adintel
-chmod +x deploy.sh
-./deploy.sh
-```
-
-**🎯 Your multi-platform ad intelligence platform will be ready in minutes!**
-
----
-
-**Built with ❤️ using Laravel, Vue.js, and modern web technologies.**
-
-**⭐ Star this repository if it helped you!**
+Built with ❤️ using Laravel, Vue.js, and modern web technologies.
