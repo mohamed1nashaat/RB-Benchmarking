@@ -280,7 +280,7 @@ class GoogleAdsCampaignSyncService
         try {
             foreach ($campaigns as $campaignData) {
                 $objective = $this->determineObjective($campaignData);
-                $funnelStage = $this->determineFunnelStage($objective);
+                $funnelStage = AdCampaign::funnelStageForObjective($objective);
                 $channelType = $campaignData['channel_type'];
 
                 // Try to auto-detect category from campaign name and account industry
@@ -333,19 +333,6 @@ class GoogleAdsCampaignSyncService
             DB::rollBack();
             throw $e;
         }
-    }
-
-    /**
-     * Determine funnel stage based on objective
-     */
-    private function determineFunnelStage(?string $objective): ?string
-    {
-        return match ($objective) {
-            'awareness' => 'TOF',
-            'leads' => 'MOF',
-            'sales', 'calls' => 'BOF',
-            default => null,
-        };
     }
 
     /**

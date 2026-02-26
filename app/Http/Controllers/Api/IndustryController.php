@@ -12,6 +12,50 @@ use Illuminate\Support\Facades\Log;
 class IndustryController extends Controller
 {
     /**
+     * Get industries that have data (tenants/clients assigned)
+     */
+    public function withData()
+    {
+        try {
+            $tenantId = request()->header('X-Tenant-ID');
+
+            // Get distinct industries from tenants table that have data
+            $query = \App\Models\Tenant::whereNotNull('industry')
+                ->where('industry', '!=', '');
+
+            // If not super admin, only include industries from accessible tenants
+            $user = auth()->user();
+            if ($user && !$user->isSuperAdmin()) {
+                $accessibleTenantIds = $user->tenants()->pluck('tenants.id');
+                $query->whereIn('id', $accessibleTenantIds);
+            }
+
+            $usedIndustryNames = $query->distinct()->pluck('industry');
+
+            // Get the industry records that match these names
+            $industries = Industry::whereIn('name', $usedIndustryNames)
+                ->orderBy('sort_order')
+                ->orderBy('display_name')
+                ->get(['id', 'name', 'display_name']);
+
+            return response()->json([
+                'data' => $industries,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching industries with data', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to fetch industries',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get all industries with their sub-industries
      */
     public function index()

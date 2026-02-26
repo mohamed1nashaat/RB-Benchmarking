@@ -17,6 +17,7 @@ class AdAccount extends Model
         'currency',
         'status',
         'industry',
+        'country',
         'category',
         'account_config',
         'data_verification_status',

@@ -29,6 +29,9 @@ class AuthController extends Controller
 
         $token = $user->createToken('api-token')->plainTextToken;
 
+        // Update last login timestamp
+        $user->updateLastLogin();
+
         // Check if user is super admin
         $isSuperAdmin = $user->id === 1 || $user->email === 'technical@redbananas.com';
 

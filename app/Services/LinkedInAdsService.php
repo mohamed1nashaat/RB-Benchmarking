@@ -233,16 +233,14 @@ class LinkedInAdsService
 
         foreach ($linkedinAccounts as $account) {
             // Check if account already exists to preserve manually set industry
-            $existingAccount = AdAccount::where([
-                'tenant_id' => $integration->tenant_id,
+            // Use withoutGlobalScopes() to avoid tenant scope interference in CLI context
+            $existingAccount = AdAccount::withoutGlobalScopes()->where([
                 'integration_id' => $integration->id,
                 'external_account_id' => (string) $account['id']
             ])->first();
 
             $accountData = [
                 'tenant_id' => $integration->tenant_id,
-                'integration_id' => $integration->id,
-                'external_account_id' => (string) $account['id'],
                 'account_name' => $account['name'] ?? 'LinkedIn Account',
                 'currency' => $account['currency'] ?? 'USD',
                 'status' => 'active',
@@ -258,9 +256,12 @@ class LinkedInAdsService
                 $accountData['industry'] = $this->industryDetector->detectIndustry($account['name'] ?? '');
             }
 
-            $adAccount = AdAccount::updateOrCreate(
+            // Match on integration_id + external_account_id to align with the
+            // database unique constraint (ad_accounts_integration_id_external_account_id_unique).
+            // Use withoutGlobalScopes() to bypass the tenant scope which can cause
+            // the lookup to miss existing records when running from CLI/artisan commands.
+            $adAccount = AdAccount::withoutGlobalScopes()->updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
                     'integration_id' => $integration->id,
                     'external_account_id' => (string) $account['id']
                 ],
@@ -448,7 +449,7 @@ class LinkedInAdsService
                 'sub_industry' => $detectedCategory,
                 'category' => $detectedCategory,
                 'inherit_category_from_account' => $detectedCategory ? false : true,
-                'funnel_stage' => $this->mapObjectiveToFunnelStage($objective),
+                'funnel_stage' => AdCampaign::funnelStageForObjective($objective),
                 'user_journey' => 'landing_page',
                 'has_pixel_data' => false,
                 'linkedin_level' => 'ad_set',
@@ -796,22 +797,6 @@ class LinkedInAdsService
         ];
 
         return $objectiveMap[$linkedinObjective] ?? 'awareness';
-    }
-
-    /**
-     * Map objective to funnel stage
-     */
-    private function mapObjectiveToFunnelStage(string $objective): string
-    {
-        $funnelMap = [
-            'awareness' => 'TOF',
-            'engagement' => 'MOF',
-            'leads' => 'MOF',
-            'sales' => 'BOF',
-            'calls' => 'BOF',
-        ];
-
-        return $funnelMap[$objective] ?? 'MOF';
     }
 
     /**

@@ -14,7 +14,13 @@ use App\Http\Controllers\Api\TwitterIntegrationController;
 use App\Http\Controllers\Api\IndustryController;
 use App\Http\Controllers\Api\MetricsController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\TenantUserController;
+use App\Http\Controllers\Api\SuperAdminUserController;
+use App\Http\Controllers\Api\InvitationController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SeoReportController;
 use App\Http\Middleware\TenantMiddleware;
+use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -506,6 +512,12 @@ Route::get('/debug/request', function (Request $request) {
     ]);
 });
 
+// Public invitation routes (no authentication required)
+Route::prefix('invitations')->group(function () {
+    Route::get('/{token}/verify', [InvitationController::class, 'verify']);
+    Route::post('/{token}/accept', [InvitationController::class, 'accept']);
+});
+
 // Protected routes requiring authentication
 Route::middleware(['auth:sanctum'])->group(function () {
     // Auth routes
@@ -539,6 +551,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{tenant}/logo', [ClientController::class, 'uploadLogo']);
         Route::delete('/{tenant}/logo', [ClientController::class, 'deleteLogo']);
 
+        // SEO Report routes
+        Route::prefix('{tenant}/seo')->group(function () {
+            Route::get('/status', [SeoReportController::class, 'status']);
+            Route::get('/properties', [SeoReportController::class, 'getProperties']);
+            Route::put('/properties', [SeoReportController::class, 'saveProperties']);
+            Route::get('/search-console/sites', [SeoReportController::class, 'listSearchConsoleSites']);
+            Route::get('/ga4/properties', [SeoReportController::class, 'listGA4Properties']);
+            Route::get('/report', [SeoReportController::class, 'report']);
+        });
+
         // Client builder wizard
         Route::post('/suggest-from-accounts', [ClientController::class, 'suggestFromAccounts']);
         Route::post('/create-from-accounts', [ClientController::class, 'createFromAccounts']);
@@ -549,6 +571,57 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Tenants endpoint for tenant switcher (not tenant-scoped)
     Route::get('/tenants', [TenantController::class, 'index']);
+
+    // Tenant User Management routes (for tenant admins)
+    Route::prefix('tenants/{tenant}/users')->group(function () {
+        Route::get('/', [TenantUserController::class, 'index']);
+        Route::get('/invitations', [TenantUserController::class, 'invitations']);
+        Route::post('/invite', [TenantUserController::class, 'invite']);
+        Route::get('/{user}', [TenantUserController::class, 'show']);
+        Route::put('/{user}/role', [TenantUserController::class, 'updateRole']);
+        Route::delete('/{user}', [TenantUserController::class, 'destroy']);
+        Route::delete('/invitations/{invitation}', [TenantUserController::class, 'cancelInvitation']);
+        Route::post('/invitations/{invitation}/resend', [TenantUserController::class, 'resendInvitation']);
+    });
+
+    // Role Management routes (for tenant admins)
+    Route::prefix('tenants/{tenant}/roles')->group(function () {
+        Route::get('/', [RoleController::class, 'index']);
+        Route::get('/permissions', [RoleController::class, 'permissions']);
+        Route::post('/', [RoleController::class, 'store']);
+        Route::get('/{role}', [RoleController::class, 'show']);
+        Route::get('/{role}/users', [RoleController::class, 'users']);
+        Route::put('/{role}', [RoleController::class, 'update']);
+        Route::delete('/{role}', [RoleController::class, 'destroy']);
+    });
+
+    // Super Admin routes (requires super admin privileges)
+    Route::middleware([SuperAdminMiddleware::class])->prefix('admin')->group(function () {
+        Route::get('/users', [SuperAdminUserController::class, 'index']);
+        Route::post('/users', [SuperAdminUserController::class, 'store']);
+        Route::get('/users/tenants', [SuperAdminUserController::class, 'tenants']);
+        Route::get('/users/{user}', [SuperAdminUserController::class, 'show']);
+        Route::put('/users/{user}', [SuperAdminUserController::class, 'update']);
+        Route::delete('/users/{user}', [SuperAdminUserController::class, 'destroy']);
+        Route::post('/users/{user}/tenants', [SuperAdminUserController::class, 'addToTenant']);
+        Route::delete('/users/{user}/tenants/{tenant}', [SuperAdminUserController::class, 'removeFromTenant']);
+        Route::put('/users/{user}/tenants/{tenant}/role', [SuperAdminUserController::class, 'updateTenantRole']);
+
+        // Super admin roles management (all tenants)
+        Route::get('/roles', [SuperAdminUserController::class, 'roles']);
+        Route::post('/roles', [SuperAdminUserController::class, 'createRole']);
+        Route::get('/roles/{role}/users', [SuperAdminUserController::class, 'roleUsers']);
+        Route::put('/roles/{role}', [SuperAdminUserController::class, 'updateRole']);
+        Route::delete('/roles/{role}', [SuperAdminUserController::class, 'deleteRole']);
+
+        // Global roles (aggregated across all tenants)
+        Route::get('/global-roles', [SuperAdminUserController::class, 'globalRoles']);
+        Route::get('/global-roles/{roleName}/users', [SuperAdminUserController::class, 'globalRoleUsers']);
+        Route::put('/global-roles/{roleName}', [SuperAdminUserController::class, 'updateGlobalRole']);
+
+        // Permissions (for role editing)
+        Route::get('/permissions', [SuperAdminUserController::class, 'permissions']);
+    });
 
     // Tenant-scoped routes
     Route::middleware([TenantMiddleware::class])->group(function () {
@@ -2263,6 +2336,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Industries management endpoints
         Route::prefix('industries')->group(function () {
             Route::get('/', [IndustryController::class, 'index']);
+            Route::get('/with-data', [IndustryController::class, 'withData']);
             Route::post('/', [IndustryController::class, 'store']);
             Route::put('/{industry}', [IndustryController::class, 'update']);
             Route::delete('/{industry}', [IndustryController::class, 'destroy']);

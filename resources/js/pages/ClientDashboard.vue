@@ -90,6 +90,39 @@
         </div>
       </div>
 
+      <!-- Tab Navigation -->
+      <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            @click="setActiveTab(0)"
+            :class="[
+              'whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors',
+              activeTabIndex === 0
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+          >
+            <ChartBarIcon class="w-5 h-5 inline-block mr-1.5 -mt-0.5" />
+            {{ $t('client_dashboard.tabs.performance') }}
+          </button>
+          <button
+            @click="setActiveTab(1)"
+            :class="[
+              'whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors',
+              activeTabIndex === 1
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+          >
+            <MagnifyingGlassIcon class="w-5 h-5 inline-block mr-1.5 -mt-0.5" />
+            {{ $t('client_dashboard.tabs.seo_report') }}
+          </button>
+        </nav>
+      </div>
+
+      <!-- Ad Performance Tab -->
+      <div v-if="activeTabIndex === 0">
+
       <!-- Filters Panel - Always Visible -->
       <div class="bg-white shadow rounded-lg p-4 mb-6">
         <div class="flex flex-wrap items-center gap-4">
@@ -467,6 +500,16 @@
           </table>
         </div>
       </div>
+
+      </div><!-- /Ad Performance Tab -->
+
+      <!-- SEO Report Tab -->
+      <div v-if="activeTabIndex === 1">
+        <SeoReportTab
+          :tenant-id="route.params.id"
+          :client-website="dashboardData?.client?.website"
+        />
+      </div>
     </div>
 
     <!-- Error State -->
@@ -492,14 +535,17 @@ import {
   ArrowDownTrayIcon,
   FunnelIcon,
   XMarkIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import InteractiveChart from '@/components/InteractiveChart.vue'
+import SeoReportTab from '@/components/SeoReportTab.vue'
 import type { ClientDashboardData } from '@/types/client'
 
 const route = useRoute()
 const router = useRouter()
 
+const activeTabIndex = ref(0)
 const dashboardData = ref<ClientDashboardData | null>(null)
 const loading = ref(true)
 const selectedPeriod = ref(30)
@@ -701,7 +747,7 @@ const selectedTrendChartData = computed(() => {
 
   const labels = trendData.map((item: any) => {
     const date = new Date(item.date)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   })
 
   const data = trendData.map((item: any) => item.value)
@@ -740,7 +786,7 @@ const combinedTrendChartData = computed(() => {
 
   const labels = impressions.map((item: any) => {
     const date = new Date(item.date)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   })
 
   return {
@@ -882,7 +928,26 @@ const campaignsChartOptions = {
   }
 }
 
+const setActiveTab = (index: number) => {
+  activeTabIndex.value = index
+  const url = new URL(window.location.href)
+  if (index === 0) {
+    url.searchParams.delete('tab')
+  } else {
+    url.searchParams.set('tab', 'seo')
+  }
+  window.history.replaceState({}, '', url.toString())
+}
+
+const initializeTabFromURL = () => {
+  const tab = new URLSearchParams(window.location.search).get('tab')
+  if (tab === 'seo') {
+    activeTabIndex.value = 1
+  }
+}
+
 onMounted(() => {
+  initializeTabFromURL()
   fetchDashboard()
 })
 </script>

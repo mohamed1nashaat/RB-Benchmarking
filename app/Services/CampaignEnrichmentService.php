@@ -64,7 +64,9 @@ class CampaignEnrichmentService
 
         // Fill in missing funnel_stage (derive from objective)
         if (!$campaign->funnel_stage && $campaign->objective) {
-            $funnelStage = $this->mapObjectiveToFunnelStage($campaign->objective);
+            // Try canonical ENUM mapping first, then extended fallback
+            $funnelStage = AdCampaign::funnelStageForObjective($campaign->objective)
+                ?? $this->mapExtendedObjectiveToFunnelStage($campaign->objective);
             if ($funnelStage) {
                 $campaign->funnel_stage = $funnelStage;
                 $changes[] = "funnel_stage: $funnelStage";
@@ -257,24 +259,22 @@ class CampaignEnrichmentService
     }
 
     /**
-     * Map objective to funnel stage
+     * Extended fallback for non-ENUM objective values (e.g. from name detection).
+     * Canonical ENUM values (awareness, leads, sales, calls) are handled by
+     * AdCampaign::funnelStageForObjective() and should not be duplicated here.
      */
-    private function mapObjectiveToFunnelStage(string $objective): ?string
+    private function mapExtendedObjectiveToFunnelStage(string $objective): ?string
     {
         $funnelMap = [
-            'awareness' => 'TOF',
-            'reach' => 'TOF',
-            'engagement' => 'TOF',
-            'traffic' => 'MOF',
-            'leads' => 'MOF',
-            'app_installs' => 'MOF',
+            'reach'         => 'TOF',
+            'engagement'    => 'TOF',
+            'traffic'       => 'MOF',
+            'app_installs'  => 'MOF',
             'website_sales' => 'BOF',
-            'sales' => 'BOF',
-            'calls' => 'BOF',
-            'retention' => 'BOF',
+            'retention'     => 'BOF',
         ];
 
-        return $funnelMap[strtolower($objective)] ?? 'MOF';
+        return $funnelMap[strtolower($objective)] ?? null;
     }
 
     /**

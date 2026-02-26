@@ -54,21 +54,34 @@ class AdAccountController extends Controller
                 'count' => $adAccounts->count(),
             ]);
 
+            // Log filter parameters for debugging
+            Log::info('Ad Accounts filter params', [
+                'from' => $request->from,
+                'to' => $request->to,
+                'platform' => $request->platform,
+                'has_from' => $request->has('from'),
+                'has_to' => $request->has('to'),
+            ]);
+
             $adAccountsData = $adAccounts->map(function ($account) use ($request) {
                 // Calculate all metrics from ad metrics
 
                 // Build query for metrics with optional date range filtering
                 $metricsQuery = $account->adMetrics();
 
-                // Apply date range filter if provided
-                if ($request->has('from')) {
-                    $metricsQuery->where('date', '>=', $request->from);
-                }
-                if ($request->has('to')) {
-                    $metricsQuery->where('date', '<=', $request->to);
+                // Apply date range filter if provided using whereBetween for reliability
+                $fromDate = $request->input('from');
+                $toDate = $request->input('to');
+
+                if ($fromDate && $toDate) {
+                    $metricsQuery->whereBetween('date', [$fromDate, $toDate]);
+                } elseif ($fromDate) {
+                    $metricsQuery->where('date', '>=', $fromDate);
+                } elseif ($toDate) {
+                    $metricsQuery->where('date', '<=', $toDate);
                 }
 
-                $totalSpend = $metricsQuery->sum('spend');
+                $totalSpend = (clone $metricsQuery)->sum('spend');
                 $totalImpressions = (clone $metricsQuery)->sum('impressions');
                 $totalClicks = (clone $metricsQuery)->sum('clicks');
                 $totalConversions = (clone $metricsQuery)->sum('conversions');
@@ -99,6 +112,7 @@ class AdAccountController extends Controller
                     'platform' => $account->integration->platform,
                     'status' => $account->status,
                     'industry' => $account->industry,
+                    'country' => $account->country,
                     'category' => $account->category,
                     'available_categories' => \App\Services\CategoryMapper::getCategoriesForIndustry($account->industry),
                     'currency' => $accountCurrency,
@@ -164,6 +178,7 @@ class AdAccountController extends Controller
                 'platform' => $adAccount->integration->platform,
                 'status' => $adAccount->status,
                 'industry' => $adAccount->industry,
+                'country' => $adAccount->country,
                 'category' => $adAccount->category,
                 'available_categories' => \App\Services\CategoryMapper::getCategoriesForIndustry($adAccount->industry),
                 'currency' => $accountCurrency,
@@ -202,6 +217,7 @@ class AdAccountController extends Controller
         try {
             $request->validate([
                 'industry' => 'nullable|string|max:255',
+                'country' => 'nullable|string|max:255',
                 'category' => 'nullable|string|max:255',
                 'status' => 'nullable|in:active,inactive',
                 'tenant_id' => 'nullable|integer|exists:tenants,id',
@@ -211,6 +227,10 @@ class AdAccountController extends Controller
 
             if ($request->has('industry')) {
                 $updateData['industry'] = $request->industry;
+            }
+
+            if ($request->has('country')) {
+                $updateData['country'] = $request->country;
             }
 
             if ($request->has('category')) {
@@ -236,6 +256,7 @@ class AdAccountController extends Controller
                     'id' => $adAccount->id,
                     'account_name' => $adAccount->account_name,
                     'industry' => $adAccount->industry,
+                    'country' => $adAccount->country,
                     'category' => $adAccount->category,
                     'status' => $adAccount->status,
                     'tenant_id' => $adAccount->tenant_id,
@@ -326,6 +347,7 @@ class AdAccountController extends Controller
                 'account_ids' => 'required|array',
                 'account_ids.*' => 'integer|exists:ad_accounts,id',
                 'industry' => 'nullable|string|max:255',
+                'country' => 'nullable|string|max:255',
                 'category' => 'nullable|string|max:255',
                 'status' => 'nullable|in:active,inactive',
                 'tenant_id' => 'nullable|integer|exists:tenants,id',
@@ -335,6 +357,10 @@ class AdAccountController extends Controller
 
             if ($request->has('industry')) {
                 $updateData['industry'] = $request->industry;
+            }
+
+            if ($request->has('country')) {
+                $updateData['country'] = $request->country;
             }
 
             if ($request->has('category')) {

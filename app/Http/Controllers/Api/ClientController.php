@@ -244,6 +244,7 @@ class ClientController extends Controller
                 'contact_phone' => 'nullable|string|max:50',
                 'contact_person' => 'nullable|string|max:255',
                 'address' => 'nullable|string',
+                'country' => 'nullable|string|max:255',
                 'website' => 'nullable|url|max:255',
                 'industry' => 'nullable|string|max:255',
                 'vertical' => 'nullable|string|max:255',
@@ -298,6 +299,7 @@ class ClientController extends Controller
                 'contact_phone' => 'nullable|string|max:50',
                 'contact_person' => 'nullable|string|max:255',
                 'address' => 'nullable|string',
+                'country' => 'nullable|string|max:255',
                 'website' => 'nullable|url|max:255',
                 'industry' => 'nullable|string|max:255',
                 'vertical' => 'nullable|string|max:255',
@@ -441,6 +443,7 @@ class ClientController extends Controller
                 'contact_phone' => 'nullable|string|max:50',
                 'contact_person' => 'nullable|string|max:255',
                 'address' => 'nullable|string',
+                'country' => 'nullable|string|max:255',
                 'website' => 'nullable|url|max:255',
                 'industry' => 'nullable|string|max:255',
                 'vertical' => 'nullable|string|max:255',
@@ -499,6 +502,19 @@ class ClientController extends Controller
                     AdAccount::whereIn('id', $accountIds)
                         ->whereNull('industry')
                         ->update(['industry' => $client->industry]);
+                }
+
+                // Derive country from ad accounts if client doesn't have one
+                if (!$client->country) {
+                    $mostCommonCountry = AdAccount::whereIn('id', $accountIds)
+                        ->whereNotNull('country')
+                        ->select('country')
+                        ->groupBy('country')
+                        ->orderByRaw('count(*) desc')
+                        ->value('country');
+                    if ($mostCommonCountry) {
+                        $client->update(['country' => $mostCommonCountry]);
+                    }
                 }
 
                 DB::commit();
@@ -575,6 +591,7 @@ class ClientController extends Controller
                     'name' => $tenant->name,
                     'logo_url' => $tenant->getLogoUrl(),
                     'industry' => $tenant->industry,
+                    'website' => $tenant->website,
                 ],
                 'metrics' => $statistics,
                 'trends' => $trends,

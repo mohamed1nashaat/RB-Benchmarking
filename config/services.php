@@ -65,4 +65,8 @@ return [
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
     ],
 
+    'pagespeed' => [
+        'api_key' => env('PAGESPEED_API_KEY'),
+    ],
+
 ];

@@ -35,7 +35,7 @@
     </div>
 
     <!-- Filter Grid - All filters in one row -->
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
       <!-- Platform Filter (Multi-select Combobox) -->
       <div class="relative">
         <label class="flex items-center justify-between text-sm font-medium text-gray-700 mb-1">
@@ -139,6 +139,31 @@
         />
       </div>
 
+      <!-- Country Filter (Multi-select Combobox) -->
+      <div class="relative">
+        <label class="flex items-center justify-between text-sm font-medium text-gray-700 mb-1">
+          <span class="flex items-center">
+            <GlobeAltIcon class="h-4 w-4 mr-1.5 text-gray-400" />
+            {{ $t('labels.country') }}
+          </span>
+          <button
+            v-if="filters.country.length > 0"
+            @click="clearFilter('country')"
+            class="text-gray-400 hover:text-gray-600"
+            :title="$t('pages.benchmarks.filters.clear_filter', { filter: $t('labels.country') })"
+          >
+            <XMarkIcon class="h-4 w-4" />
+          </button>
+        </label>
+        <MultiSelectCombobox
+          v-model="filters.country"
+          :options="countryOptions"
+          :placeholder="$t('filters.all_countries')"
+          :searchPlaceholder="$t('pages.benchmarks.filters.search_placeholder', { filter: $t('labels.country') })"
+          @update:modelValue="updateFilters"
+        />
+      </div>
+
       <!-- Date Range -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -160,8 +185,10 @@ import {
   FunnelIcon,
   BuildingOfficeIcon,
   TagIcon,
-  CalendarIcon
+  CalendarIcon,
+  GlobeAltIcon
 } from '@heroicons/vue/24/outline'
+import { countries as allCountries, getCountryName } from '@/utils/countries'
 import DateRangePicker from '@/components/DateRangePicker.vue'
 import FilterPresets from '@/components/FilterPresets.vue'
 import MultiSelectCombobox from '@/components/MultiSelectCombobox.vue'
@@ -170,9 +197,14 @@ import type { FilterPreset } from '@/composables/useFilterPresets'
 interface Props {
   initialFilters?: any
   dateRange?: any
+  availablePlatforms?: string[]
+  availableIndustries?: string[]
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  availablePlatforms: () => [],
+  availableIndustries: () => []
+})
 const emit = defineEmits(['filtersChanged'])
 const { t } = useI18n()
 
@@ -181,7 +213,8 @@ const filters = ref({
   platform: [] as string[],
   funnel_stage: [] as string[],
   industry: [] as string[],
-  sub_industry: [] as string[]
+  sub_industry: [] as string[],
+  country: [] as string[]
 })
 
 // Loading states
@@ -203,8 +236,8 @@ const activeFilterCount = computed(() => {
   return count
 })
 
-// Platform options
-const platformOptions = computed(() => [
+// Platform options - filter by available data if provided
+const allPlatformOptions = [
   { value: 'facebook', label: 'Facebook' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'google', label: 'Google Ads' },
@@ -213,7 +246,14 @@ const platformOptions = computed(() => [
   { value: 'twitter', label: 'Twitter' },
   { value: 'tiktok', label: 'TikTok' },
   { value: 'snapchat', label: 'Snapchat' }
-])
+]
+
+const platformOptions = computed(() => {
+  if (props.availablePlatforms && props.availablePlatforms.length > 0) {
+    return allPlatformOptions.filter(opt => props.availablePlatforms.includes(opt.value))
+  }
+  return allPlatformOptions
+})
 
 // Funnel stage options
 const funnelStageOptions = computed(() => [
@@ -223,9 +263,18 @@ const funnelStageOptions = computed(() => [
   { value: 'retention', label: t('funnel_stages.retention') }
 ])
 
-// Industry options (from API)
-const industryOptions = computed(() =>
-  industries.value.map(ind => ({ value: ind.name, label: ind.display_name }))
+// Industry options (from API) - filter by available data if provided
+const industryOptions = computed(() => {
+  const allOptions = industries.value.map(ind => ({ value: ind.name, label: ind.display_name }))
+  if (props.availableIndustries && props.availableIndustries.length > 0) {
+    return allOptions.filter(opt => props.availableIndustries.includes(opt.value))
+  }
+  return allOptions
+})
+
+// Country options - use full list from countries utility
+const countryOptions = computed(() =>
+  allCountries.map(c => ({ value: c.code, label: c.name }))
 )
 
 // Sub-industry options (from API, dynamic based on industry)
@@ -342,10 +391,10 @@ const clearFilter = (filterName: keyof typeof filters.value) => {
 const clearAllFilters = () => {
   filters.value = {
     platform: [],
-    objective: [],
     funnel_stage: [],
     industry: [],
-    sub_industry: []
+    sub_industry: [],
+    country: []
   }
   updateFilters()
 }

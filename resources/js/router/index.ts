@@ -16,6 +16,10 @@ import Settings from '@/pages/Settings.vue'
 import Login from '@/pages/Login.vue'
 import PrivacyPolicy from '@/pages/PrivacyPolicy.vue'
 import TermsOfService from '@/pages/TermsOfService.vue'
+import Users from '@/pages/Users.vue'
+import RoleManagement from '@/pages/RoleManagement.vue'
+import SuperAdminUsers from '@/pages/SuperAdminUsers.vue'
+import AcceptInvitation from '@/pages/AcceptInvitation.vue'
 
 const routes = [
   {
@@ -131,8 +135,32 @@ const routes = [
         name: 'settings',
         component: Settings,
         meta: { title: 'Settings' }
+      },
+      {
+        path: '/users',
+        name: 'users',
+        component: Users,
+        meta: { title: 'Users' }
+      },
+      {
+        path: '/roles',
+        name: 'roles',
+        component: RoleManagement,
+        meta: { title: 'Role Management' }
+      },
+      {
+        path: '/admin/users',
+        name: 'super-admin-users',
+        component: SuperAdminUsers,
+        meta: { title: 'User Management' }
       }
     ]
+  },
+  {
+    path: '/invitation/:token',
+    name: 'accept-invitation',
+    component: AcceptInvitation,
+    meta: { requiresAuth: false }
   }
 ]
 

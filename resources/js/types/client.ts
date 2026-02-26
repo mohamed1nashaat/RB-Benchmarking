@@ -111,6 +111,7 @@ export interface ClientDashboardData {
     name: string
     logo_url: string | null
     industry: string | null
+    website?: string | null
   }
   metrics: ClientDashboardMetrics
   trends: ClientDashboardTrends

@@ -181,6 +181,9 @@
             <th v-if="columnVisibility.industry" scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {{ $t('labels.industry') }}
             </th>
+            <th v-if="columnVisibility.country" scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {{ $t('labels.country') }}
+            </th>
             <th v-if="columnVisibility.status" scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
               {{ $t('labels.status') }}
             </th>
@@ -211,6 +214,9 @@
               <div class="h-3 bg-gray-200 rounded w-1/2"></div>
             </td>
             <td v-if="columnVisibility.industry" class="px-4 py-4">
+              <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+            </td>
+            <td v-if="columnVisibility.country" class="px-4 py-4">
               <div class="h-4 bg-gray-200 rounded w-2/3"></div>
             </td>
             <td v-if="columnVisibility.status" class="px-4 py-4">
@@ -331,6 +337,19 @@
               </div>
             </th>
             <th
+              v-if="columnVisibility.country"
+              scope="col"
+              class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 select-none"
+              @click="handleSort('country')"
+            >
+              <div class="flex items-center gap-1">
+                {{ $t('labels.country') }}
+                <ChevronUpIcon v-if="filters.sort_by === 'country' && filters.sort_order === 'asc'" class="h-4 w-4 text-primary-600" />
+                <ChevronDownIcon v-else-if="filters.sort_by === 'country' && filters.sort_order === 'desc'" class="h-4 w-4 text-primary-600" />
+                <ChevronUpDownIcon v-else class="h-4 w-4 text-gray-400" />
+              </div>
+            </th>
+            <th
               v-if="columnVisibility.status"
               scope="col"
               class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 select-none"
@@ -417,6 +436,10 @@
                       <span class="text-sm text-gray-700">Industry</span>
                     </label>
                     <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 rounded px-1">
+                      <input type="checkbox" v-model="columnVisibility.country" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                      <span class="text-sm text-gray-700">Country</span>
+                    </label>
+                    <label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 rounded px-1">
                       <input type="checkbox" v-model="columnVisibility.status" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
                       <span class="text-sm text-gray-700">Status</span>
                     </label>
@@ -497,6 +520,35 @@
                 @click="startEditing(client.id, 'industry', client.industry || '')"
               >
                 {{ client.industry ? formatIndustry(client.industry) : '-' }}
+              </span>
+            </td>
+            <td v-if="columnVisibility.country" class="px-4 py-4 text-sm text-gray-500" @click.stop>
+              <div v-if="editingCell?.clientId === client.id && editingCell?.field === 'country'" class="relative">
+                <select
+                  ref="editSelect"
+                  v-model="editValue"
+                  @change="saveEdit(client)"
+                  class="w-full rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
+                >
+                  <option value="">-</option>
+                  <option v-for="c in countries" :key="c.code" :value="c.code">
+                    {{ c.name }}
+                  </option>
+                </select>
+                <button
+                  @click="cancelEdit"
+                  class="absolute -right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  type="button"
+                >
+                  <XMarkIcon class="h-4 w-4" />
+                </button>
+              </div>
+              <span
+                v-else
+                class="cursor-pointer hover:text-primary-600 hover:underline"
+                @click="startEditing(client.id, 'country', client.country || '')"
+              >
+                {{ client.country ? getCountryName(client.country) : '-' }}
               </span>
             </td>
             <td v-if="columnVisibility.status" class="px-4 py-4" @click.stop>
@@ -726,6 +778,7 @@ import ClientWizard from '@/components/ClientWizard.vue'
 import ClientFormModal from '@/components/ClientFormModal.vue'
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue'
 import type { Client, ClientFilters, PaginatedClients } from '@/types/client'
+import { countries, getCountryName } from '@/utils/countries'
 
 // Register Chart.js components
 ChartJS.register(
@@ -766,6 +819,7 @@ const editValue = ref<string>('')
 const showColumnSelector = ref(false)
 const columnVisibility = ref({
   industry: true,
+  country: true,
   status: true,
   subscription: true,
   adAccounts: true,
@@ -1278,7 +1332,8 @@ const fetchAccounts = async () => {
 
 const fetchIndustries = async () => {
   try {
-    const response = await window.axios.get('/api/industries')
+    // Fetch only industries that have data (clients assigned)
+    const response = await window.axios.get('/api/industries/with-data')
     industries.value = response.data.data || []
   } catch (error) {
     console.error('Error fetching industries:', error)

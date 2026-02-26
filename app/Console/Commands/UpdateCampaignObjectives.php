@@ -108,7 +108,7 @@ class UpdateCampaignObjectives extends Command
                     try {
                         $campaign->update([
                             'objective' => $detected,
-                            'funnel_stage' => $this->determineFunnelStage($detected)
+                            'funnel_stage' => AdCampaign::funnelStageForObjective($detected)
                         ]);
                         $this->updated++;
                     } catch (\Exception $e) {
@@ -456,7 +456,7 @@ class UpdateCampaignObjectives extends Command
         try {
             $campaign->update([
                 'objective' => $campaignData['objective'],
-                'funnel_stage' => $this->determineFunnelStage($campaignData['objective'])
+                'funnel_stage' => AdCampaign::funnelStageForObjective($campaignData['objective'])
             ]);
             $this->updated++;
         } catch (\Exception $e) {
@@ -540,13 +540,4 @@ class UpdateCampaignObjectives extends Command
         };
     }
 
-    private function determineFunnelStage(string $objective): ?string
-    {
-        return match ($objective) {
-            'awareness', 'video_views' => 'TOF',
-            'traffic', 'engagement', 'leads', 'messages' => 'MOF',
-            'conversions', 'app_installs', 'calls' => 'BOF',
-            default => null
-        };
-    }
 }

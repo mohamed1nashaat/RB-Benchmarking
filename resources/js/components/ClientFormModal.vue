@@ -76,6 +76,23 @@
                     <p v-if="errors.contact_email" class="mt-1.5 text-sm text-red-600">{{ errors.contact_email }}</p>
                   </div>
 
+                  <!-- Country -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                      {{ $t('labels.country') }}
+                      <span class="font-normal text-gray-400 ml-1">(optional)</span>
+                    </label>
+                    <select
+                      v-model="formData.country"
+                      class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                    >
+                      <option value="">{{ $t('filters.all_countries') }}</option>
+                      <option v-for="c in countries" :key="c.code" :value="c.code">
+                        {{ c.name }}
+                      </option>
+                    </select>
+                  </div>
+
                   <!-- Error Message -->
                   <div v-if="submitError" class="rounded-lg bg-red-50 p-3 flex items-start gap-2">
                     <ExclamationCircleIcon class="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -118,6 +135,7 @@
 import { ref, watch, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import { BuildingOffice2Icon, ExclamationCircleIcon } from '@heroicons/vue/24/outline'
+import { countries } from '@/utils/countries'
 import type { Client } from '@/types/client'
 
 interface Props {
@@ -145,7 +163,8 @@ const nameInputRef = ref<HTMLInputElement | null>(null)
 const formData = ref({
   name: '',
   status: 'active',
-  contact_email: ''
+  contact_email: '',
+  country: ''
 })
 
 // Watch for client prop changes to populate form
@@ -154,13 +173,15 @@ watch(() => props.client, (client) => {
     formData.value = {
       name: client.name || '',
       status: client.status || 'active',
-      contact_email: client.contact_email || ''
+      contact_email: client.contact_email || '',
+      country: client.country || ''
     }
   } else {
     formData.value = {
       name: '',
       status: 'active',
-      contact_email: ''
+      contact_email: '',
+      country: ''
     }
   }
   errors.value = {}
@@ -201,7 +222,8 @@ const handleSubmit = async () => {
     const payload = {
       name: formData.value.name,
       status: formData.value.status,
-      contact_email: formData.value.contact_email || undefined
+      contact_email: formData.value.contact_email || undefined,
+      country: formData.value.country || undefined
     }
 
     let response
@@ -212,7 +234,7 @@ const handleSubmit = async () => {
     }
 
     emit('saved', response.data.data || response.data)
-    handleClose()
+    emit('close')  // Emit close directly instead of calling handleClose() which checks loading state
   } catch (error: any) {
     console.error('Error saving client:', error)
 

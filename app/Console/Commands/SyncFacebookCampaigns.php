@@ -112,7 +112,7 @@ class SyncFacebookCampaigns extends Command
 
                         // Map objective and derive funnel stage
                         $objective = $this->mapFacebookObjective($campaign['objective'] ?? 'unknown');
-                        $funnelStage = $this->determineFunnelStage($objective);
+                        $funnelStage = \App\Models\AdCampaign::funnelStageForObjective($objective);
 
                         // Auto-detect category from campaign name and account industry
                         $accountIndustry = $adAccount->industry;
@@ -179,13 +179,4 @@ class SyncFacebookCampaigns extends Command
         };
     }
 
-    private function determineFunnelStage(?string $objective): ?string
-    {
-        return match ($objective) {
-            'awareness' => 'TOF',
-            'leads' => 'MOF',
-            'sales', 'calls' => 'BOF',
-            default => null,
-        };
-    }
 }

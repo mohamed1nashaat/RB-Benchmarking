@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <div class="container mx-auto px-4 py-8 space-y-6">
+    <div class="px-4 py-8 space-y-6">
     <!-- Header -->
     <div class="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
       <div class="flex-1 min-w-0">
@@ -74,11 +74,13 @@
     <BenchmarkFiltersEnhanced
       :initial-filters="dashboardFilters"
       :date-range="dateRange"
+      :available-platforms="availablePlatforms"
+      :available-industries="availableIndustries"
       @filters-changed="onFiltersChanged"
     />
 
     <!-- Filter Status Indicator -->
-    <div v-if="filters.industry.length > 0 || filters.platform.length > 0" class="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+    <div v-if="filters.industry.length > 0 || filters.platform.length > 0 || (filters.country && filters.country.length > 0)" class="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
       <p class="text-sm text-blue-700">
         <span class="font-semibold">{{ $t('pages.benchmarks.filtered_view.label') }}</span> {{ $t('pages.benchmarks.filtered_view.showing') }} {{ summary.total_accounts }} {{ $t('pages.benchmarks.filtered_view.of') }} {{ unfilteredSummary.total_accounts }} {{ $t('pages.benchmarks.filtered_view.accounts') }}
         <span v-for="industry in filters.industry" :key="industry" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -408,12 +410,40 @@
               <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div class="flex-1">
-                    <h2 class="text-base font-medium text-gray-900">{{ $t('pages.benchmarks.industry_performance') }}</h2>
+                    <h2 class="text-base font-medium text-gray-900">
+                      {{ tableGroupBy === 'industry' ? $t('pages.benchmarks.industry_performance') : 'Client Performance' }}
+                    </h2>
                     <p class="text-sm text-gray-600 mt-1">{{ $t('pages.benchmarks.hierarchical_breakdown') }}</p>
                   </div>
 
-                  <!-- Search Bar and Column Selector -->
+                  <!-- Group By Toggle, Search Bar and Column Selector -->
                   <div class="flex items-center space-x-3">
+                    <!-- Group By Toggle -->
+                    <div class="flex items-center space-x-2">
+                      <span class="text-sm text-gray-700">Group by:</span>
+                      <button
+                        @click="tableGroupBy = 'industry'"
+                        :class="[
+                          'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                          tableGroupBy === 'industry'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ]"
+                      >
+                        Industry
+                      </button>
+                      <button
+                        @click="tableGroupBy = 'client'"
+                        :class="[
+                          'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                          tableGroupBy === 'client'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ]"
+                      >
+                        Client
+                      </button>
+                    </div>
                     <div class="relative">
                       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -595,7 +625,9 @@
                     </div>
 
                     <span class="text-sm text-gray-500 whitespace-nowrap">
-                      {{ $t('pages.benchmarks.industries_count', { count: hierarchicalTableData.length }) }}
+                      {{ tableGroupBy === 'industry'
+                        ? $t('pages.benchmarks.industries_count', { count: activeTableData.length })
+                        : `${activeTableData.length} Clients` }}
                     </span>
                   </div>
                 </div>
@@ -614,10 +646,11 @@
                     </tr>
                     <!-- Row 2: Column Headers -->
                     <tr>
-                      <th v-if="isColumnVisible('industry')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50">{{ $t('pages.benchmarks.columns.industry') }}</th>
-                      <th v-if="isColumnVisible('category')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50">{{ $t('pages.benchmarks.columns.category') }}</th>
-                      <th v-if="isColumnVisible('subCategory')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50 border-r border-gray-300">{{ $t('pages.benchmarks.columns.sub_category') }}</th>
-                      <th v-if="isColumnVisible('objective')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-green-50 border-r border-gray-300">{{ $t('pages.benchmarks.columns.objective') }}</th>
+                      <th v-if="isColumnVisible('industry')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50 min-w-[120px]">{{ tableGroupBy === 'industry' ? $t('pages.benchmarks.columns.industry') : 'Client' }}</th>
+                      <th v-if="isColumnVisible('country')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50 min-w-[100px]">{{ $t('pages.benchmarks.columns.country') }}</th>
+                      <th v-if="isColumnVisible('category')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50 min-w-[100px]">{{ tableGroupBy === 'industry' ? $t('pages.benchmarks.columns.category') : 'Industry' }}</th>
+                      <th v-if="isColumnVisible('subCategory')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-blue-50 border-r border-gray-300 min-w-[120px]">{{ $t('pages.benchmarks.columns.sub_category') }}</th>
+                      <th v-if="isColumnVisible('objective')" class="px-3 py-2 text-left text-xs font-medium text-gray-600 uppercase bg-green-50 border-r border-gray-300 min-w-[80px]">{{ $t('pages.benchmarks.columns.objective') }}</th>
                       <th v-if="isColumnVisible('spend')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50">
                         <div class="flex items-center justify-end gap-1">
                           <span>{{ $t('pages.benchmarks.columns.spend') }}</span>
@@ -631,30 +664,31 @@
                           </button>
                         </div>
                       </th>
-                      <th v-if="isColumnVisible('impressions')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50">{{ $t('pages.benchmarks.columns.impressions') }}</th>
-                      <th v-if="isColumnVisible('clicks')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50">{{ $t('pages.benchmarks.columns.clicks') }}</th>
-                      <th v-if="isColumnVisible('leads')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50">{{ $t('pages.benchmarks.columns.leads') }}</th>
-                      <th v-if="isColumnVisible('installs')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50">{{ $t('pages.benchmarks.columns.installs') }}</th>
-                      <th v-if="isColumnVisible('conversions')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50 border-r border-gray-300">{{ $t('pages.benchmarks.columns.conversions') }}</th>
-                      <th v-if="isColumnVisible('cpm')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50">{{ $t('pages.benchmarks.columns.cpm') }}</th>
-                      <th v-if="isColumnVisible('cpc')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50">{{ $t('pages.benchmarks.columns.cpc') }}</th>
-                      <th v-if="isColumnVisible('ctr')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50">{{ $t('pages.benchmarks.columns.ctr') }}</th>
-                      <th v-if="isColumnVisible('cpl')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50">{{ $t('pages.benchmarks.columns.cpl') }}</th>
-                      <th v-if="isColumnVisible('cpa')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50">{{ $t('pages.benchmarks.columns.cpa') }}</th>
-                      <th v-if="isColumnVisible('cpi')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50">{{ $t('pages.benchmarks.columns.cpi') }}</th>
+                      <th v-if="isColumnVisible('impressions')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50 whitespace-nowrap">{{ $t('pages.benchmarks.columns.impressions') }}</th>
+                      <th v-if="isColumnVisible('clicks')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50 whitespace-nowrap">{{ $t('pages.benchmarks.columns.clicks') }}</th>
+                      <th v-if="isColumnVisible('leads')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50 whitespace-nowrap">{{ $t('pages.benchmarks.columns.leads') }}</th>
+                      <th v-if="isColumnVisible('installs')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50 whitespace-nowrap">{{ $t('pages.benchmarks.columns.installs') }}</th>
+                      <th v-if="isColumnVisible('conversions')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-purple-50 border-r border-gray-300 whitespace-nowrap">{{ $t('pages.benchmarks.columns.conversions') }}</th>
+                      <th v-if="isColumnVisible('cpm')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50 w-[80px]">{{ $t('pages.benchmarks.columns.cpm') }}</th>
+                      <th v-if="isColumnVisible('cpc')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50 w-[80px]">{{ $t('pages.benchmarks.columns.cpc') }}</th>
+                      <th v-if="isColumnVisible('ctr')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50 w-[70px]">{{ $t('pages.benchmarks.columns.ctr') }}</th>
+                      <th v-if="isColumnVisible('cpl')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50 w-[80px]">{{ $t('pages.benchmarks.columns.cpl') }}</th>
+                      <th v-if="isColumnVisible('cpa')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50 w-[80px]">{{ $t('pages.benchmarks.columns.cpa') }}</th>
+                      <th v-if="isColumnVisible('cpi')" class="px-3 py-2 text-right text-xs font-medium text-gray-600 uppercase bg-amber-50 w-[80px]">{{ $t('pages.benchmarks.columns.cpi') }}</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-100">
-                    <template v-for="industry in hierarchicalTableData" :key="industry.key">
-                      <template v-for="category in industry.categories" :key="`${industry.key}-${category.key}`">
+                    <template v-for="group in activeTableData" :key="group.key">
+                      <template v-for="category in group.categories" :key="`${group.key}-${category.key}`">
                         <tr
                           v-for="row in category.rows"
-                          :key="`${industry.key}-${category.key}-${row.key}`"
+                          :key="`${group.key}-${category.key}-${row.key}`"
                           class="hover:bg-gray-50 transition-colors duration-150"
                         >
-                          <td v-if="isColumnVisible('industry')" class="px-3 py-2 whitespace-nowrap text-gray-700">{{ industry.label }}</td>
-                          <td v-if="isColumnVisible('category')" class="px-3 py-2 whitespace-nowrap text-gray-700">{{ category.label }}</td>
-                          <td v-if="isColumnVisible('subCategory')" class="px-3 py-2 text-gray-600">{{ row.subCategory }}</td>
+                          <td v-if="isColumnVisible('industry')" class="px-3 py-2 text-gray-700 truncate max-w-[150px]" :title="group.label">{{ group.label }}</td>
+                          <td v-if="isColumnVisible('country')" class="px-3 py-2 text-gray-700 truncate max-w-[120px]">{{ row.country ? getCountryName(row.country) : '-' }}</td>
+                          <td v-if="isColumnVisible('category')" class="px-3 py-2 text-gray-700 truncate max-w-[120px]" :title="category.label">{{ category.label }}</td>
+                          <td v-if="isColumnVisible('subCategory')" class="px-3 py-2 text-gray-600 truncate max-w-[150px]" :title="row.subCategory">{{ row.subCategory }}</td>
                           <td v-if="isColumnVisible('objective')" class="px-3 py-2 whitespace-nowrap">
                             <span :class="{
                               'text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-xs': row.funnel === 'TOF',
@@ -665,30 +699,30 @@
                           </td>
                           <td v-if="isColumnVisible('spend')" class="px-3 py-2 text-right text-gray-700">
                             <div class="flex items-center justify-end gap-1">
-                              <span v-html="isSpendRevealed(`${industry.key}-${category.key}-${row.key}`) ? formatCurrency(row.metrics.spend) : '****'"></span>
-                              <button @click.stop="toggleSpendCell(`${industry.key}-${category.key}-${row.key}`)" class="p-0.5 rounded hover:bg-gray-100">
-                                <EyeIcon v-if="isSpendRevealed(`${industry.key}-${category.key}-${row.key}`)" class="h-3 w-3 text-gray-400" />
+                              <span v-html="isSpendRevealed(`${group.key}-${category.key}-${row.key}`) ? formatCurrency(row.metrics.spend) : '****'"></span>
+                              <button @click.stop="toggleSpendCell(`${group.key}-${category.key}-${row.key}`)" class="p-0.5 rounded hover:bg-gray-100">
+                                <EyeIcon v-if="isSpendRevealed(`${group.key}-${category.key}-${row.key}`)" class="h-3 w-3 text-gray-400" />
                                 <EyeSlashIcon v-else class="h-3 w-3 text-gray-300" />
                               </button>
                             </div>
                           </td>
-                          <td v-if="isColumnVisible('impressions')" class="px-3 py-2 text-right text-gray-700">{{ formatNumber(row.metrics.impressions) }}</td>
-                          <td v-if="isColumnVisible('clicks')" class="px-3 py-2 text-right text-gray-700">{{ formatNumber(row.metrics.clicks) }}</td>
-                          <td v-if="isColumnVisible('leads')" class="px-3 py-2 text-right text-gray-700">{{ formatNumber(row.metrics.leads) }}</td>
-                          <td v-if="isColumnVisible('installs')" class="px-3 py-2 text-right text-gray-700">{{ formatNumber(row.metrics.installs) }}</td>
-                          <td v-if="isColumnVisible('conversions')" class="px-3 py-2 text-right text-gray-700">{{ formatNumber(row.metrics.conversions) }}</td>
-                          <td v-if="isColumnVisible('cpm')" class="px-3 py-2 text-right text-gray-700"><span v-html="formatCurrency(row.metrics.cpm)"></span></td>
-                          <td v-if="isColumnVisible('cpc')" class="px-3 py-2 text-right text-gray-700"><span v-html="formatCurrency(row.metrics.cpc)"></span></td>
-                          <td v-if="isColumnVisible('ctr')" class="px-3 py-2 text-right text-gray-700">{{ row.metrics.ctr.toFixed(2) }}%</td>
-                          <td v-if="isColumnVisible('cpl')" class="px-3 py-2 text-right text-gray-700"><span v-html="formatCurrency(row.metrics.cpl)"></span></td>
-                          <td v-if="isColumnVisible('cpa')" class="px-3 py-2 text-right text-gray-700"><span v-html="formatCurrency(row.metrics.cpa)"></span></td>
-                          <td v-if="isColumnVisible('cpi')" class="px-3 py-2 text-right text-gray-700"><span v-html="formatCurrency(row.metrics.cpi)"></span></td>
+                          <td v-if="isColumnVisible('impressions')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap">{{ formatNumber(row.metrics.impressions) }}</td>
+                          <td v-if="isColumnVisible('clicks')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap">{{ formatNumber(row.metrics.clicks) }}</td>
+                          <td v-if="isColumnVisible('leads')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap">{{ formatNumber(row.metrics.leads) }}</td>
+                          <td v-if="isColumnVisible('installs')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap">{{ formatNumber(row.metrics.installs) }}</td>
+                          <td v-if="isColumnVisible('conversions')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap">{{ formatNumber(row.metrics.conversions) }}</td>
+                          <td v-if="isColumnVisible('cpm')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap"><span v-html="formatCurrency(row.metrics.cpm)"></span></td>
+                          <td v-if="isColumnVisible('cpc')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap"><span v-html="formatCurrency(row.metrics.cpc)"></span></td>
+                          <td v-if="isColumnVisible('ctr')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap">{{ row.metrics.ctr.toFixed(2) }}%</td>
+                          <td v-if="isColumnVisible('cpl')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap"><span v-html="formatCurrency(row.metrics.cpl)"></span></td>
+                          <td v-if="isColumnVisible('cpa')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap"><span v-html="formatCurrency(row.metrics.cpa)"></span></td>
+                          <td v-if="isColumnVisible('cpi')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap"><span v-html="formatCurrency(row.metrics.cpi)"></span></td>
                         </tr>
                       </template>
                     </template>
 
                     <!-- Empty State -->
-                    <tr v-if="hierarchicalTableData.length === 0">
+                    <tr v-if="activeTableData.length === 0">
                       <td :colspan="columnConfig.filter(c => c.visible).length" class="px-6 py-8 text-center text-gray-500">
                         {{ $t('pages.benchmarks.empty_state') }}
                       </td>
@@ -899,6 +933,7 @@ import HorizontalBarChart from '@/components/charts/HorizontalBarChart.vue'
 import DoughnutChart from '@/components/charts/DoughnutChart.vue'
 import CurrencyDisplay from '@/components/CurrencyDisplay.vue'
 import { calculateIndustryBenchmarks, calculateAggregatedBenchmarks, calculateAccountMetrics } from '@/utils/benchmarkCalculator'
+import { getCountryName } from '@/utils/countries'
 
 interface BenchmarkMetric {
   actual: number | null
@@ -961,7 +996,8 @@ const filters = ref(savedFilters?.filters || {
   platform: [] as string[],
   funnel_stage: [] as string[],
   industry: [] as string[],
-  sub_industry: [] as string[]
+  sub_industry: [] as string[],
+  country: [] as string[]
 })
 
 // Save filters to localStorage
@@ -1005,7 +1041,8 @@ const dashboardFilters = ref({
   platform: [] as string[],
   funnel_stage: [] as string[],
   industry: [] as string[],
-  sub_industry: [] as string[]
+  sub_industry: [] as string[],
+  country: [] as string[]
 })
 
 // Performance tab date presets
@@ -1042,6 +1079,7 @@ const searchQuery = ref('')
 // Table enhancement state
 const tableSearchQuery = ref('')
 const showColumnSelector = ref(false)
+const tableGroupBy = ref<'industry' | 'client'>('industry') // Toggle between industry and client grouping
 const showAllSpend = ref(false) // Global toggle to show all spend values
 const revealedSpendCells = ref<Set<string>>(new Set()) // Track which individual spend cells are revealed
 
@@ -1075,10 +1113,12 @@ const toggleAllSpendValues = () => {
 const columnConfigRaw = ref([
   // Ad Account Level columns (always visible, not toggleable)
   { key: 'industry', group: 'account', visible: true, locked: true },
+  { key: 'country', group: 'account', visible: true, locked: false },
   { key: 'category', group: 'account', visible: true, locked: false },
   { key: 'subCategory', group: 'campaign', visible: true, locked: false },
   // Campaign Level columns
   { key: 'objective', group: 'campaign', visible: true, locked: false },
+  { key: 'geotarget', group: 'campaign', visible: false, locked: false },
   // Volume Metrics
   { key: 'spend', group: 'volume', visible: true, locked: false },
   { key: 'impressions', group: 'volume', visible: true, locked: false },
@@ -1100,9 +1140,11 @@ const getColumnLabel = (key: string): string => {
   // Map keys to their column translation keys
   const keyMap: Record<string, string> = {
     industry: 'industry',
+    country: 'country',
     category: 'category',
     subCategory: 'sub_category',
     objective: 'objective',
+    geotarget: 'geotarget',
     spend: 'spend',
     impressions: 'impressions',
     clicks: 'clicks',
@@ -1290,6 +1332,7 @@ const hierarchicalTableData = computed(() => {
     if (!account.industry) return false
     if (filters.value.industry.length > 0 && !filters.value.industry.includes(account.industry)) return false
     if (filters.value.platform.length > 0 && !filters.value.platform.includes(account.platform)) return false
+    if (filters.value.country && filters.value.country.length > 0 && !filters.value.country.includes(account.country || '')) return false
     return true
   })
 
@@ -1381,6 +1424,7 @@ const hierarchicalTableData = computed(() => {
         subCategory: subCategory,
         funnel: funnel,
         objective: objective,
+        country: account.country || null,
         metrics: createEmptyMetrics()
       })
     }
@@ -1450,6 +1494,176 @@ const hierarchicalTableData = computed(() => {
 
   // Sort industries by spend (descending)
   return result.sort((a, b) => b.metrics.spend - a.metrics.spend)
+})
+
+// Client-grouped table data computed property
+// Structure: Client -> Industry -> Category aggregated
+const clientGroupedTableData = computed(() => {
+  // Get filtered ad accounts
+  const filteredAccounts = adAccounts.value.filter(account => {
+    if (filters.value.industry.length > 0 && !filters.value.industry.includes(account.industry || '')) return false
+    if (filters.value.platform.length > 0 && !filters.value.platform.includes(account.platform)) return false
+    if (filters.value.country && filters.value.country.length > 0 && !filters.value.country.includes(account.country || '')) return false
+    return true
+  })
+
+  // Apply search filter
+  const searchFilteredAccounts = tableSearchQuery.value
+    ? filteredAccounts.filter(acc =>
+        acc.tenant?.name?.toLowerCase().includes(tableSearchQuery.value.toLowerCase()) ||
+        acc.industry?.toLowerCase().includes(tableSearchQuery.value.toLowerCase()) ||
+        acc.account_name?.toLowerCase().includes(tableSearchQuery.value.toLowerCase())
+      )
+    : filteredAccounts
+
+  // Helper to create empty metrics object
+  const createEmptyMetrics = () => ({
+    spend: 0, impressions: 0, clicks: 0, leads: 0, installs: 0, conversions: 0,
+    cpm: 0, cpc: 0, ctr: 0, cpl: 0, cpa: 0, cpi: 0
+  })
+
+  // Calculate derived metrics
+  const calculateDerivedMetrics = (metrics: any) => {
+    metrics.cpm = metrics.impressions > 0 ? (metrics.spend / metrics.impressions) * 1000 : 0
+    metrics.cpc = metrics.clicks > 0 ? metrics.spend / metrics.clicks : 0
+    metrics.ctr = metrics.impressions > 0 ? (metrics.clicks / metrics.impressions) * 100 : 0
+    metrics.cpl = metrics.leads > 0 ? metrics.spend / metrics.leads : 0
+    metrics.cpa = metrics.conversions > 0 ? metrics.spend / metrics.conversions : 0
+    metrics.cpi = metrics.installs > 0 ? metrics.spend / metrics.installs : 0
+  }
+
+  // Build hierarchy: Client -> Industry -> Category
+  const clientMap = new Map<string, any>()
+
+  searchFilteredAccounts.forEach(account => {
+    const clientKey = account.tenant?.name || 'Unassigned'
+    const industryKey = account.industry || 'Uncategorized'
+    const categoryKey = account.category || 'General'
+
+    // Account metrics
+    const accountMetrics = {
+      spend: account.total_spend || 0,
+      impressions: account.total_impressions || 0,
+      clicks: account.total_clicks || 0,
+      leads: account.total_leads || account.total_conversions || 0,
+      installs: account.total_installs || 0,
+      conversions: account.total_conversions || 0
+    }
+
+    // Initialize client
+    if (!clientMap.has(clientKey)) {
+      clientMap.set(clientKey, {
+        key: clientKey,
+        label: clientKey,
+        metrics: createEmptyMetrics(),
+        categories: new Map()
+      })
+    }
+    const client = clientMap.get(clientKey)
+
+    // Use industry as category in client view
+    const rowKey = `${industryKey}-${categoryKey}`
+
+    // Initialize category (industry in this case)
+    if (!client.categories.has(industryKey)) {
+      client.categories.set(industryKey, {
+        key: industryKey,
+        label: getIndustryLabel(industryKey),
+        metrics: createEmptyMetrics(),
+        rows: new Map()
+      })
+    }
+    const category = client.categories.get(industryKey)
+
+    // Determine funnel from campaigns
+    const campaigns = account.campaigns || []
+    let funnel = 'Other'
+    if (campaigns.length > 0) {
+      const objectives = [...new Set(campaigns.map((c: any) => c.objective).filter(Boolean))]
+      funnel = mapObjectiveToFunnel(objectives[0] || '')
+    }
+
+    // Initialize or aggregate row
+    if (!category.rows.has(rowKey)) {
+      category.rows.set(rowKey, {
+        key: rowKey,
+        subCategory: categoryKey,
+        funnel: funnel,
+        country: account.country || null,
+        metrics: createEmptyMetrics()
+      })
+    }
+    const row = category.rows.get(rowKey)
+
+    // Aggregate metrics to this row
+    row.metrics.spend += accountMetrics.spend
+    row.metrics.impressions += accountMetrics.impressions
+    row.metrics.clicks += accountMetrics.clicks
+    row.metrics.leads += accountMetrics.leads
+    row.metrics.installs += accountMetrics.installs
+    row.metrics.conversions += accountMetrics.conversions
+
+    // Aggregate to category level
+    category.metrics.spend += accountMetrics.spend
+    category.metrics.impressions += accountMetrics.impressions
+    category.metrics.clicks += accountMetrics.clicks
+    category.metrics.leads += accountMetrics.leads
+    category.metrics.installs += accountMetrics.installs
+    category.metrics.conversions += accountMetrics.conversions
+
+    // Aggregate to client level
+    client.metrics.spend += accountMetrics.spend
+    client.metrics.impressions += accountMetrics.impressions
+    client.metrics.clicks += accountMetrics.clicks
+    client.metrics.leads += accountMetrics.leads
+    client.metrics.installs += accountMetrics.installs
+    client.metrics.conversions += accountMetrics.conversions
+  })
+
+  // Convert Maps to arrays and calculate derived metrics
+  const result: any[] = []
+  clientMap.forEach((client) => {
+    calculateDerivedMetrics(client.metrics)
+
+    const categoryArray: any[] = []
+    client.categories.forEach((category: any) => {
+      calculateDerivedMetrics(category.metrics)
+
+      const rowArray: any[] = []
+      category.rows.forEach((row: any) => {
+        calculateDerivedMetrics(row.metrics)
+
+        // Only include rows with spend
+        if (row.metrics.spend > 0) {
+          rowArray.push(row)
+        }
+      })
+
+      // Only include categories with rows
+      if (rowArray.length > 0) {
+        categoryArray.push({
+          ...category,
+          rows: rowArray.sort((a, b) => b.metrics.spend - a.metrics.spend)
+        })
+      }
+    })
+
+    // Only include clients with categories
+    if (categoryArray.length > 0) {
+      result.push({
+        ...client,
+        categories: categoryArray.sort((a, b) => b.metrics.spend - a.metrics.spend)
+      })
+    }
+  })
+
+  // Sort clients by spend (descending)
+  return result.sort((a, b) => b.metrics.spend - a.metrics.spend)
+})
+
+// Active table data based on groupBy selection
+const activeTableData = computed(() => {
+  return tableGroupBy.value === 'industry' ? hierarchicalTableData.value : clientGroupedTableData.value
 })
 
 // Initialize active tab from URL
@@ -2604,6 +2818,12 @@ interface AdAccount {
 const adAccounts = ref<AdAccount[]>([])
 const accountsLoading = ref(false)
 const availableIndustries = ref<string[]>([])
+
+// Computed available platforms from actual data
+const availablePlatforms = computed(() => {
+  const platforms = new Set(adAccounts.value.map(a => a.platform).filter(Boolean))
+  return Array.from(platforms)
+})
 const industryLabelsFromApi = ref<Record<string, string>>({})
 const totalTrackableIndustries = ref<number>(36) // Main industries + sub-industries
 

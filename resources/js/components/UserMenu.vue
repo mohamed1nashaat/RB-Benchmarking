@@ -94,6 +94,48 @@
 
         </div>
 
+        <!-- User Management (Admin Only) -->
+        <div v-if="isAdmin || isSuperAdmin" class="py-1">
+          <MenuItem v-if="isAdmin" v-slot="{ active }">
+            <router-link
+              to="/users"
+              :class="[
+                active ? 'bg-gray-50' : '',
+                'flex items-center px-4 py-2 text-sm text-gray-700'
+              ]"
+            >
+              <UsersIcon class="mr-3 h-5 w-5 text-gray-400" />
+              {{ $t('navigation.users') }}
+            </router-link>
+          </MenuItem>
+
+          <MenuItem v-if="isAdmin" v-slot="{ active }">
+            <router-link
+              to="/roles"
+              :class="[
+                active ? 'bg-gray-50' : '',
+                'flex items-center px-4 py-2 text-sm text-gray-700'
+              ]"
+            >
+              <ShieldCheckIcon class="mr-3 h-5 w-5 text-gray-400" />
+              {{ $t('navigation.roles') }}
+            </router-link>
+          </MenuItem>
+
+          <MenuItem v-if="isSuperAdmin" v-slot="{ active }">
+            <router-link
+              to="/admin/users"
+              :class="[
+                active ? 'bg-gray-50' : '',
+                'flex items-center px-4 py-2 text-sm text-gray-700'
+              ]"
+            >
+              <UserGroupIcon class="mr-3 h-5 w-5 text-gray-400" />
+              {{ $t('navigation.admin_users') }}
+            </router-link>
+          </MenuItem>
+        </div>
+
         <!-- Settings -->
         <div class="py-1">
           <MenuItem v-slot="{ active }">
@@ -154,6 +196,8 @@ import {
   Cog6ToothIcon,
   ChartBarIcon,
   UserGroupIcon,
+  UsersIcon,
+  ShieldCheckIcon,
   BellIcon,
   DocumentTextIcon
 } from '@heroicons/vue/20/solid'
@@ -161,6 +205,15 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+// Check if user is admin in current tenant
+const isAdmin = computed(() => authStore.user?.role === 'admin')
+
+// Check if user is super admin
+const isSuperAdmin = computed(() => {
+  const user = authStore.user
+  return user?.id === 1 || user?.email === 'technical@redbananas.com'
+})
 
 const userInitials = computed(() => {
   if (!authStore.user?.name) return ''

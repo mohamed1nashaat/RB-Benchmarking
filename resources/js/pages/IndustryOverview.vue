@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="px-4 sm:px-6 lg:px-8 py-6">
 
       <!-- Page Header -->
       <div class="mb-6">
@@ -787,8 +787,18 @@ const fetchData = async () => {
   error.value = ''
 
   try {
-    // Fetch all ad accounts data
-    const response = await axios.get('/api/ad-accounts')
+    // Fetch all ad accounts data with filters
+    const params = new URLSearchParams({
+      from: filters.value.from,
+      to: filters.value.to,
+      _t: Date.now().toString() // Cache bust
+    })
+    if (filters.value.platform) {
+      params.append('platform', filters.value.platform)
+    }
+    const url = `/api/ad-accounts?${params.toString()}`
+    console.log('IndustryOverview fetchData - calling URL:', url)
+    const response = await axios.get(url)
     let accounts: AdAccount[] = response.data.data || []
 
     // Apply platform filter if specified

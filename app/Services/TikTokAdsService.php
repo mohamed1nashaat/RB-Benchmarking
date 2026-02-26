@@ -451,7 +451,7 @@ class TikTokAdsService
 
             foreach ($campaigns as $campaignData) {
                 $objective = $this->mapTikTokObjective($campaignData['objective'] ?? '');
-                $funnelStage = $this->determineFunnelStage($objective);
+                $funnelStage = \App\Models\AdCampaign::funnelStageForObjective($objective);
 
                 // Auto-detect category
                 $accountIndustry = $account->industry;
@@ -505,19 +505,6 @@ class TikTokAdsService
             ]);
             throw $e;
         }
-    }
-
-    /**
-     * Determine funnel stage from objective
-     */
-    private function determineFunnelStage(?string $objective): ?string
-    {
-        return match ($objective) {
-            'awareness' => 'TOF',
-            'leads' => 'MOF',
-            'sales' => 'BOF',
-            default => null,
-        };
     }
 
     public function isAvailable(): bool

@@ -10,6 +10,66 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AdCampaign extends Model
 {
+    public const OBJECTIVE_FUNNEL_MAP = [
+        'awareness' => 'TOF',
+        'leads'     => 'BOF',
+        'sales'     => 'BOF',
+        'calls'     => 'BOF',
+    ];
+
+    public const NAME_FUNNEL_KEYWORDS = [
+        'BOF' => [
+            'leads', 'lead gen', 'lead generation', 'leadgen', 'signups', 'signup',
+            'sales', 'conversions', 'conversion', 'install', 'download',
+            'action', 'cpa', 'bof', 'purchase', 'checkout', 'calls',
+        ],
+        'MOF' => [
+            'traffic', 'visits', 'content views', 'product views',
+            'landing page views', 'clicks', 'cpc', 'mof',
+        ],
+        'TOF' => [
+            'awareness', 'reach', 'impressions', 'brand', 'branding',
+            'tof', 'video views',
+        ],
+    ];
+
+    public static function funnelStageForObjective(?string $objective): ?string
+    {
+        if ($objective === null) {
+            return null;
+        }
+        return self::OBJECTIVE_FUNNEL_MAP[$objective] ?? null;
+    }
+
+    public static function funnelStageFromName(?string $name): ?string
+    {
+        if (!$name) {
+            return null;
+        }
+
+        $nameLower = strtolower($name);
+        $scores = [];
+
+        foreach (self::NAME_FUNNEL_KEYWORDS as $stage => $keywords) {
+            $score = 0;
+            foreach ($keywords as $keyword) {
+                if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/', $nameLower)) {
+                    $score += 10;
+                }
+            }
+            if ($score > 0) {
+                $scores[$stage] = $score;
+            }
+        }
+
+        if (empty($scores)) {
+            return null;
+        }
+
+        arsort($scores);
+        return array_key_first($scores);
+    }
+
     protected $fillable = [
         'tenant_id',
         'ad_account_id',
@@ -86,6 +146,16 @@ class AdCampaign extends Model
             // Load relationships needed for sheet creation
             $campaign->load('adAccount.integration');
             event(new CampaignCreated($campaign));
+        });
+
+        // Auto-derive funnel_stage: objective → name keywords → keep existing
+        static::saving(function (AdCampaign $campaign) {
+            if ($campaign->isDirty('objective') || $campaign->isDirty('name') || !$campaign->funnel_stage) {
+                $campaign->funnel_stage =
+                    self::funnelStageForObjective($campaign->objective)
+                    ?? self::funnelStageFromName($campaign->name)
+                    ?? $campaign->funnel_stage;
+            }
         });
     }
 

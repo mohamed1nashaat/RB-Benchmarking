@@ -115,11 +115,9 @@
               class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
               <option value="">{{ $t('filters.all_platforms') }}</option>
-              <option value="facebook">{{ $t('platforms.facebook') }}</option>
-              <option value="google">{{ $t('platforms.google') }}</option>
-              <option value="tiktok">{{ $t('platforms.tiktok') }}</option>
-              <option value="linkedin">LinkedIn</option>
-              <option value="snapchat">Snapchat</option>
+              <option v-for="platform in availablePlatforms" :key="platform" :value="platform">
+                {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
+              </option>
             </select>
           </div>
 
@@ -146,8 +144,24 @@
               class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
             >
               <option value="">{{ $t('filters.all_industries') }}</option>
-              <option v-for="(label, value) in industries" :key="value" :value="value">
+              <option v-for="[value, label] in availableIndustries" :key="value" :value="value">
                 {{ label }}
+              </option>
+              <option value="unset">{{ $t('filters.not_set') }}</option>
+            </select>
+          </div>
+
+          <div class="flex-1 min-w-[150px]">
+            <label for="country-filter" class="block text-sm font-medium text-gray-700">{{ $t('labels.country') }}</label>
+            <select
+              id="country-filter"
+              v-model="filters.country"
+              @change="applyFilters"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+            >
+              <option value="">{{ $t('filters.all_countries') }}</option>
+              <option v-for="c in availableCountries" :key="c.code" :value="c.code">
+                {{ c.name }}
               </option>
               <option value="unset">{{ $t('filters.not_set') }}</option>
             </select>
@@ -181,6 +195,22 @@
             </select>
           </div>
 
+          <div class="flex-1 min-w-[150px]">
+            <label for="client-filter" class="block text-sm font-medium text-gray-700">Client</label>
+            <select
+              id="client-filter"
+              v-model="filters.clientId"
+              @change="applyFilters"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+            >
+              <option value="">All Clients</option>
+              <option value="unassigned">Unassigned</option>
+              <option v-for="client in clients" :key="client.id" :value="client.id">
+                {{ client.name }}
+              </option>
+            </select>
+          </div>
+
           <div class="flex items-end">
             <button
               v-if="hasActiveFilters"
@@ -195,7 +225,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       <div class="bg-white overflow-hidden shadow-md rounded-lg hover:shadow-lg transition-shadow duration-200">
         <div class="p-5">
           <div class="flex items-center">
@@ -207,7 +237,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('pages.ad_accounts.total_accounts') }}</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ filteredAccounts.length }}</dd>
+                <dd class="mt-1 text-xl sm:text-2xl xl:text-3xl font-semibold text-gray-900 truncate">{{ filteredAccounts.length }}</dd>
               </dl>
             </div>
           </div>
@@ -225,7 +255,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('pages.ad_accounts.active_accounts') }}</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ activeAccountsCount }}</dd>
+                <dd class="mt-1 text-xl sm:text-2xl xl:text-3xl font-semibold text-gray-900 truncate">{{ activeAccountsCount }}</dd>
               </dl>
             </div>
           </div>
@@ -246,7 +276,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">With Industry</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ accountsWithIndustryCount }}</dd>
+                <dd class="mt-1 text-xl sm:text-2xl xl:text-3xl font-semibold text-gray-900 truncate">{{ accountsWithIndustryCount }}</dd>
               </dl>
             </div>
           </div>
@@ -267,7 +297,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">{{ $t('pages.ad_accounts.total_campaigns') }}</dt>
-                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ formatNumber(totalCampaignsCount) }}</dd>
+                <dd class="mt-1 text-xl sm:text-2xl xl:text-3xl font-semibold text-gray-900 truncate">{{ formatNumber(totalCampaignsCount) }}</dd>
               </dl>
             </div>
           </div>
@@ -288,7 +318,7 @@
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Total Spend (All-Time)</dt>
-                <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ formatCurrency(totalSpend, 'SAR') }}</dd>
+                <dd class="mt-1 text-lg sm:text-xl xl:text-2xl font-semibold text-gray-900 break-words">{{ formatCurrency(totalSpend, 'SAR') }}</dd>
               </dl>
             </div>
           </div>
@@ -369,6 +399,14 @@
                 <div class="flex items-center space-x-1">
                   <span>Industry</span>
                   <ChevronUpDownIcon v-if="sortField !== 'industry'" class="h-4 w-4 text-gray-400" />
+                  <ChevronUpIcon v-else-if="sortDirection === 'asc'" class="h-4 w-4 text-gray-700" />
+                  <ChevronDownIcon v-else class="h-4 w-4 text-gray-700" />
+                </div>
+              </th>
+              <th v-if="visibleColumns.country" scope="col" @click="sortBy('country')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                <div class="flex items-center space-x-1">
+                  <span>Country</span>
+                  <ChevronUpDownIcon v-if="sortField !== 'country'" class="h-4 w-4 text-gray-400" />
                   <ChevronUpIcon v-else-if="sortDirection === 'asc'" class="h-4 w-4 text-gray-700" />
                   <ChevronDownIcon v-else class="h-4 w-4 text-gray-700" />
                 </div>
@@ -480,6 +518,20 @@
                   <option value="">Select</option>
                   <option v-for="(label, value) in industries" :key="value" :value="value">
                     {{ label }}
+                  </option>
+                </select>
+              </td>
+
+              <td v-if="visibleColumns.country" class="px-4 py-3 whitespace-nowrap">
+                <select
+                  :value="account.country"
+                  @change="updateAccountCountry(account.id, $event.target.value)"
+                  class="text-xs border-gray-300 focus:ring-primary-500 focus:border-primary-500 rounded-md py-1"
+                  :disabled="updating === account.id"
+                >
+                  <option value="">Select</option>
+                  <option v-for="c in countries" :key="c.code" :value="c.code">
+                    {{ c.name }}
                   </option>
                 </select>
               </td>
@@ -629,6 +681,19 @@
                 <option value="">Keep Current</option>
                 <option v-for="(label, value) in industries" :key="value" :value="value">
                   {{ label }}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Country</label>
+              <select
+                v-model="bulkUpdateData.country"
+                class="mt-1 block w-full border-gray-300 focus:ring-primary-500 focus:border-primary-500 rounded-md"
+              >
+                <option value="">Keep Current</option>
+                <option v-for="c in countries" :key="c.code" :value="c.code">
+                  {{ c.name }}
                 </option>
               </select>
             </div>
@@ -790,6 +855,7 @@ import {
   ChevronRightIcon
 } from '@heroicons/vue/24/outline'
 import { exportToCSV, exportToExcel } from '@/utils/exportUtils'
+import { countries, getCountryName } from '@/utils/countries'
 import ColumnToggle from '@/components/ColumnToggle.vue'
 import ClientFormModal from '@/components/ClientFormModal.vue'
 import ClientCombobox from '@/components/ClientCombobox.vue'
@@ -814,6 +880,7 @@ interface AdAccount {
   platform: string
   status: string
   industry: string | null
+  country: string | null
   category: string | null
   available_categories?: string[]
   currency: string
@@ -883,8 +950,10 @@ const filters = ref({
   platform: savedFilters?.platform || '',
   status: savedFilters?.status || '',
   industry: savedFilters?.industry || '',
+  country: savedFilters?.country || '',
   verificationStatus: savedFilters?.verificationStatus || '',
-  year: savedFilters?.year || ''
+  year: savedFilters?.year || '',
+  clientId: savedFilters?.clientId || ''
 })
 
 // Year filter options
@@ -904,8 +973,10 @@ const saveFilters = () => {
       platform: filters.value.platform,
       status: filters.value.status,
       industry: filters.value.industry,
+      country: filters.value.country,
       verificationStatus: filters.value.verificationStatus,
       year: filters.value.year,
+      clientId: filters.value.clientId,
       searchQuery: searchQuery.value
     }))
   } catch (e) {
@@ -915,6 +986,7 @@ const saveFilters = () => {
 
 const bulkUpdateData = ref({
   industry: '',
+  country: '',
   category: '',
   status: ''
 })
@@ -934,6 +1006,7 @@ const tableColumns = [
   { key: 'status', label: 'Status', defaultVisible: true },
   { key: 'verification_status', label: 'Verification', defaultVisible: true },
   { key: 'industry', label: 'Industry', defaultVisible: true },
+  { key: 'country', label: 'Country', defaultVisible: true },
   { key: 'category', label: 'Category', defaultVisible: true },
   { key: 'currency', label: 'Currency', defaultVisible: false },
   { key: 'campaigns_count', label: 'Campaigns', defaultVisible: true },
@@ -980,9 +1053,17 @@ const filteredAccounts = computed(() => {
     // Industry filter
     if (filters.value.industry) {
       if (filters.value.industry === 'unset') {
-        return !account.industry
+        if (account.industry) return false
       } else {
-        return account.industry === filters.value.industry
+        if (account.industry !== filters.value.industry) return false
+      }
+    }
+    // Country filter
+    if (filters.value.country) {
+      if (filters.value.country === 'unset') {
+        if (account.country) return false
+      } else {
+        if (account.country !== filters.value.country) return false
       }
     }
     // Verification status filter
@@ -992,13 +1073,21 @@ const filteredAccounts = computed(() => {
         return false
       }
     }
+    // Client filter
+    if (filters.value.clientId) {
+      if (filters.value.clientId === 'unassigned') {
+        if (account.tenant_id) return false
+      } else {
+        if (account.tenant_id !== parseInt(filters.value.clientId as string)) return false
+      }
+    }
     // Search filter
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase()
-      return (
-        account.account_name.toLowerCase().includes(query) ||
-        account.external_account_id.toLowerCase().includes(query)
-      )
+      if (!account.account_name.toLowerCase().includes(query) &&
+          !account.external_account_id.toLowerCase().includes(query)) {
+        return false
+      }
     }
     return true
   })
@@ -1059,8 +1148,10 @@ const hasActiveFilters = computed(() => {
   return filters.value.platform !== '' ||
          filters.value.status !== '' ||
          filters.value.industry !== '' ||
+         filters.value.country !== '' ||
          filters.value.verificationStatus !== '' ||
          filters.value.year !== '' ||
+         filters.value.clientId !== '' ||
          searchQuery.value !== ''
 })
 
@@ -1084,6 +1175,22 @@ const totalSpend = computed(() => {
   return filteredAccounts.value.reduce((sum, account) => {
     return sum + (account.total_spend || 0)
   }, 0)
+})
+
+// Computed properties for filters - only show options with actual data
+const availablePlatforms = computed(() => {
+  const platforms = new Set(accounts.value.map(a => a.platform).filter(Boolean))
+  return Array.from(platforms)
+})
+
+const availableIndustries = computed(() => {
+  const industrySet = new Set(accounts.value.map(a => a.industry).filter(Boolean))
+  return Object.entries(industries.value).filter(([key]) => industrySet.has(key))
+})
+
+const availableCountries = computed(() => {
+  const countrySet = new Set(accounts.value.map(a => a.country).filter(Boolean))
+  return countries.filter(c => countrySet.has(c.code))
 })
 
 const fetchAccounts = async () => {
@@ -1273,6 +1380,22 @@ const updateAccountIndustry = async (accountId: number, industry: string) => {
   }
 }
 
+const updateAccountCountry = async (accountId: number, country: string) => {
+  updating.value = accountId
+  try {
+    await window.axios.put(`/api/ad-accounts/${accountId}`, { country })
+
+    const account = accounts.value.find(a => a.id === accountId)
+    if (account) {
+      account.country = country || null
+    }
+  } catch (error) {
+    console.error('Error updating account country:', error)
+  } finally {
+    updating.value = null
+  }
+}
+
 const updateAccountCategory = async (accountId: number, category: string) => {
   updating.value = accountId
   try {
@@ -1363,6 +1486,10 @@ const performBulkUpdate = async () => {
       updateData.industry = bulkUpdateData.value.industry
     }
 
+    if (bulkUpdateData.value.country) {
+      updateData.country = bulkUpdateData.value.country
+    }
+
     if (bulkUpdateData.value.category) {
       updateData.category = bulkUpdateData.value.category
     }
@@ -1392,7 +1519,7 @@ const performBulkUpdate = async () => {
 const closeBulkModal = () => {
   showBulkModal.value = false
   selectedAccounts.value = []
-  bulkUpdateData.value = { industry: '', category: '', status: '' }
+  bulkUpdateData.value = { industry: '', country: '', category: '', status: '' }
   bulkAvailableCategories.value = []
   bulkChangeClient.value = false
   bulkSelectedClient.value = null
@@ -1423,6 +1550,7 @@ const exportData = (format: 'csv' | 'xlsx') => {
     'Status': account.status,
     'Verification Status': account.data_verification_status || 'pending',
     'Industry': account.industry || '',
+    'Country': account.country ? getCountryName(account.country) : '',
     'Category': account.category || '',
     'Currency': account.currency || '',
     'Campaigns': account.campaigns_count,
@@ -1432,12 +1560,12 @@ const exportData = (format: 'csv' | 'xlsx') => {
   const filename = `ad-accounts-export-${new Date().toISOString().split('T')[0]}`
 
   if (format === 'csv') {
-    const headers = ['Account Name', 'External ID', 'Platform', 'Status', 'Verification Status', 'Industry', 'Category', 'Currency', 'Campaigns', 'Total Spend (SAR)']
+    const headers = ['Account Name', 'External ID', 'Platform', 'Status', 'Verification Status', 'Industry', 'Country', 'Category', 'Currency', 'Campaigns', 'Total Spend (SAR)']
     exportToCSV(exportRows, `${filename}.csv`, headers)
   } else {
     exportToExcel([{
       title: 'Ad Accounts',
-      headers: ['Account Name', 'External ID', 'Platform', 'Status', 'Verification Status', 'Industry', 'Category', 'Currency', 'Campaigns', 'Total Spend (SAR)'],
+      headers: ['Account Name', 'External ID', 'Platform', 'Status', 'Verification Status', 'Industry', 'Country', 'Category', 'Currency', 'Campaigns', 'Total Spend (SAR)'],
       data: exportRows
     }], `${filename}.xlsx`)
   }
@@ -1486,8 +1614,10 @@ const clearAllFilters = () => {
   filters.value.platform = ''
   filters.value.status = ''
   filters.value.industry = ''
+  filters.value.country = ''
   filters.value.verificationStatus = ''
   filters.value.year = ''
+  filters.value.clientId = ''
   searchQuery.value = ''
   currentPage.value = 1
   fetchAccounts()

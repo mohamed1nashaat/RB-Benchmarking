@@ -585,7 +585,7 @@ class SnapchatAdsService
 
             foreach ($campaigns as $campaignData) {
                 $objective = $this->mapSnapchatObjective($campaignData['objective'] ?? '');
-                $funnelStage = $this->determineFunnelStage($objective);
+                $funnelStage = \App\Models\AdCampaign::funnelStageForObjective($objective);
 
                 // Auto-detect category from campaign name and account industry
                 $accountIndustry = $account->industry;
@@ -675,19 +675,6 @@ class SnapchatAdsService
             'PAUSED' => 'paused',
             'DELETED' => 'archived',
             default => 'paused',
-        };
-    }
-
-    /**
-     * Determine funnel stage from objective
-     */
-    private function determineFunnelStage(?string $objective): ?string
-    {
-        return match ($objective) {
-            'awareness' => 'TOF',
-            'leads' => 'MOF',
-            'sales', 'calls' => 'BOF',
-            default => null,
         };
     }
 

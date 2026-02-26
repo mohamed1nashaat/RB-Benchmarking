@@ -337,6 +337,14 @@ class ClientBuilderService
             $changes[] = 'monthly_budget';
         }
 
+        if ($force || empty($tenant->country)) {
+            $country = $accounts->pluck('country')->filter()->countBy()->sortDesc()->keys()->first();
+            if ($country) {
+                $updateData['country'] = $country;
+                $changes[] = 'country';
+            }
+        }
+
         // Update contact info if emails found
         if (!empty($suggestions['suggested']['contact_info']['emails_found'])) {
             if ($force || empty($tenant->contact_email)) {

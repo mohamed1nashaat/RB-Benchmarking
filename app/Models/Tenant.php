@@ -23,6 +23,7 @@ class Tenant extends Model
         'contact_phone',
         'contact_person',
         'address',
+        'country',
         'website',
         'industry',
         'vertical',
@@ -81,6 +82,14 @@ class Tenant extends Model
     public function alerts(): HasMany
     {
         return $this->hasMany(Alert::class);
+    }
+
+    /**
+     * Get the roles for this tenant.
+     */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(TenantRole::class);
     }
 
     public function scopeActive($query)

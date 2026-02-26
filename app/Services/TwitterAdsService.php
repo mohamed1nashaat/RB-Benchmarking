@@ -235,7 +235,7 @@ class TwitterAdsService
                 'sub_industry' => $detectedCategory,
                 'category' => $detectedCategory,
                 'inherit_category_from_account' => $detectedCategory ? false : true,
-                'funnel_stage' => $this->mapObjectiveToFunnelStage($objective),
+                'funnel_stage' => AdCampaign::funnelStageForObjective($objective),
                 'user_journey' => 'landing_page',
                 'has_pixel_data' => false,
             ];
@@ -371,24 +371,6 @@ class TwitterAdsService
         ];
 
         return $objectiveMap[$twitterObjective] ?? 'traffic';
-    }
-
-    /**
-     * Map objective to funnel stage
-     */
-    private function mapObjectiveToFunnelStage(string $objective): string
-    {
-        $funnelMap = [
-            'awareness' => 'TOF',
-            'engagement' => 'TOF',
-            'traffic' => 'MOF',
-            'leads' => 'BOF',
-            'website_sales' => 'BOF',
-            'app_installs' => 'MOF',
-            'retention' => 'BOF'
-        ];
-
-        return $funnelMap[$objective] ?? 'MOF';
     }
 
     /**

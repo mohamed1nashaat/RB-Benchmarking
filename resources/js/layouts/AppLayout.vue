@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Top Navigation Bar -->
     <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Left: Logo + Primary Nav -->
           <div class="flex items-center space-x-8">
@@ -100,14 +100,14 @@
 
     <!-- Page Content -->
     <main class="flex-1">
-      <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div class="py-6 px-4 sm:px-6 lg:px-8">
         <router-view />
       </div>
     </main>
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex justify-between items-center text-sm text-gray-500">
           <div class="hidden sm:block">
             © {{ currentYear }} RB Benchmarks. All rights reserved.

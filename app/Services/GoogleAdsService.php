@@ -77,10 +77,12 @@ class GoogleAdsService
                 'https://www.googleapis.com/auth/analytics.readonly',
                 'https://www.googleapis.com/auth/analytics.edit',
                 'https://www.googleapis.com/auth/userinfo.profile',
-                'https://www.googleapis.com/auth/cloud-platform.read-only'
+                'https://www.googleapis.com/auth/cloud-platform.read-only',
+                'https://www.googleapis.com/auth/webmasters.readonly',
             ]),
             'access_type' => 'offline',
             'prompt' => 'consent',
+            'include_granted_scopes' => 'true',
             'state' => $state,
         ]);
 

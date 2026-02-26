@@ -125,7 +125,16 @@
       "Bash(sqlite3:*)",
       "Bash(git config:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(stat:*)",
+      "Bash(bash:*)",
+      "Bash(npx vite build:*)",
+      "WebFetch(domain:www.debugbear.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:addyosmani.com)",
+      "WebFetch(domain:www.googleapis.com)"
     ],
     "deny": [],
     "ask": []
