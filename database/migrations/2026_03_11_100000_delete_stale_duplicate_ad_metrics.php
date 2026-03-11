@@ -17,19 +17,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $deleted = DB::delete("
-            DELETE m FROM ad_metrics m
-            JOIN ad_accounts a ON m.ad_account_id = a.id
-            WHERE m.tenant_id != a.tenant_id
-            AND EXISTS (
-                SELECT 1 FROM ad_metrics m2
-                WHERE m2.ad_account_id = m.ad_account_id
-                AND m2.ad_campaign_id = m.ad_campaign_id
-                AND m2.platform = m.platform
-                AND m2.date = m.date
-                AND m2.tenant_id = a.tenant_id
-            )
-        ");
+        // MySQL doesn't allow subquery on the same table being deleted,
+        // so collect IDs first, then delete in batches.
+        $staleIds = DB::table('ad_metrics as m')
+            ->join('ad_accounts as a', 'm.ad_account_id', '=', 'a.id')
+            ->whereColumn('m.tenant_id', '!=', 'a.tenant_id')
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('ad_metrics as m2')
+                    ->whereColumn('m2.ad_account_id', 'm.ad_account_id')
+                    ->whereColumn('m2.ad_campaign_id', 'm.ad_campaign_id')
+                    ->whereColumn('m2.platform', 'm.platform')
+                    ->whereColumn('m2.date', 'm.date')
+                    ->whereColumn('m2.tenant_id', 'a.tenant_id');
+            })
+            ->pluck('m.id');
+
+        $deleted = 0;
+        foreach ($staleIds->chunk(500) as $chunk) {
+            $deleted += DB::table('ad_metrics')->whereIn('id', $chunk)->delete();
+        }
 
         Log::info("Deleted {$deleted} stale duplicate ad_metric rows from tenant_id mismatch");
     }
