@@ -149,26 +149,19 @@ class FacebookMetricsSyncService
                 $actions = $this->parseActions($dayMetric['actions'] ?? []);
                 $actionValues = $this->parseActionValues($dayMetric['action_values'] ?? []);
 
-                // Calculate checksum for deduplication
-                $checksum = md5(json_encode([
-                    'platform' => 'facebook',
-                    'account_id' => $account->id,
-                    'campaign_id' => $campaign->id,
-                    'date' => $date,
-                    'impressions' => $dayMetric['impressions'] ?? 0,
-                    'spend' => $dayMetric['spend'] ?? 0
-                ]));
+                // Calculate checksum for deduplication (stable, not based on mutable values)
+                $checksum = md5("{$account->id}:{$campaign->id}:facebook:{$date}");
 
                 AdMetric::updateOrCreate(
                     [
-                        'checksum' => $checksum
+                        'ad_account_id' => $account->id,
+                        'ad_campaign_id' => $campaign->id,
+                        'platform' => 'facebook',
+                        'date' => $date,
                     ],
                     [
                         'tenant_id' => $account->tenant_id,
-                        'date' => $date,
-                        'platform' => 'facebook',
-                        'ad_account_id' => $account->id,
-                        'ad_campaign_id' => $campaign->id,
+                        'checksum' => $checksum,
                         'objective' => $campaign->objective,
                         'funnel_stage' => $campaign->funnel_stage,
                         'user_journey' => $campaign->user_journey,

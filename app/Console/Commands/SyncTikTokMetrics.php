@@ -7,6 +7,8 @@ use App\Models\AdAccount;
 use App\Models\AdCampaign;
 use App\Models\AdMetric;
 use App\Services\TikTokAdsService;
+use App\Services\SyncMonitoringService;
+use App\Traits\TracksSyncProgress;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,17 +16,20 @@ use Carbon\Carbon;
 
 class SyncTikTokMetrics extends Command
 {
+    use TracksSyncProgress;
     protected $signature = 'tiktok:sync-metrics {integration_id?} {--days=30} {--all : Sync all available historical data} {--start-date= : Start date (Y-m-d)} {--end-date= : End date (Y-m-d)} {--account-id= : Specific ad account ID to sync}';
     protected $description = 'Sync metrics from TikTok Ads for campaigns';
 
     private const API_BASE_URL = 'https://business-api.tiktok.com/open_api/v1.3';
 
     private TikTokAdsService $tikTokAdsService;
+    private SyncMonitoringService $monitoringService;
 
-    public function __construct(TikTokAdsService $tikTokAdsService)
+    public function __construct(TikTokAdsService $tikTokAdsService, SyncMonitoringService $monitoringService)
     {
         parent::__construct();
         $this->tikTokAdsService = $tikTokAdsService;
+        $this->monitoringService = $monitoringService;
     }
 
     public function handle()
@@ -70,6 +75,8 @@ class SyncTikTokMetrics extends Command
     private function syncMetricsForIntegration(Integration $integration, int $days, bool $allTime, ?string $startDateOption, ?string $endDateOption, ?string $accountId)
     {
         try {
+            $this->initSyncProgress($integration->id);
+
             $config = $integration->app_config;
 
             if (is_string($config)) {
@@ -102,13 +109,16 @@ class SyncTikTokMetrics extends Command
             }
             $adAccounts = $adAccountsQuery->get();
 
-            $this->info("Found {$adAccounts->count()} ad accounts to sync");
+            $this->reportStep("Found {$adAccounts->count()} ad accounts to sync");
 
             $totalSynced = 0;
             $totalErrors = 0;
+            $accountIndex = 0;
+            $accountTotal = $adAccounts->count();
 
             foreach ($adAccounts as $adAccount) {
-                $this->info("Syncing metrics for ad account: {$adAccount->account_name}");
+                $accountIndex++;
+                $this->reportCurrentStep("Syncing account {$accountIndex}/{$accountTotal}: {$adAccount->account_name}");
 
                 try {
                     // For all-time sync, dynamically detect earliest campaign start date
@@ -133,6 +143,9 @@ class SyncTikTokMetrics extends Command
                     );
                     $totalSynced += $synced;
 
+                    // Update last metrics sync timestamp
+                    $adAccount->update(['last_metrics_sync_at' => now()]);
+
                 } catch (\Exception $e) {
                     $this->error("  Error syncing account {$adAccount->external_account_id}: {$e->getMessage()}");
                     $totalErrors++;
@@ -143,12 +156,23 @@ class SyncTikTokMetrics extends Command
             $this->info("Total metrics synced: {$totalSynced}");
             $this->info("Total errors: {$totalErrors}");
 
+            $stats = [
+                'accounts_processed' => $adAccounts->count(),
+                'metrics_synced' => $totalSynced,
+                'errors' => $totalErrors,
+            ];
+
+            $this->monitoringService->recordSuccess('tiktok', $integration->id, $stats);
+            $this->completeSyncProgress($stats);
+
         } catch (\Exception $e) {
             $this->error("Error syncing metrics: " . $e->getMessage());
             Log::error('TikTok metrics sync failed', [
                 'integration_id' => $integration->id,
                 'error' => $e->getMessage(),
             ]);
+            $this->monitoringService->recordFailure('tiktok', $integration->id, $e->getMessage());
+            $this->failSyncProgress($e->getMessage());
         }
     }
 
@@ -194,32 +218,50 @@ class SyncTikTokMetrics extends Command
                 'report_type' => 'BASIC',
                 'data_level' => 'AUCTION_CAMPAIGN',
                 'dimensions' => '["stat_time_day", "campaign_id"]',  // Include campaign_id to get per-campaign data
-                'metrics' => '["spend","impressions","clicks","reach","cpc","cpm","ctr","frequency"]',
+                'metrics' => '["spend","impressions","clicks","reach","cpc","cpm","ctr","frequency","conversion","complete_payment","app_event_add_to_cart","video_play_actions","video_watched_2s","video_watched_6s","result","cost_per_result"]',
                 'start_date' => $currentStart->format('Y-m-d'),
                 'end_date' => $chunkEnd->format('Y-m-d'),
                 'page_size' => 1000,
             ];
 
             try {
-                $response = Http::withHeaders([
-                    'Access-Token' => $accessToken,
-                ])->get($url, $params);
+                // Pagination loop for metrics
+                $insights = [];
+                $metricsPage = 1;
 
-                if (!$response->successful()) {
-                    $this->error("  API call failed: " . $response->body());
+                do {
+                    $params['page'] = $metricsPage;
+
+                    $response = Http::withHeaders([
+                        'Access-Token' => $accessToken,
+                    ])->get($url, $params);
+
+                    if (!$response->successful()) {
+                        $this->error("  API call failed: " . $response->body());
+                        break;
+                    }
+
+                    $data = $response->json();
+
+                    if (!isset($data['code']) || $data['code'] !== 0) {
+                        $this->error("  TikTok API error: " . ($data['message'] ?? 'Unknown error'));
+                        break;
+                    }
+
+                    $pageInsights = $data['data']['list'] ?? [];
+                    $insights = array_merge($insights, $pageInsights);
+
+                    $pageInfo = $data['data']['page_info'] ?? [];
+                    $totalPage = $pageInfo['total_page'] ?? 1;
+                    $metricsPage++;
+                } while ($metricsPage <= $totalPage);
+
+                if (empty($insights) && !isset($data['code'])) {
+                    // API call failed entirely, skip to next chunk
                     $currentStart = $chunkEnd->copy()->addDay();
                     continue;
                 }
 
-                $data = $response->json();
-
-                if (!isset($data['code']) || $data['code'] !== 0) {
-                    $this->error("  TikTok API error: " . ($data['message'] ?? 'Unknown error'));
-                    $currentStart = $chunkEnd->copy()->addDay();
-                    continue;
-                }
-
-                $insights = $data['data']['list'] ?? [];
                 $this->info("    Found " . count($insights) . " metric rows");
 
                 $chunkSynced = 0;
@@ -236,33 +278,43 @@ class SyncTikTokMetrics extends Command
                         $date = explode(' ', $date)[0];
                     }
 
-                    // Find the matching campaign
+                    // Find the matching campaign, auto-create if missing
                     $campaign = $campaignMap[$campaignExternalId] ?? null;
                     if (!$campaign) {
-                        // Skip metrics for unknown campaigns (not in our DB)
-                        continue;
+                        $campaign = AdCampaign::create([
+                            'tenant_id' => $adAccount->tenant_id,
+                            'ad_account_id' => $adAccount->id,
+                            'external_campaign_id' => $campaignExternalId,
+                            'name' => 'TikTok Campaign ' . $campaignExternalId,
+                            'status' => 'active',
+                            'objective' => 'awareness',
+                        ]);
+                        $campaignMap[$campaignExternalId] = $campaign;
+                        Log::info('Auto-created placeholder TikTok campaign', ['external_id' => $campaignExternalId]);
                     }
 
                     // Generate checksum for this metric record
-                    $checksum = md5("{$campaign->tenant_id}:{$campaign->ad_account_id}:{$campaign->id}:tiktok:{$date}");
+                    $checksum = md5("{$campaign->ad_account_id}:{$campaign->id}:tiktok:{$date}");
 
                     AdMetric::updateOrCreate(
                         [
-                            'tenant_id' => $campaign->tenant_id,
                             'ad_account_id' => $campaign->ad_account_id,
                             'ad_campaign_id' => $campaign->id,
                             'platform' => 'tiktok',
                             'date' => $date,
                         ],
                         [
+                            'tenant_id' => $adAccount->tenant_id,
                             'spend' => floatval($metrics['spend'] ?? 0),
                             'impressions' => intval($metrics['impressions'] ?? 0),
                             'clicks' => intval($metrics['clicks'] ?? 0),
-                            'conversions' => 0,
-                            'revenue' => 0,
+                            'conversions' => intval($metrics['conversion'] ?? 0),
+                            'revenue' => floatval($metrics['complete_payment'] ?? 0),
+                            'purchases' => intval($metrics['conversion'] ?? 0),
                             'reach' => intval($metrics['reach'] ?? 0),
-                            'video_views' => 0,
-                            'leads' => 0,
+                            'video_views' => intval($metrics['video_play_actions'] ?? $metrics['video_watched_2s'] ?? 0),
+                            'leads' => ($campaign->objective === 'leads') ? intval($metrics['result'] ?? 0) : 0,
+                            'atc' => intval($metrics['app_event_add_to_cart'] ?? 0),
                             'checksum' => $checksum,
                         ]
                     );
