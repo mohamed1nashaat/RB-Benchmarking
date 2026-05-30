@@ -8,12 +8,15 @@ use App\Models\AdCampaign;
 use App\Services\GoogleAdsService;
 use App\Services\GoogleAdsCampaignSyncService;
 use App\Services\GoogleAdsMetricsSyncService;
+use App\Services\SyncMonitoringService;
+use App\Traits\TracksSyncProgress;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class SyncGoogleAdsCampaigns extends Command
 {
+    use TracksSyncProgress;
     protected $signature = 'google-ads:sync
                             {integration_id? : Specific integration ID to sync}
                             {--campaigns : Sync campaigns only}
@@ -28,16 +31,19 @@ class SyncGoogleAdsCampaigns extends Command
     protected GoogleAdsService $googleAdsService;
     protected GoogleAdsCampaignSyncService $campaignSyncService;
     protected GoogleAdsMetricsSyncService $metricsSyncService;
+    private SyncMonitoringService $monitoringService;
 
     public function __construct(
         GoogleAdsService $googleAdsService,
         GoogleAdsCampaignSyncService $campaignSyncService,
-        GoogleAdsMetricsSyncService $metricsSyncService
+        GoogleAdsMetricsSyncService $metricsSyncService,
+        SyncMonitoringService $monitoringService
     ) {
         parent::__construct();
         $this->googleAdsService = $googleAdsService;
         $this->campaignSyncService = $campaignSyncService;
         $this->metricsSyncService = $metricsSyncService;
+        $this->monitoringService = $monitoringService;
     }
 
     public function handle()
@@ -73,7 +79,7 @@ class SyncGoogleAdsCampaigns extends Command
         $this->info('Sync metrics: ' . ($syncMetrics ? 'Yes' : 'No'));
 
         foreach ($integrations as $integration) {
-            $this->info("Processing integration ID: {$integration->id} ({$integration->tenant->name})");
+            $this->info("Processing integration ID: {$integration->id} (" . ($integration->tenant?->name ?? 'No Tenant') . ")");
             $this->syncForIntegration($integration, $syncCampaigns, $syncMetrics);
         }
 
@@ -84,6 +90,8 @@ class SyncGoogleAdsCampaigns extends Command
     private function syncForIntegration(Integration $integration, bool $syncCampaigns, bool $syncMetrics): void
     {
         try {
+            $this->initSyncProgress($integration->id);
+
             // Get access token
             $config = $integration->app_config;
 
@@ -105,19 +113,45 @@ class SyncGoogleAdsCampaigns extends Command
                 return;
             }
 
-            $this->info("Found {$adAccounts->count()} ad account(s) to sync");
+            $this->reportStep("Found {$adAccounts->count()} ad account(s) to sync");
 
             // Sync campaigns
             if ($syncCampaigns) {
-                $this->info("\n=== Syncing Campaigns ===");
+                $this->reportCurrentStep('Syncing campaigns...');
                 $this->syncCampaigns($adAccounts, $accessToken, $refreshToken);
+                $this->reportStep('Campaign sync complete', 'success');
             }
 
             // Sync metrics
             if ($syncMetrics) {
-                $this->info("\n=== Syncing Metrics ===");
+                $this->reportCurrentStep('Syncing metrics...');
                 $this->syncMetrics($adAccounts, $accessToken, $refreshToken);
+
+                // Update last metrics sync timestamp on all synced accounts
+                foreach ($adAccounts as $adAccount) {
+                    $adAccount->update(['last_metrics_sync_at' => now()]);
+                }
+                $this->reportStep('Metrics sync complete', 'success');
             }
+
+            // Count permission-denied accounts for reporting
+            $permissionDeniedCount = $adAccounts->where('status', 'permission_denied')->count();
+            $activeCount = $adAccounts->count() - $permissionDeniedCount;
+
+            $stats = [
+                'accounts_processed' => $activeCount,
+                'accounts_skipped_permission_denied' => $permissionDeniedCount,
+                'campaigns_synced' => $syncCampaigns,
+                'metrics_synced' => $syncMetrics,
+            ];
+
+            // Warn if >50% of accounts are permission-denied
+            if ($adAccounts->count() > 0 && $permissionDeniedCount / $adAccounts->count() > 0.5) {
+                $this->monitoringService->recordPartialSuccess('google', $integration->id, $stats, "{$permissionDeniedCount}/{$adAccounts->count()} accounts have permission_denied status");
+            } else {
+                $this->monitoringService->recordSuccess('google', $integration->id, $stats);
+            }
+            $this->completeSyncProgress($stats);
 
         } catch (\Exception $e) {
             $this->error("Error syncing integration {$integration->id}: " . $e->getMessage());
@@ -126,23 +160,58 @@ class SyncGoogleAdsCampaigns extends Command
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+
+            // Detect auth/token errors and mark integration for re-authorization
+            $msg = $e->getMessage();
+            if (
+                str_contains($msg, 'PERMISSION_DENIED') ||
+                str_contains($msg, 'AUTHENTICATION_ERROR') ||
+                str_contains($msg, 'AuthenticationError') ||
+                str_contains($msg, 'invalid_grant') ||
+                str_contains($msg, 'Token has been expired or revoked') ||
+                str_contains($msg, 'AUTH_FAILED')
+            ) {
+                $integration->update(['status' => 'needs_reauth']);
+                $this->warn("Marked integration {$integration->id} as needs_reauth");
+            }
+
+            $this->monitoringService->recordFailure('google', $integration->id, $e->getMessage());
+            $this->failSyncProgress($e->getMessage());
         }
     }
 
     private function syncCampaigns($adAccounts, string $accessToken, ?string $refreshToken = null): void
     {
+        $accountIndex = 0;
+        $accountTotal = $adAccounts->count();
+
         foreach ($adAccounts as $adAccount) {
+            $accountIndex++;
+
+            // Skip accounts flagged as permission_denied
+            if ($adAccount->status === 'permission_denied') {
+                $this->warn("  Skipping {$adAccount->account_name} — flagged as permission_denied");
+                continue;
+            }
+
             try {
-                $this->info("Syncing campaigns for: {$adAccount->account_name}");
+                $this->reportCurrentStep("Syncing campaigns {$accountIndex}/{$accountTotal}: {$adAccount->account_name}");
 
                 $result = $this->campaignSyncService->syncCampaignsForAccount($adAccount, $accessToken, $refreshToken);
 
-                $this->info("  ✓ Created: {$result['created']}");
-                $this->info("  ✓ Updated: {$result['updated']}");
-                $this->info("  ✓ Total: {$result['total']}");
+                $this->info("  Created: {$result['created']}");
+                $this->info("  Updated: {$result['updated']}");
+                $this->info("  Total: {$result['total']}");
+
+                // Auto-reset permission_denied if sync succeeds
+                if ($adAccount->status === 'permission_denied') {
+                    $adAccount->update(['status' => 'active']);
+                    $this->info("  ✓ Auto-reset status to active (was permission_denied)");
+                }
 
             } catch (\Exception $e) {
-                $this->error("  ✗ Failed: " . $e->getMessage());
+                $this->error("  Failed: " . $e->getMessage());
+                $this->flagPermissionDenied($adAccount, $e);
             }
         }
     }
@@ -169,9 +238,20 @@ class SyncGoogleAdsCampaigns extends Command
 
         $this->info("Date range: {$startDate} to {$endDate}");
 
+        $accountIndex = 0;
+        $accountTotal = $adAccounts->count();
+
         foreach ($adAccounts as $adAccount) {
+            $accountIndex++;
+
+            // Skip accounts flagged as permission_denied
+            if ($adAccount->status === 'permission_denied') {
+                $this->warn("  Skipping {$adAccount->account_name} — flagged as permission_denied");
+                continue;
+            }
+
             try {
-                $this->info("Syncing metrics for: {$adAccount->name}");
+                $this->reportCurrentStep("Syncing metrics {$accountIndex}/{$accountTotal}: {$adAccount->account_name}");
 
                 $result = $this->metricsSyncService->syncMetricsForAccount(
                     $adAccount,
@@ -186,9 +266,38 @@ class SyncGoogleAdsCampaigns extends Command
                 $this->info("  ✓ Skipped: {$result['skipped']}");
                 $this->info("  ✓ Total: {$result['total']}");
 
+                // Auto-reset permission_denied if sync succeeds
+                if ($adAccount->status === 'permission_denied') {
+                    $adAccount->update(['status' => 'active']);
+                    $this->info("  ✓ Auto-reset status to active (was permission_denied)");
+                }
+
             } catch (\Exception $e) {
                 $this->error("  ✗ Failed: " . $e->getMessage());
+                $this->flagPermissionDenied($adAccount, $e);
             }
+        }
+    }
+
+    /**
+     * Flag an ad account as permission_denied if the error indicates PERMISSION_DENIED
+     */
+    private function flagPermissionDenied(AdAccount $adAccount, \Exception $e): void
+    {
+        $message = $e->getMessage();
+        if (
+            str_contains($message, 'PERMISSION_DENIED') ||
+            str_contains($message, 'CUSTOMER_NOT_ENABLED') ||
+            str_contains($message, 'The caller does not have permission') ||
+            str_contains($message, 'permission')
+        ) {
+            $adAccount->update(['status' => 'permission_denied']);
+            $this->warn("  Flagged {$adAccount->account_name} as permission_denied — will be skipped on future syncs");
+            Log::warning('Google Ads account flagged as permission_denied', [
+                'account_id' => $adAccount->id,
+                'account_name' => $adAccount->account_name,
+                'error' => $message,
+            ]);
         }
     }
 
@@ -252,14 +361,14 @@ class SyncGoogleAdsCampaigns extends Command
 
                     // Only log when data was found
                     if ($result['created'] > 0 || $result['updated'] > 0) {
-                        $this->info("  ✓ {$adAccount->name}: +{$result['created']}, ~{$result['updated']}");
+                        $this->info("  ✓ {$adAccount->account_name}: +{$result['created']}, ~{$result['updated']}");
                     }
 
                     // Force garbage collection after each account
                     gc_collect_cycles();
 
                 } catch (\Exception $e) {
-                    $this->error("  ✗ {$adAccount->name}: " . $e->getMessage());
+                    $this->error("  ✗ {$adAccount->account_name}: " . $e->getMessage());
                 }
             }
 
