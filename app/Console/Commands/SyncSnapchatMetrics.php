@@ -182,7 +182,7 @@ class SyncSnapchatMetrics extends Command
         // Get account timezone (required for Snapchat API)
         $timezone = $adAccount->account_config['time_zone'] ?? $this->fetchAccountTimezone($adAccount, $accessToken);
 
-        // Output progress markers for date range (for sync-progress API to parse)
+        // Output progress markers for date range (for SyncProgressService cache tracking)
         $progressStart = Carbon::parse($startDate);
         $progressEnd = Carbon::parse($endDate);
         $totalMonths = (int) $progressStart->diffInMonths($progressEnd) + 1;
