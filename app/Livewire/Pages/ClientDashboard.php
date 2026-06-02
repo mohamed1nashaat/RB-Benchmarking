@@ -1025,7 +1025,11 @@ class ClientDashboard extends Component
     }
 
     /**
-     * Generate SVG sparkline from data points
+     * Generate SVG sparkline from data points.
+     *
+     * @security-safe Output is internally-generated SVG markup containing only
+     *                numeric coordinates and hardcoded colors. No user input
+     *                reaches the returned string. Safe for {!! !!} rendering.
      */
     protected function generateSparkline(array $data, int $width = 80, int $height = 24): string
     {
