@@ -60,8 +60,8 @@ class SyncTikTokMetrics extends Command
         }
 
         if ($integrations->isEmpty()) {
-            $this->error('No TikTok Ads integrations found.');
-            return 1;
+            $this->info('No active TikTok Ads integrations found — nothing to sync');
+            return 0;
         }
 
         foreach ($integrations as $integration) {

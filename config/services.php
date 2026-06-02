@@ -46,6 +46,7 @@ return [
         'client_id' => env('GOOGLE_ADS_CLIENT_ID'),
         'client_secret' => env('GOOGLE_ADS_CLIENT_SECRET'),
         'developer_token' => env('GOOGLE_ADS_DEVELOPER_TOKEN'),
+        'api_key' => env('GOOGLE_ADS_API_KEY'),
     ],
 
     'tiktok' => [
@@ -63,6 +64,11 @@ return [
     'linkedin' => [
         'client_id' => env('LINKEDIN_CLIENT_ID'),
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
+    ],
+
+    'twitter' => [
+        'client_id' => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
     ],
 
     'pagespeed' => [

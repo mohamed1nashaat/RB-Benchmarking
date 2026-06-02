@@ -45,7 +45,7 @@ class SuperAdminUserController extends Controller
         // Filter by role in any tenant
         if ($request->role) {
             $query->whereHas('tenants', function ($q) use ($request) {
-                $q->wherePivot('role', $request->role);
+                $q->where('tenant_users.role', $request->role);
             });
         }
 
@@ -172,7 +172,7 @@ class SuperAdminUserController extends Controller
             ], 201);
         } catch (\Exception $e) {
             Log::error('Failed to create user', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'email' => $validated['email'],
             ]);
 
@@ -215,7 +215,7 @@ class SuperAdminUserController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to update user', [
                 'user_id' => $user->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to update user'], 500);
@@ -250,7 +250,7 @@ class SuperAdminUserController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to delete user', [
                 'user_id' => $user->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to delete user'], 500);
@@ -303,7 +303,7 @@ class SuperAdminUserController extends Controller
             Log::error('Failed to add user to tenant', [
                 'user_id' => $user->id,
                 'tenant_id' => $validated['tenant_id'],
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to add user to tenant'], 500);
@@ -344,7 +344,7 @@ class SuperAdminUserController extends Controller
             Log::error('Failed to remove user from tenant', [
                 'user_id' => $user->id,
                 'tenant_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to remove user from tenant'], 500);
@@ -386,7 +386,7 @@ class SuperAdminUserController extends Controller
             Log::error('Failed to update user role', [
                 'user_id' => $user->id,
                 'tenant_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to update user role'], 500);
@@ -673,7 +673,7 @@ class SuperAdminUserController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to update global role', [
                 'role_name' => $roleName,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to update global role'], 500);

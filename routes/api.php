@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\SuperAdminUserController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SeoReportController;
+use App\Http\Controllers\Api\LiveSpendController;
 use App\Http\Middleware\TenantMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Http\Request;
@@ -36,7 +37,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public authentication routes
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::middleware('throttle:5,1')->post('/auth/login', [AuthController::class, 'login']);
+
+// OAuth callback rate limiting to prevent brute force / enumeration
+Route::middleware('throttle:10,1')->group(function () {
 
 // Facebook OAuth callback (public)
 Route::get('/facebook/callback', [FacebookIntegrationController::class, 'handleCallback']);
@@ -55,6 +59,8 @@ Route::get('/linkedin/oauth/callback', [LinkedInIntegrationController::class, 'c
 
 // Twitter/X Ads OAuth callback (public)
 Route::get('/twitter/oauth/callback', [TwitterIntegrationController::class, 'callback']);
+
+});
 
 // Legacy Snapchat OAuth callbacks (public) - for backward compatibility
 Route::get('/oauth/snapchat/callback', [App\Http\Controllers\SnapchatOAuthController::class, 'callback']);
@@ -496,22 +502,6 @@ Route::prefix('demo')->group(function () {
     });
 });
 
-// Debug route to test what frontend is sending
-Route::get('/debug/request', function (Request $request) {
-    return response()->json([
-        'headers' => $request->headers->all(),
-        'bearer_token' => $request->bearerToken(),
-        'auth_header' => $request->header('Authorization'),
-        'tenant_header' => $request->header('X-Tenant-ID'),
-        'all_headers_debug' => [
-            'authorization' => $request->header('Authorization'),
-            'accept' => $request->header('Accept'),
-            'content_type' => $request->header('Content-Type'),
-            'x_tenant_id' => $request->header('X-Tenant-ID'),
-        ]
-    ]);
-});
-
 // Public invitation routes (no authentication required)
 Route::prefix('invitations')->group(function () {
     Route::get('/{token}/verify', [InvitationController::class, 'verify']);
@@ -519,7 +509,7 @@ Route::prefix('invitations')->group(function () {
 });
 
 // Protected routes requiring authentication
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Auth routes
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
@@ -655,6 +645,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/{adAccount}/verify', [AdAccountController::class, 'verifyData']);
 
             // Aggregated metrics for manager accounts (MCC)
+            Route::post('/live-spend-batch', [LiveSpendController::class, 'batch']);
+
             Route::get('/{adAccount}/aggregated-metrics', function (\App\Models\AdAccount $adAccount, \Illuminate\Http\Request $request) {
                 $config = $adAccount->account_config;
                 if (is_string($config)) {

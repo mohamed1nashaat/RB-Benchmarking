@@ -111,12 +111,12 @@ class CampaignIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to setup Google Sheets integration', [
                 'campaign_id' => $campaign->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to setup Google Sheets integration',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -172,12 +172,12 @@ class CampaignIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to update sheet mapping', [
                 'campaign_id' => $campaign->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to update sheet mapping',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -224,12 +224,12 @@ class CampaignIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to setup conversion pixel', [
                 'campaign_id' => $campaign->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to setup conversion pixel',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -331,7 +331,16 @@ class CampaignIntegrationController extends Controller
             }
 
             // Add campaign context to conversion data
-            $conversionData = $request->all();
+            $conversionData = $request->only([
+                'conversion_value',
+                'currency',
+                'event_name',
+                'event_time',
+                'user_data',
+                'referrer',
+                'source',
+                'medium',
+            ]);
             $conversionData['campaign_id'] = $campaign->id;
             $conversionData['campaign_name'] = $campaign->name;
             $conversionData['platform'] = $campaign->adAccount->integration->platform ?? 'unknown';
@@ -373,13 +382,11 @@ class CampaignIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to track conversion', [
                 'pixel_id' => $pixelId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'error' => 'An unexpected error occurred',]);
 
             return response()->json([
                 'error' => 'Failed to track conversion',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -405,12 +412,12 @@ class CampaignIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to get conversion analytics', [
                 'campaign_id' => $campaign->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to get conversion analytics',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -465,12 +472,12 @@ class CampaignIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to sync conversions to Google Sheets', [
                 'campaign_id' => $campaign->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to sync conversions',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }

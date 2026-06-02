@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('ad_campaigns', function (Blueprint $table) {
+            if (!Schema::hasColumn('ad_campaigns', 'linkedin_level')) {
+                $table->string('linkedin_level')->nullable()->after('channel_type');
+            }
+            if (!Schema::hasColumn('ad_campaigns', 'google_level')) {
+                $table->string('google_level')->nullable()->after('linkedin_level');
+            }
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('ad_campaigns', function (Blueprint $table) {
+            $table->dropColumn(['linkedin_level', 'google_level']);
+        });
+    }
+};

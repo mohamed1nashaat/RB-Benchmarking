@@ -74,10 +74,8 @@ class FacebookMetricsSyncService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Facebook metrics sync failed', [
+            \App\Helpers\SecureLogger::exception('error', 'Facebook metrics sync failed', $e, [
                 'account_id' => $account->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ]);
 
             throw $e;
@@ -178,6 +176,13 @@ class FacebookMetricsSyncService
                         'app_installs' => $actions['app_installs'] ?? 0,
                         'atc' => $actions['add_to_cart'] ?? 0,
                         'page_views' => $actions['landing_page_view'] ?? 0,
+                        'link_clicks' => $actions['link_clicks'] ?? 0,
+                        'instant_leads' => $actions['instant_leads'] ?? 0,
+                        'native_leads' => $actions['native_leads'] ?? 0,
+                        'blended_leads' => $actions['blended_leads'] ?? 0,
+                        'sign_ups' => $actions['sign_ups'] ?? 0,
+                        'website_leads' => $actions['website_leads'] ?? 0,
+                        'on_facebook_leads' => $actions['on_facebook_leads'] ?? 0,
                         // Revenue
                         'revenue' => $actionValues['purchase_value'] ?? 0,
                         // Video metrics
@@ -211,7 +216,13 @@ class FacebookMetricsSyncService
             'purchases' => 0,
             'app_installs' => 0,
             'add_to_cart' => 0,
-            'landing_page_view' => 0
+            'landing_page_view' => 0,
+            'link_clicks' => 0,
+            'instant_leads' => 0,
+            'native_leads' => 0,
+            'website_leads' => 0,
+            'on_facebook_leads' => 0,
+            'sign_ups' => 0,
         ];
 
         foreach ($actions as $action) {
@@ -226,6 +237,9 @@ class FacebookMetricsSyncService
                     $result['conversions'] += $value;
                     break;
                 case 'lead':
+                    $result['instant_leads'] += $value;
+                    $result['conversions'] += $value;
+                    break;
                 case 'offsite_conversion.fb_pixel_lead':
                     $result['leads'] += $value;
                     $result['conversions'] += $value;
@@ -242,12 +256,33 @@ class FacebookMetricsSyncService
                 case 'landing_page_view':
                     $result['landing_page_view'] += $value;
                     break;
-                case 'omni_complete_registration':
+                case 'link_click':
+                    $result['link_clicks'] += $value;
+                    break;
+                case 'instant_form_opens':
+                case 'instant_form_submits':
+                    $result['instant_leads'] += $value;
+                    break;
+                case 'onsite_conversion.lead_grouped':
+                case 'leadgen_grouped':
+                case 'onsite_conversion.messaging_conversation_started_7d':
+                    $result['on_facebook_leads'] += $value;
+                    break;
+                case 'offsite_conversion.lead':
+                    $result['website_leads'] += $value;
+                    break;
+                case 'offsite_conversion.sign_up':
                 case 'complete_registration':
+                case 'omni_complete_registration':
+                    $result['sign_ups'] += $value;
                     $result['conversions'] += $value;
                     break;
             }
         }
+
+        // Derive blended and native leads
+        $result['native_leads'] = $result['on_facebook_leads'];
+        $result['blended_leads'] = $result['leads'] + $result['instant_leads'] + $result['website_leads'] + $result['on_facebook_leads'];
 
         return $result;
     }
@@ -307,6 +342,184 @@ class FacebookMetricsSyncService
     }
 
     /**
+     * Sync ad creatives for a specific ad account
+     */
+    public function syncCreativesForAccount(AdAccount $account, string $accessToken): array
+    {
+        if (empty($account->tenant_id)) {
+            return ['success' => false, 'error' => 'Ad account has no tenant_id assigned. Skipping creative sync.'];
+        }
+
+        try {
+            // Build lookup map of external campaign IDs to internal campaign IDs
+            $campaignMap = \App\Models\AdCampaign::where('ad_account_id', $account->id)
+                ->pluck('id', 'external_campaign_id')
+                ->toArray();
+
+            $actId = str_starts_with($account->external_account_id, 'act_') ? $account->external_account_id : "act_{$account->external_account_id}";
+            $url = self::API_BASE_URL . "/{$actId}/ads";
+            $params = [
+                'access_token' => $accessToken,
+                'fields' => 'id,name,campaign_id,creative{thumbnail_url,object_story_spec{photo_data,video_data{image_url}},asset_feed_spec{images{url}}},status',
+                'limit' => 100,
+            ];
+
+            $ads = [];
+            do {
+                $response = Http::get($url, $params);
+                if (!$response->successful()) {
+                    Log::error('Facebook creatives API request failed', [
+                        'account_id' => $account->id,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    return ['success' => false, 'error' => $response->body()];
+                }
+
+                $data = $response->json();
+                $ads = array_merge($ads, $data['data'] ?? []);
+                $after = $data['paging']['cursors']['after'] ?? null;
+                $params['after'] = $after;
+            } while ($after);
+
+            $synced = 0;
+
+            foreach ($ads as $ad) {
+                $creative = $ad['creative'] ?? [];
+                $thumbnailUrl = $creative['thumbnail_url'] ?? null;
+                $imageUrl = null;
+                $videoUrl = null;
+
+                // Try object_story_spec first
+                $story = $creative['object_story_spec'] ?? [];
+                if (!empty($story['photo_data'])) {
+                    $photoData = $story['photo_data'];
+                    if (!empty($photoData['images'])) {
+                        $images = $photoData['images'];
+                        $imageUrl = $images['1200x628']['url'] ?? ($images['1080x1080']['url'] ?? reset($images)['url'] ?? null);
+                    } elseif (!empty($photoData['url'])) {
+                        $imageUrl = $photoData['url'];
+                    }
+                }
+                if (!empty($story['video_data']['image_url'])) {
+                    $videoUrl = $story['video_data']['image_url'];
+                }
+
+                // Fallback to asset_feed_spec for dynamic creatives
+                if (empty($imageUrl) && !empty($creative['asset_feed_spec']['images'])) {
+                    $feedImages = $creative['asset_feed_spec']['images'];
+                    $imageUrl = $feedImages[0]['url'] ?? reset($feedImages)['url'] ?? null;
+                }
+
+                $externalCampaignId = $ad['campaign_id'] ?? null;
+                $adCampaignId = $externalCampaignId ? ($campaignMap[$externalCampaignId] ?? null) : null;
+
+                \App\Models\AdCreative::updateOrCreate(
+                    [
+                        'platform' => 'facebook',
+                        'external_creative_id' => $ad['id'],
+                    ],
+                    [
+                        'tenant_id' => $account->tenant_id,
+                        'ad_account_id' => $account->id,
+                        'ad_campaign_id' => $adCampaignId,
+                        'name' => $ad['name'] ?? null,
+                        'thumbnail_url' => $thumbnailUrl,
+                        'image_url' => $imageUrl,
+                        'video_url' => $videoUrl,
+                        'status' => $ad['status'] ?? null,
+                        'metadata' => ['creative_id' => $creative['id'] ?? null, 'external_campaign_id' => $externalCampaignId],
+                    ]
+                );
+                $synced++;
+            }
+
+            // Batch-update thumbnails to 320x320 for all synced creatives
+            $this->updateCreativeThumbnails($account, $accessToken, $ads);
+
+            Log::info('Facebook creatives sync completed', [
+                'account_id' => $account->id,
+                'synced' => $synced,
+            ]);
+
+            return ['success' => true, 'synced' => $synced];
+        } catch (\Exception $e) {
+            Log::error('Facebook creatives sync failed', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Batch-update creative thumbnails to 320x320 via the /adcreatives endpoint.
+     * The /ads endpoint returns 64x64 thumbnails by default; this fetches larger ones.
+     */
+    private function updateCreativeThumbnails(AdAccount $account, string $accessToken, array $ads): void
+    {
+        $creativeIds = [];
+        $idMap = [];
+        foreach ($ads as $ad) {
+            $creativeId = $ad['creative']['id'] ?? null;
+            $externalAdId = $ad['id'] ?? null;
+            if ($creativeId && $externalAdId) {
+                $creativeIds[] = $creativeId;
+                $idMap[$creativeId] = $externalAdId;
+            }
+        }
+
+        if (empty($creativeIds)) {
+            return;
+        }
+
+        $batches = array_chunk($creativeIds, 50);
+        foreach ($batches as $batch) {
+            $batchRequests = [];
+            foreach ($batch as $creativeId) {
+                $batchRequests[] = [
+                    'method' => 'GET',
+                    'relative_url' => $creativeId . '?fields=thumbnail_url&thumbnail_width=1200&thumbnail_height=1200',
+                ];
+            }
+
+            try {
+                $response = Http::post(self::API_BASE_URL . '/', [
+                    'access_token' => $accessToken,
+                    'batch' => json_encode($batchRequests),
+                ]);
+
+                if (!$response->successful()) {
+                    Log::warning('Facebook thumbnail batch update failed', [
+                        'account_id' => $account->id,
+                        'status' => $response->status(),
+                    ]);
+                    continue;
+                }
+
+                $results = $response->json();
+                foreach ($results as $idx => $result) {
+                    $body = json_decode($result['body'] ?? '{}', true);
+                    $thumbnailUrl = $body['thumbnail_url'] ?? null;
+                    $creativeId = $batch[$idx];
+                    $externalAdId = $idMap[$creativeId] ?? null;
+
+                    if ($thumbnailUrl && $externalAdId) {
+                        \App\Models\AdCreative::where('platform', 'facebook')
+                            ->where('external_creative_id', $externalAdId)
+                            ->update(['thumbnail_url' => $thumbnailUrl]);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Facebook thumbnail batch update exception', [
+                    'account_id' => $account->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    /**
      * Sync metrics for multiple accounts
      */
     public function syncMetricsForAccounts(array $accounts, string $accessToken, string $startDate, string $endDate): array
@@ -329,5 +542,68 @@ class FacebookMetricsSyncService
         }
 
         return $results;
+    }
+
+    /**
+     * Fetch total lifetime spend for an ad account directly from Facebook API.
+     * Returns spend in the account's original currency.
+     */
+    public function fetchAccountTotalSpend(AdAccount $account): ?float
+    {
+        try {
+            $integration = $account->integration;
+            if (!$integration) {
+                Log::warning('Facebook fetchAccountTotalSpend: no integration', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $config = $integration->app_config;
+            if (is_string($config)) {
+                $config = json_decode($config, true);
+            }
+            $accessToken = $config['access_token'] ?? null;
+            if (!$accessToken) {
+                Log::warning('Facebook fetchAccountTotalSpend: no access token', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $accountId = $account->external_account_id;
+            if (!str_starts_with($accountId, 'act_')) {
+                $accountId = 'act_' . $accountId;
+            }
+
+            $url = self::API_BASE_URL . "/{$accountId}/insights";
+            $response = Http::get($url, [
+                'access_token' => $accessToken,
+                'date_preset' => 'maximum',
+                'level' => 'account',
+                'fields' => 'spend',
+            ]);
+
+            if (!$response->successful()) {
+                Log::warning('Facebook fetchAccountTotalSpend API failed', [
+                    'account_id' => $account->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return null;
+            }
+
+            $data = $response->json();
+            $spend = (float) ($data['data'][0]['spend'] ?? 0);
+
+            Log::info('Facebook fetchAccountTotalSpend success', [
+                'account_id' => $account->id,
+                'spend' => $spend,
+            ]);
+
+            return $spend;
+        } catch (\Exception $e) {
+            Log::error('Facebook fetchAccountTotalSpend error', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

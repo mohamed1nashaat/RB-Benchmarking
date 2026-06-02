@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientRequest;
 use App\Models\AdAccount;
 use App\Models\Tenant;
 use App\Services\ClientBuilderService;
@@ -39,23 +41,17 @@ class ClientController extends Controller
     }
 
     /**
-     * Check if user is super admin or has admin role in any tenant
+     * Check if user can see all clients (super admins or tenant admins)
      */
     private function userCanSeeAllClients(): bool
     {
         $user = auth()->user();
 
-        // Super admin check
-        if ($user->id === 1 || $user->email === 'technical@redbananas.com') {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        // Check if user has admin role in any tenant
-        $hasAdminRole = $user->tenants()
-            ->wherePivot('role', 'admin')
-            ->exists();
-
-        return $hasAdminRole;
+        return $user->tenants()->wherePivot('role', 'admin')->exists();
     }
 
     /**
@@ -180,14 +176,11 @@ class ClientController extends Controller
             return response()->json($clients);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching clients', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching clients', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch clients',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -214,19 +207,17 @@ class ClientController extends Controller
             $tenant->contract_active = $tenant->isContractActive();
             $tenant->days_until_contract_expires = $tenant->daysUntilContractExpires();
 
-            return response()->json([
-                'data' => $tenant,
-            ]);
+            return response()->json(['data' => $tenant]);
 
         } catch (\Exception $e) {
             Log::error('Error fetching client', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch client',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -234,28 +225,10 @@ class ClientController extends Controller
     /**
      * Create new client
      */
-    public function store(Request $request)
+    public function store(StoreClientRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'contact_email' => 'nullable|email|max:255',
-                'contact_phone' => 'nullable|string|max:50',
-                'contact_person' => 'nullable|string|max:255',
-                'address' => 'nullable|string',
-                'country' => 'nullable|string|max:255',
-                'website' => 'nullable|url|max:255',
-                'industry' => 'nullable|string|max:255',
-                'vertical' => 'nullable|string|max:255',
-                'billing_email' => 'nullable|email|max:255',
-                'contract_start_date' => 'nullable|date',
-                'contract_end_date' => 'nullable|date|after_or_equal:contract_start_date',
-                'subscription_tier' => 'nullable|string|in:basic,pro,enterprise',
-                'monthly_budget' => 'nullable|numeric|min:0',
-                'notes' => 'nullable|string',
-                'status' => 'nullable|in:active,inactive,suspended',
-            ]);
+            $validated = $request->validated();
 
             // Generate slug from name
             $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(6);
@@ -275,13 +248,13 @@ class ClientController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error creating client', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to create client',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -289,28 +262,10 @@ class ClientController extends Controller
     /**
      * Update client
      */
-    public function update(Request $request, Tenant $tenant)
+    public function update(UpdateClientRequest $request, Tenant $tenant)
     {
         try {
-            $validated = $request->validate([
-                'name' => 'sometimes|required|string|max:255',
-                'description' => 'nullable|string',
-                'contact_email' => 'nullable|email|max:255',
-                'contact_phone' => 'nullable|string|max:50',
-                'contact_person' => 'nullable|string|max:255',
-                'address' => 'nullable|string',
-                'country' => 'nullable|string|max:255',
-                'website' => 'nullable|url|max:255',
-                'industry' => 'nullable|string|max:255',
-                'vertical' => 'nullable|string|max:255',
-                'billing_email' => 'nullable|email|max:255',
-                'contract_start_date' => 'nullable|date',
-                'contract_end_date' => 'nullable|date|after_or_equal:contract_start_date',
-                'subscription_tier' => 'nullable|string|in:basic,pro,enterprise',
-                'monthly_budget' => 'nullable|numeric|min:0',
-                'notes' => 'nullable|string',
-                'status' => 'nullable|in:active,inactive,suspended',
-            ]);
+            $validated = $request->validated();
 
             $tenant->update($validated);
 
@@ -327,12 +282,12 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating client', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to update client',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -360,19 +315,17 @@ class ClientController extends Controller
                 'name' => $tenant->name,
             ]);
 
-            return response()->json([
-                'message' => 'Client deactivated successfully',
-            ]);
+            return response()->json(['message' => 'Client deactivated successfully']);
 
         } catch (\Exception $e) {
             Log::error('Error deleting client', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to delete client',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -396,9 +349,7 @@ class ClientController extends Controller
                 ->get();
 
             if ($accounts->isEmpty()) {
-                return response()->json([
-                    'error' => 'No valid ad accounts found',
-                ], 404);
+                return response()->json(['error' => 'No valid ad accounts found'], 404);
             }
 
             // Get suggestions from builder service
@@ -416,13 +367,13 @@ class ClientController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error generating client suggestions', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to generate suggestions',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -461,9 +412,7 @@ class ClientController extends Controller
             $accounts = AdAccount::whereIn('id', $accountIds)->get();
 
             if ($accounts->isEmpty()) {
-                return response()->json([
-                    'error' => 'No valid ad accounts found',
-                ], 404);
+                return response()->json(['error' => 'No valid ad accounts found'], 404);
             }
 
             DB::beginTransaction();
@@ -493,9 +442,7 @@ class ClientController extends Controller
                 }
 
                 // Reassign ad accounts to this client
-                AdAccount::whereIn('id', $accountIds)->update([
-                    'tenant_id' => $client->id,
-                ]);
+                AdAccount::whereIn('id', $accountIds)->update(['tenant_id' => $client->id]);
 
                 // Inherit industry from client to ad accounts that don't have one
                 if ($client->industry) {
@@ -548,13 +495,13 @@ class ClientController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error creating client from accounts', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to create client',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -603,12 +550,12 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             Log::error('Error fetching client dashboard', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch dashboard data',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -645,12 +592,12 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             Log::error('Error uploading logo', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to upload logo',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -665,24 +612,20 @@ class ClientController extends Controller
                 Storage::disk('public')->delete($tenant->logo);
                 $tenant->update(['logo' => null]);
 
-                Log::info('Client logo deleted', [
-                    'client_id' => $tenant->id,
-                ]);
+                Log::info('Client logo deleted', ['client_id' => $tenant->id]);
             }
 
-            return response()->json([
-                'message' => 'Logo deleted successfully',
-            ]);
+            return response()->json(['message' => 'Logo deleted successfully']);
 
         } catch (\Exception $e) {
             Log::error('Error deleting logo', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to delete logo',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -795,13 +738,11 @@ class ClientController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching client overview', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching client overview', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch overview statistics',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -814,19 +755,17 @@ class ClientController extends Controller
         try {
             $statistics = $this->dashboardService->getClientStatistics($tenant);
 
-            return response()->json([
-                'data' => $statistics,
-            ]);
+            return response()->json(['data' => $statistics]);
 
         } catch (\Exception $e) {
             Log::error('Error fetching client statistics', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch statistics',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -839,19 +778,17 @@ class ClientController extends Controller
         try {
             $health = $this->healthService->calculateHealthScore($tenant);
 
-            return response()->json([
-                'data' => $health,
-            ]);
+            return response()->json(['data' => $health]);
 
         } catch (\Exception $e) {
             Log::error('Error calculating client health', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to calculate health score',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -881,12 +818,12 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             Log::error('Error exporting dashboard to PDF', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to export PDF',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -915,12 +852,12 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             Log::error('Error exporting dashboard to CSV', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to export CSV',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -949,12 +886,12 @@ class ClientController extends Controller
         } catch (\Exception $e) {
             Log::error('Error exporting dashboard to Excel', [
                 'client_id' => $tenant->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to export Excel',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }

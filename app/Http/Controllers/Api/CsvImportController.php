@@ -25,7 +25,7 @@ class CsvImportController extends Controller
         try {
             // Store uploaded file temporarily
             $file = $request->file('file');
-            $filename = 'facebook_import_' . time() . '_' . $file->getClientOriginalName();
+            $filename = 'facebook_import_' . time() . '.csv';
             $path = $file->storeAs('imports', $filename, 'local');
             $fullPath = storage_path('app/' . $path);
 
@@ -81,14 +81,11 @@ class CsvImportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('CSV import failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('CSV import failed', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -158,13 +155,11 @@ class CsvImportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('CSV preview failed', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('CSV preview failed', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Preview failed: ' . $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -183,7 +178,7 @@ class CsvImportController extends Controller
         try {
             // Store uploaded file temporarily
             $file = $request->file('file');
-            $filename = 'google_ads_import_' . time() . '_' . $file->getClientOriginalName();
+            $filename = 'google_ads_import_' . time() . '.csv';
             $path = $file->storeAs('imports', $filename, 'local');
             $fullPath = storage_path('app/' . $path);
 
@@ -239,14 +234,11 @@ class CsvImportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Google Ads CSV import failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Google Ads CSV import failed', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }

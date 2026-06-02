@@ -14,7 +14,7 @@ class TenantController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isSuperAdmin = $user->id === 1 || $user->email === 'technical@redbananas.com';
+        $isSuperAdmin = $user->isSuperAdmin();
 
         $query = Tenant::withCount('adAccounts');
 

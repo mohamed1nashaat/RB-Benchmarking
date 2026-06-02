@@ -15,7 +15,7 @@ use Google\Ads\GoogleAds\V22\Services\SearchGoogleAdsRequest;
 
 class GoogleAdsMetricsSyncService
 {
-    private const API_BASE_URL = 'https://googleads.googleapis.com/v16';
+    private const API_BASE_URL = 'https://googleads.googleapis.com/v22';
     private const PAGE_SIZE = 100;
 
     private GoogleAdsService $googleAdsService;
@@ -113,9 +113,7 @@ class GoogleAdsMetricsSyncService
         } catch (\Exception $e) {
             Log::error('Metrics sync failed', [
                 'account_id' => $account->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'error' => $e->getMessage(),]);
 
             throw $e;
         }
@@ -189,6 +187,10 @@ class GoogleAdsMetricsSyncService
                     'status' => $statusCode,
                     'body' => $responseBody
                 ]);
+
+                if ($statusCode === 401 || $statusCode === 403) {
+                    throw new \Exception("AUTH_FAILED: Google Ads API returned {$statusCode} - {$responseBody}");
+                }
 
                 throw new \Exception("Google Ads API error: {$statusCode} - {$responseBody}");
             }
@@ -360,7 +362,9 @@ class GoogleAdsMetricsSyncService
                         'external_campaign_id' => $metricRow['campaign_id'],
                         'name' => $metricRow['campaign_name'] ?? 'Deleted Campaign ' . $metricRow['campaign_id'],
                         'status' => 'archived',
-                        'objective' => null,
+                        'objective' => 'awareness',
+                        'funnel_stage' => 'TOF',
+                        'channel_type' => 'Google',
                     ]);
 
                     Log::info('Auto-created placeholder campaign for metrics', [
@@ -386,10 +390,19 @@ class GoogleAdsMetricsSyncService
                         'spend' => $metricRow['spend'],
                         'impressions' => $metricRow['impressions'],
                         'clicks' => $metricRow['clicks'],
+                        'link_clicks' => $metricRow['clicks'],
                         'conversions' => $metricRow['conversions'],
                         'revenue' => $metricRow['revenue'],
                         'video_views' => $metricRow['video_views'],
-                        'reach' => $metricRow['interactions'], // Use interactions as proxy for reach
+                        'leads' => $metricRow['conversions'] ?? 0,
+                        'native_leads' => $metricRow['conversions'] ?? 0,
+                        'blended_leads' => $metricRow['conversions'] ?? 0,
+                        'instant_leads' => 0,
+                        'website_leads' => 0,
+                        'on_facebook_leads' => 0,
+                        'swipes' => 0,
+                        'sign_ups' => 0,
+                        'reach' => 0, // Google Ads doesn't provide reach at campaign level
                     ]);
                     $updated++;
                 } else {
@@ -404,10 +417,19 @@ class GoogleAdsMetricsSyncService
                         'spend' => $metricRow['spend'],
                         'impressions' => $metricRow['impressions'],
                         'clicks' => $metricRow['clicks'],
+                        'link_clicks' => $metricRow['clicks'],
                         'conversions' => $metricRow['conversions'],
                         'revenue' => $metricRow['revenue'],
                         'video_views' => $metricRow['video_views'],
-                        'reach' => $metricRow['interactions'], // Use interactions as proxy for reach
+                        'leads' => $metricRow['conversions'] ?? 0,
+                        'native_leads' => $metricRow['conversions'] ?? 0,
+                        'blended_leads' => $metricRow['conversions'] ?? 0,
+                        'instant_leads' => 0,
+                        'website_leads' => 0,
+                        'on_facebook_leads' => 0,
+                        'swipes' => 0,
+                        'sign_ups' => 0,
+                        'reach' => 0, // Google Ads doesn't provide reach at campaign level
                         'checksum' => $checksum,
                     ]);
                     $created++;
@@ -446,7 +468,7 @@ class GoogleAdsMetricsSyncService
                 $syncResult = $this->syncMetricsForAccount($account, $accessToken, $startDate, $endDate, $refreshToken);
                 $results[$account->id] = [
                     'success' => true,
-                    'account_name' => $account->name,
+                    'account_name' => $account->account_name,
                     'created' => $syncResult['created'],
                     'updated' => $syncResult['updated'],
                     'skipped' => $syncResult['skipped'],
@@ -455,7 +477,7 @@ class GoogleAdsMetricsSyncService
             } catch (\Exception $e) {
                 $results[$account->id] = [
                     'success' => false,
-                    'account_name' => $account->name,
+                    'account_name' => $account->account_name,
                     'error' => $e->getMessage()
                 ];
             }
@@ -487,5 +509,128 @@ class GoogleAdsMetricsSyncService
     private function generateChecksum(int $accountId, int $campaignId, string $date): string
     {
         return hash('sha256', "google_{$accountId}_{$campaignId}_{$date}");
+    }
+
+    /**
+     * Fetch total lifetime spend for an ad account directly from Google Ads API.
+     * Returns spend in the account's original currency.
+     */
+    public function fetchAccountTotalSpend(AdAccount $account): ?float
+    {
+        try {
+            $integration = $account->integration;
+            if (!$integration) {
+                Log::warning('Google Ads fetchAccountTotalSpend: no integration', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $config = $integration->app_config;
+            if (is_string($config)) {
+                $config = json_decode($config, true);
+            }
+            $accessToken = $config['access_token'] ?? null;
+            $refreshToken = $config['refresh_token'] ?? null;
+            if (!$accessToken || !$refreshToken) {
+                Log::warning('Google Ads fetchAccountTotalSpend: missing tokens', ['account_id' => $account->id]);
+                return null;
+            }
+
+            // Refresh token if expired
+            $expiresAt = $config['expires_at'] ?? 0;
+            if (now()->timestamp >= $expiresAt - 300) {
+                $googleAdsService = app(GoogleAdsService::class);
+                $tokenData = $googleAdsService->refreshAccessToken($refreshToken);
+                if ($tokenData && isset($tokenData['access_token'])) {
+                    $config['access_token'] = $tokenData['access_token'];
+                    $config['expires_at'] = now()->timestamp + ($tokenData['expires_in'] ?? 3600);
+                    if (isset($tokenData['refresh_token'])) {
+                        $config['refresh_token'] = $tokenData['refresh_token'];
+                    }
+                    $integration->update(['app_config' => $config]);
+                    $accessToken = $config['access_token'];
+                    Log::info('Google Ads token refreshed in fetchAccountTotalSpend', ['integration_id' => $integration->id]);
+                } else {
+                    Log::warning('Google Ads fetchAccountTotalSpend: token refresh failed', ['integration_id' => $integration->id]);
+                    return null;
+                }
+            }
+
+            $developerToken = config('services.google_ads.developer_token') ?: env('GOOGLE_ADS_DEVELOPER_TOKEN', '');
+            if (empty($developerToken)) {
+                Log::warning('Google Ads fetchAccountTotalSpend: no developer token');
+                return null;
+            }
+
+            $accountConfig = $account->account_config ?? [];
+            if (is_string($accountConfig)) {
+                $accountConfig = json_decode($accountConfig, true);
+            }
+            $customerId = $accountConfig['customer_id'] ?? $account->external_account_id;
+            $loginCustomerId = $accountConfig['parent_manager_id'] ?? null;
+
+            // Use a very wide date range for "all-time"
+            $startDate = '2000-01-01';
+            $endDate = now()->format('Y-m-d');
+            $startDateFormatted = str_replace('-', '', $startDate);
+            $endDateFormatted = str_replace('-', '', $endDate);
+
+            $totalMicros = 0;
+            $nextPageToken = null;
+
+            do {
+                $query = 'SELECT ' .
+                    'campaign.resource_name, metrics.cost_micros, segments.date ' .
+                    'FROM campaign ' .
+                    'WHERE segments.date BETWEEN "' . $startDateFormatted . '" AND "' . $endDateFormatted . '" ' .
+                    'ORDER BY segments.date DESC';
+
+                $requestBody = ['query' => $query];
+                if ($nextPageToken) {
+                    $requestBody['pageToken'] = $nextPageToken;
+                }
+
+                $headers = [
+                    'Authorization' => "Bearer {$accessToken}",
+                    'developer-token' => $developerToken,
+                ];
+                if ($loginCustomerId) {
+                    $headers['login-customer-id'] = str_replace('-', '', $loginCustomerId);
+                }
+
+                $response = Http::withHeaders($headers)
+                    ->post(self::API_BASE_URL . "/customers/{$customerId}/googleAds:search", $requestBody);
+
+                if (!$response->successful()) {
+                    Log::warning('Google Ads fetchAccountTotalSpend API failed', [
+                        'account_id' => $account->id,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    return null;
+                }
+
+                $data = $response->json();
+                $results = $data['results'] ?? [];
+                foreach ($results as $result) {
+                    $totalMicros += (int) ($result['metrics']['costMicros'] ?? 0);
+                }
+                $nextPageToken = $data['nextPageToken'] ?? null;
+            } while ($nextPageToken);
+
+            $spend = $this->convertMicrosToDecimal($totalMicros);
+
+            Log::info('Google Ads fetchAccountTotalSpend success', [
+                'account_id' => $account->id,
+                'spend' => $spend,
+            ]);
+
+            return $spend;
+        } catch (\Exception $e) {
+            Log::error('Google Ads fetchAccountTotalSpend error', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

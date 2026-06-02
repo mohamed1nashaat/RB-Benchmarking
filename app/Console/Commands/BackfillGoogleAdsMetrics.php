@@ -82,7 +82,7 @@ class BackfillGoogleAdsMetrics extends Command
 
         foreach ($integrations as $integration) {
             $this->info("Processing Integration ID: {$integration->id}");
-            $this->info("Tenant: {$integration->tenant->name}");
+            $this->info("Tenant: " . ($integration->tenant?->name ?? 'No Tenant'));
 
             $config = $integration->app_config;
             if (is_string($config)) {
@@ -164,6 +164,13 @@ class BackfillGoogleAdsMetrics extends Command
                             'chunk_end' => $currentChunkEnd->format('Y-m-d'),
                             'error' => $e->getMessage()
                         ]);
+
+                        // PERMISSION_DENIED / CUSTOMER_NOT_ENABLED — no point retrying remaining chunks
+                        if (str_contains($e->getMessage(), 'PERMISSION_DENIED') || str_contains($e->getMessage(), 'CUSTOMER_NOT_ENABLED')) {
+                            $this->warn("      ⚠ Account not accessible — skipping remaining chunks");
+                            $adAccount->update(['status' => 'permission_denied']);
+                            break;
+                        }
                     }
 
                     $chunkStart = $currentChunkEnd->copy()->addDay();

@@ -248,7 +248,7 @@ class RoleController extends Controller
                 'message' => 'Role deleted successfully. ' . ($usersCount > 0 ? "{$usersCount} user(s) reassigned to Viewer role." : ''),
             ]);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => 'An unexpected error occurred'], 422);
         }
     }
 

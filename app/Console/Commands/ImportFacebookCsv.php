@@ -56,7 +56,7 @@ class ImportFacebookCsv extends Command
             return 1;
         }
 
-        $this->info("Using Integration ID: {$integration->id} (Tenant: {$integration->tenant->name})");
+        $this->info("Using Integration ID: {$integration->id} (Tenant: " . ($integration->tenant?->name ?? 'No Tenant') . ")");
 
         // Get or create ad account
         $adAccount = null;
@@ -327,17 +327,17 @@ class ImportFacebookCsv extends Command
 
     private function saveMetric($campaign, string $date, float $spend, int $impressions, int $reach, int $clicks, int $conversions, int $leads, int $purchases)
     {
-        $checksum = md5("{$campaign->tenant_id}:{$campaign->ad_account_id}:{$campaign->id}:facebook:{$date}");
+        $checksum = md5("{$campaign->ad_account_id}:{$campaign->id}:facebook:{$date}");
 
         $metric = AdMetric::updateOrCreate(
             [
-                'tenant_id' => $campaign->tenant_id,
                 'ad_account_id' => $campaign->ad_account_id,
                 'ad_campaign_id' => $campaign->id,
                 'platform' => 'facebook',
                 'date' => $date,
             ],
             [
+                'tenant_id' => $campaign->tenant_id,
                 'spend' => $spend,
                 'impressions' => $impressions,
                 'reach' => $reach,

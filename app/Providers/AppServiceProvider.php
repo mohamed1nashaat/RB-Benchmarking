@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Dashboard;
+use App\Policies\DashboardPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use App\Services\GoogleSheetsService;
 use App\Services\ConversionPixelService;
@@ -59,6 +62,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::policy(Dashboard::class, DashboardPolicy::class);
     }
 }

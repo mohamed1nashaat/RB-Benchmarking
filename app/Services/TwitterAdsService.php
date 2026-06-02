@@ -8,19 +8,55 @@ use App\Models\AdMetric;
 use App\Models\Integration;
 use App\Services\CurrencyConversionService;
 use App\Services\IndustryDetector;
+use App\Traits\RefreshesOAuthToken;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class TwitterAdsService
 {
+    use RefreshesOAuthToken;
+
     protected CurrencyConversionService $currencyService;
     protected IndustryDetector $industryDetector;
 
     private const API_BASE_URL = 'https://ads-api.x.com/12';
     private const OAUTH_URL = 'https://api.x.com/oauth/authorize';
     private const TOKEN_URL = 'https://api.x.com/oauth/access_token';
+    private const TOKEN_REFRESH_URL = 'https://api.x.com/2/oauth2/token';
     private const REDIRECT_URI = 'https://rb-benchmarks.redbananas.com/api/twitter/oauth/callback';
+
+    protected function getPlatformName(): string
+    {
+        return 'Twitter';
+    }
+
+    public function refreshAccessToken(string $refreshToken): ?array
+    {
+        try {
+            $response = Http::asForm()
+                ->withBasicAuth(config('services.twitter.client_id'), config('services.twitter.client_secret'))
+                ->post(self::TOKEN_REFRESH_URL, [
+                    'grant_type' => 'refresh_token',
+                    'refresh_token' => $refreshToken,
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'access_token' => $data['access_token'],
+                    'refresh_token' => $data['refresh_token'] ?? $refreshToken,
+                    'expires_in' => $data['expires_in'] ?? 7200,
+                ];
+            }
+
+            Log::error('Twitter token refresh HTTP failed', ['status' => $response->status()]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Twitter token refresh error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
 
     public function __construct(CurrencyConversionService $currencyService, IndustryDetector $industryDetector)
     {
@@ -106,6 +142,9 @@ class TwitterAdsService
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
+                if ($response->status() === 401 || $response->status() === 403) {
+                    throw new \Exception("AUTH_FAILED: Twitter API returned {$response->status()} - {$response->body()}");
+                }
                 throw new \Exception('Failed to fetch Twitter ad accounts');
             }
 
@@ -128,14 +167,13 @@ class TwitterAdsService
 
         foreach ($twitterAccounts as $account) {
             // Check if account already exists to preserve manually set industry
-            $existingAccount = AdAccount::where([
-                'tenant_id' => $integration->tenant_id,
+            $existingAccount = AdAccount::withoutGlobalScopes()->where([
                 'integration_id' => $integration->id,
                 'external_account_id' => (string) $account['id']
             ])->first();
 
             $accountData = [
-                'tenant_id' => $integration->tenant_id,
+                'tenant_id' => AdAccount::syncTenantId($integration->id, (string) $account['id'], $integration->tenant_id),
                 'integration_id' => $integration->id,
                 'external_account_id' => (string) $account['id'],
                 'account_name' => $account['name'] ?? 'Twitter Account',
@@ -154,9 +192,8 @@ class TwitterAdsService
                 $accountData['industry'] = $this->industryDetector->detectIndustry($account['name'] ?? '');
             }
 
-            $adAccount = AdAccount::updateOrCreate(
+            $adAccount = AdAccount::withoutGlobalScopes()->updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
                     'integration_id' => $integration->id,
                     'external_account_id' => (string) $account['id']
                 ],
@@ -195,6 +232,9 @@ class TwitterAdsService
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
+                if ($response->status() === 401 || $response->status() === 403) {
+                    throw new \Exception("AUTH_FAILED: Twitter API returned {$response->status()} - {$response->body()}");
+                }
                 throw new \Exception('Failed to fetch Twitter campaigns');
             }
 
@@ -341,7 +381,6 @@ class TwitterAdsService
 
             AdMetric::updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
                     'date' => $date,
                     'platform' => 'twitter',
                     'ad_account_id' => $campaign->ad_account_id,
@@ -384,6 +423,62 @@ class TwitterAdsService
         } catch (\Exception $e) {
             Log::error('Twitter connection test failed: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Fetch total lifetime spend for an ad account directly from Twitter/X API.
+     * Returns spend in the account's original currency.
+     */
+    public function fetchAccountTotalSpend(AdAccount $account): ?float
+    {
+        try {
+            $integration = $account->integration;
+            if (!$integration) {
+                Log::warning('Twitter fetchAccountTotalSpend: no integration', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $accessToken = $this->ensureValidToken($integration);
+            if (!$accessToken) {
+                Log::warning('Twitter fetchAccountTotalSpend: no valid token', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $campaigns = $this->getCampaigns($integration, $account);
+            if (empty($campaigns)) {
+                return 0.0;
+            }
+
+            $startDate = '2000-01-01';
+            $endDate = now()->format('Y-m-d');
+            $totalSpend = 0.0;
+
+            foreach ($campaigns as $campaignData) {
+                $campaign = new AdCampaign([
+                    'ad_account_id' => $account->id,
+                    'external_campaign_id' => $campaignData['id'],
+                ]);
+
+                $metrics = $this->getCampaignMetrics($integration, $campaign, $startDate, $endDate);
+                foreach ($metrics as $metric) {
+                    $totalSpend += (float) (($metric['billed_charge_local_micro'] ?? 0) / 1000000);
+                }
+            }
+
+            Log::info('Twitter fetchAccountTotalSpend success', [
+                'account_id' => $account->id,
+                'spend' => $totalSpend,
+                'campaigns' => count($campaigns),
+            ]);
+
+            return $totalSpend;
+        } catch (\Exception $e) {
+            Log::error('Twitter fetchAccountTotalSpend error', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
         }
     }
 }

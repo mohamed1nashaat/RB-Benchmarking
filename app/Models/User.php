@@ -25,6 +25,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_super_admin',
         'default_tenant_id',
         'avatar',
         'last_login_at',
@@ -52,6 +53,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }
@@ -191,7 +193,7 @@ class User extends Authenticatable
      */
     public function isSuperAdmin(): bool
     {
-        return $this->id === 1 || $this->email === 'technical@redbananas.com';
+        return (bool) $this->is_super_admin;
     }
 
     /**

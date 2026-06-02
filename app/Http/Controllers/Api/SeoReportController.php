@@ -25,7 +25,7 @@ class SeoReportController extends Controller
      */
     protected function getGoogleIntegration(Tenant $tenant): ?Integration
     {
-        return Integration::withoutGlobalScopes()
+        return Integration::query()
             ->where('tenant_id', $tenant->id)
             ->where('platform', 'google')
             ->where('status', 'active')
@@ -202,7 +202,7 @@ class SeoReportController extends Controller
                     'pages' => $pages,
                 ];
             } catch (\Exception $e) {
-                Log::warning('SEO report: Search Console failed', ['error' => $e->getMessage(), 'code' => $e->getCode()]);
+                Log::warning('SEO report: Search Console failed', ['error' => 'An unexpected error occurred', 'code' => $e->getCode()]);
                 if ($e->getCode() === 403) {
                     $msg = $e->getMessage();
                     if (str_contains($msg, 'has not been used in project') || str_contains($msg, 'it is disabled')) {
@@ -224,7 +224,7 @@ class SeoReportController extends Controller
             try {
                 $result['ga4'] = $this->ga4Service->getReport($integration, $ga4PropertyId, $startDate, $endDate);
             } catch (\Exception $e) {
-                Log::warning('SEO report: GA4 failed', ['error' => $e->getMessage()]);
+                Log::warning('SEO report: GA4 failed', ['error' => 'An unexpected error occurred']);
                 $result['ga4'] = ['error' => 'failed'];
             }
         }
@@ -236,7 +236,7 @@ class SeoReportController extends Controller
                 $result['pagespeed_mobile'] = $this->pageSpeedService->analyze($pageSpeedUrl, 'mobile');
                 $result['pagespeed_desktop'] = $this->pageSpeedService->analyze($pageSpeedUrl, 'desktop');
             } catch (\Exception $e) {
-                Log::warning('SEO report: PageSpeed failed', ['error' => $e->getMessage()]);
+                Log::warning('SEO report: PageSpeed failed', ['error' => 'An unexpected error occurred']);
             }
             // Flag when URL is configured but data couldn't be fetched
             if (!$result['pagespeed_mobile'] && !$result['pagespeed_desktop']) {

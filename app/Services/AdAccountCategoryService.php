@@ -160,34 +160,8 @@ class AdAccountCategoryService
             return null;
         }
 
-        // Map industries to default categories
-        $industryToCategoryMap = [
-            'real_estate' => 'Residential Projects',
-            'retail_ecommerce' => 'Fashion & Apparel',
-            'technology' => 'Software & Technology',
-            'education' => 'K-12 Schools',
-            'healthcare' => 'Medical Services',
-            'automotive' => 'Car Dealerships',
-            'home_garden' => 'Home & Furniture',
-            'finance_insurance' => 'Financial Services',
-            'travel_hospitality' => 'Tourism Boards',
-            'food_beverage' => 'Restaurants & Cafes',
-            'sports_fitness' => 'Fitness Centers',
-            'arts_entertainment' => 'Entertainment Venues',
-            'professional_services' => 'Professional Services',
-            'non_profit' => 'Non-Profit Organizations',
-            'business_industrial' => 'B2B Services',
-            // Additional industry mappings
-            'entertainment' => 'Entertainment Venues',
-            'finance' => 'Financial Services',
-            'travel_tourism' => 'Tourism Boards',
-            'media_publishing' => 'Media & Publishing',
-            'sports_recreation' => 'Sports Organizations',
-            'beauty_fitness' => 'Beauty & Wellness',
-            'health_medicine' => 'Medical Services',
-        ];
-
-        return $industryToCategoryMap[$industry] ?? null;
+        // Use CategoryMapper to get the default category from the database
+        return CategoryMapper::getDefaultCategory($industry);
     }
 
     /**

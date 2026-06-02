@@ -141,9 +141,7 @@ class GenerateScheduledReports extends Command
                 Log::error('Scheduled report generation error', [
                     'report_id' => $report->id,
                     'report_name' => $report->name,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
+                    'error' => $e->getMessage(),]);
             }
 
             $this->newLine();

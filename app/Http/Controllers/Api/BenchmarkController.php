@@ -54,9 +54,7 @@ class BenchmarkController extends Controller
                     $filters
                 );
             } catch (\Exception $serviceError) {
-                Log::warning('BenchmarkService failed for industry benchmarks, using fallback', [
-                    'error' => $serviceError->getMessage(),
-                ]);
+                Log::warning('BenchmarkService failed for industry benchmarks, using fallback', ['error' => $serviceError->getMessage()]);
                 
                 // Return sample benchmark data
                 $benchmarks = $this->getFallbackIndustryBenchmarks();
@@ -71,10 +69,7 @@ class BenchmarkController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching industry benchmarks', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching industry benchmarks', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'data' => $this->getFallbackIndustryBenchmarks(),
@@ -105,19 +100,17 @@ class BenchmarkController extends Controller
                 $request->to
             );
 
-            return response()->json([
-                'data' => $benchmark,
-            ]);
+            return response()->json(['data' => $benchmark]);
 
         } catch (\Exception $e) {
             Log::error('Error fetching account benchmark', [
                 'account_id' => $accountId,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch account benchmark',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -139,9 +132,7 @@ class BenchmarkController extends Controller
                     $request->to
                 );
             } catch (\Exception $serviceError) {
-                Log::warning('BenchmarkService failed, using fallback data', [
-                    'error' => $serviceError->getMessage(),
-                ]);
+                Log::warning('BenchmarkService failed, using fallback data', ['error' => $serviceError->getMessage()]);
                 
                 // Fallback to default summary when service fails
                 $summary = [
@@ -167,9 +158,7 @@ class BenchmarkController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching benchmark summary', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching benchmark summary', ['error' => 'An unexpected error occurred']);
 
             // Return a basic fallback response instead of 500 error
             return response()->json([
@@ -219,13 +208,11 @@ class BenchmarkController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching benchmark industries', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching benchmark industries', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch industries',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -239,9 +226,7 @@ class BenchmarkController extends Controller
             $benchmarkData = $this->benchmarkService->getIndustryBenchmarkData($industry);
 
             if (!$benchmarkData) {
-                return response()->json([
-                    'error' => 'Industry benchmark data not found',
-                ], 404);
+                return response()->json(['error' => 'Industry benchmark data not found'], 404);
             }
 
             return response()->json([
@@ -252,12 +237,12 @@ class BenchmarkController extends Controller
         } catch (\Exception $e) {
             Log::error('Error fetching industry details', [
                 'industry' => $industry,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch industry details',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -305,9 +290,7 @@ class BenchmarkController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::warning('Error generating insights, using fallback', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::warning('Error generating insights, using fallback', ['error' => 'An unexpected error occurred']);
 
             // Return fallback insights instead of error
             return response()->json([
@@ -518,18 +501,14 @@ class BenchmarkController extends Controller
                 'available_industries' => array_map([$this, 'getIndustryLabel'], $availableIndustries),
             ];
 
-            return response()->json([
-                'data' => $details,
-            ]);
+            return response()->json(['data' => $details]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching benchmark details', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching benchmark details', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch benchmark details',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -552,20 +531,18 @@ class BenchmarkController extends Controller
                 $request->objective ?? 'leads'
             );
 
-            return response()->json([
-                'data' => $results,
-            ]);
+            return response()->json(['data' => $results]);
 
         } catch (\Exception $e) {
             Log::error('Error calculating expected results', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'spend' => $request->spend ?? null,
                 'industry' => $request->industry ?? null,
             ]);
 
             return response()->json([
                 'error' => 'Failed to calculate expected results',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -576,9 +553,7 @@ class BenchmarkController extends Controller
     public function subIndustries(Request $request)
     {
         try {
-            $request->validate([
-                'industry' => 'nullable|string',
-            ]);
+            $request->validate(['industry' => 'nullable|string']);
             
             $query = \App\Models\AdCampaign::select('sub_industry')
                 ->whereNotNull('sub_industry')
@@ -613,13 +588,13 @@ class BenchmarkController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Error fetching sub-industries', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'industry' => $request->industry ?? null,
             ]);
             
             return response()->json([
                 'error' => 'Failed to fetch sub-industries',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -637,18 +612,14 @@ class BenchmarkController extends Controller
                 ->sort()
                 ->values();
                 
-            return response()->json([
-                'data' => $objectives,
-            ]);
+            return response()->json(['data' => $objectives]);
             
         } catch (\Exception $e) {
-            Log::error('Error fetching objectives', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching objectives', ['error' => 'An unexpected error occurred']);
             
             return response()->json([
                 'error' => 'Failed to fetch objectives',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -680,13 +651,11 @@ class BenchmarkController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('Error fetching filter options', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching filter options', ['error' => 'An unexpected error occurred']);
             
             return response()->json([
                 'error' => 'Failed to fetch filter options',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -1012,14 +981,11 @@ class BenchmarkController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching external benchmarks', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching external benchmarks', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch external benchmark data',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -1072,13 +1038,11 @@ class BenchmarkController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching competitive intelligence', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching competitive intelligence', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch competitive intelligence',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }

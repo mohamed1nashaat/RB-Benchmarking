@@ -2,11 +2,22 @@
 
 namespace App\Services;
 
+use App\Models\AdAccount;
+use App\Services\CategoryMapper;
+use App\Traits\RefreshesOAuthToken;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
 class TikTokAdsService
 {
+    use RefreshesOAuthToken;
+
+    protected function getPlatformName(): string
+    {
+        return 'TikTok';
+    }
+
     // Use environment variables for OAuth credentials
     private function getClientKey(): string
     {
@@ -238,10 +249,7 @@ class TikTokAdsService
             return $accounts;
 
         } catch (\Exception $e) {
-            Log::error('TikTok ad accounts fetch failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            \App\Helpers\SecureLogger::exception('error', 'TikTok ad accounts fetch failed', $e);
             return [];
         }
     }
@@ -249,38 +257,60 @@ class TikTokAdsService
     public function getCampaigns(string $accessToken, string $advertiserId): array
     {
         try {
-            $response = Http::withHeaders([
-                'Access-Token' => $accessToken,
-            ])->get(self::API_BASE_URL . '/campaign/get/', [
-                'advertiser_id' => $advertiserId,
-                'page' => 1,
-                'page_size' => 100,
-            ]);
+            $allCampaigns = [];
+            $page = 1;
+            $pageSize = 100;
 
-            if (!$response->successful()) {
-                Log::error('Failed to fetch TikTok campaigns', [
+            do {
+                $response = Http::withHeaders([
+                    'Access-Token' => $accessToken,
+                ])->get(self::API_BASE_URL . '/campaign/get/', [
                     'advertiser_id' => $advertiserId,
-                    'status' => $response->status(),
-                    'body' => $response->body()
+                    'page' => $page,
+                    'page_size' => $pageSize,
                 ]);
-                return [];
-            }
 
-            $data = $response->json();
+                if (!$response->successful()) {
+                    Log::error('Failed to fetch TikTok campaigns', [
+                        'advertiser_id' => $advertiserId,
+                        'page' => $page,
+                        'status' => $response->status(),
+                        'body' => $response->body()
+                    ]);
+                    break;
+                }
 
-            if (!isset($data['code']) || $data['code'] !== 0) {
-                Log::error('TikTok campaigns API returned error', [
-                    'advertiser_id' => $advertiserId,
-                    'code' => $data['code'] ?? null,
-                    'message' => $data['message'] ?? null
-                ]);
-                return [];
-            }
+                $data = $response->json();
 
-            $campaignsList = $data['data']['list'] ?? [];
+                if (!isset($data['code']) || $data['code'] !== 0) {
+                    $errorCode = $data['code'] ?? null;
+                    $errorMessage = $data['message'] ?? 'Unknown error';
+
+                    Log::error('TikTok campaigns API returned error', [
+                        'advertiser_id' => $advertiserId,
+                        'page' => $page,
+                        'code' => $errorCode,
+                        'message' => $errorMessage
+                    ]);
+
+                    // Auth-related error codes: 40001 = unauthorized, 40100 = access_token invalid
+                    if (in_array($errorCode, [40001, 40100, 40101, 40102])) {
+                        throw new \Exception("AUTH_FAILED: TikTok API auth error {$errorCode} - {$errorMessage}");
+                    }
+
+                    break;
+                }
+
+                $campaignsList = $data['data']['list'] ?? [];
+                $allCampaigns = array_merge($allCampaigns, $campaignsList);
+
+                $totalNumber = $data['data']['page_info']['total_number'] ?? count($campaignsList);
+                $totalPages = (int) ceil($totalNumber / $pageSize);
+                $page++;
+            } while ($page <= $totalPages);
+
             $campaigns = [];
-
-            foreach ($campaignsList as $campaign) {
+            foreach ($allCampaigns as $campaign) {
                 $campaigns[] = [
                     'id' => $campaign['campaign_id'],
                     'name' => $campaign['campaign_name'] ?? 'Unnamed Campaign',
@@ -507,6 +537,177 @@ class TikTokAdsService
         }
     }
 
+    /**
+     * Sync ad creatives for a TikTok ad account
+     */
+    public function syncCreativesForAccount(\App\Models\AdAccount $account, string $accessToken): array
+    {
+        try {
+            $synced = 0;
+            $advertiserId = $account->external_account_id;
+
+            // Build lookup map of external campaign IDs to internal campaign IDs
+            $campaignMap = \App\Models\AdCampaign::where('ad_account_id', $account->id)
+                ->pluck('id', 'external_campaign_id')
+                ->toArray();
+
+            // Fetch all ads for this advertiser with pagination
+            $allAds = [];
+            $page = 1;
+            $pageSize = 100;
+
+            do {
+                $response = Http::withHeaders([
+                    'Access-Token' => $accessToken,
+                ])->get(self::API_BASE_URL . '/ad/get/', [
+                    'advertiser_id' => $advertiserId,
+                    'page' => $page,
+                    'page_size' => $pageSize,
+                    'fields' => json_encode(['ad_id', 'ad_name', 'campaign_id', 'adgroup_id', 'image_ids', 'video_id', 'ad_text', 'landing_page_url']),
+                ]);
+
+                if (!$response->successful()) {
+                    Log::error('TikTok ads fetch failed', [
+                        'advertiser_id' => $advertiserId,
+                        'page' => $page,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    break;
+                }
+
+                $data = $response->json();
+                if (!isset($data['code']) || $data['code'] !== 0) {
+                    Log::error('TikTok ads API returned error', [
+                        'advertiser_id' => $advertiserId,
+                        'code' => $data['code'] ?? null,
+                        'message' => $data['message'] ?? null,
+                    ]);
+                    break;
+                }
+
+                $adsList = $data['data']['list'] ?? [];
+                $allAds = array_merge($allAds, $adsList);
+
+                $totalNumber = $data['data']['page_info']['total_number'] ?? count($adsList);
+                $totalPages = (int) ceil($totalNumber / $pageSize);
+                $page++;
+            } while ($page <= $totalPages);
+
+            if (empty($allAds)) {
+                return ['success' => true, 'synced' => 0];
+            }
+
+            // Parse creatives directly from ad response — TikTok /ad/get/ includes creative assets
+            foreach ($allAds as $ad) {
+                $adId = $ad['ad_id'] ?? $ad['adid'] ?? null;
+                $adName = $ad['ad_name'] ?? $ad['adname'] ?? null;
+                $externalCampaignId = $ad['campaign_id'] ?? null;
+                $creativeId = $ad['creative_id'] ?? null;
+                $adCampaignId = $externalCampaignId ? ($campaignMap[$externalCampaignId] ?? null) : null;
+
+                // Resolve image/video URLs from the creatives array in the ad object
+                $thumbnailUrl = null;
+                $imageUrl = null;
+                $videoUrl = null;
+                $creativeType = null;
+
+                // TikTok /ad/get/ returns creative info in the ad object's creatives field
+                $creatives = $ad['creatives'] ?? [];
+                if (!empty($creatives) && is_array($creatives)) {
+                    $firstCreative = $creatives[0];
+                    if (is_array($firstCreative)) {
+                        $creativeType = $firstCreative['type'] ?? null;
+                        $imageIds = $firstCreative['image_ids'] ?? $firstCreative['image_id'] ?? [];
+                        $videoId = $firstCreative['video_id'] ?? null;
+
+                        // Some TikTok API versions return image_url / video_url directly
+                        if (!empty($firstCreative['image_url'])) {
+                            $imageUrl = $firstCreative['image_url'];
+                            $thumbnailUrl = $imageUrl;
+                        }
+                        if (!empty($firstCreative['video_url'])) {
+                            $videoUrl = $firstCreative['video_url'];
+                            $thumbnailUrl = $firstCreative['cover_url'] ?? $firstCreative['preview_url'] ?? $videoUrl;
+                        }
+                    }
+                }
+
+                // Fallback: try the creative_id based endpoint (may work for some accounts)
+                if (empty($thumbnailUrl) && $creativeId) {
+                    try {
+                        $response = Http::withHeaders([
+                            'Access-Token' => $accessToken,
+                        ])->get(self::API_BASE_URL . '/creative/info/get/', [
+                            'advertiser_id' => $advertiserId,
+                            'creative_id' => $creativeId,
+                        ]);
+
+                        if ($response->successful()) {
+                            $data = $response->json();
+                            if (isset($data['code']) && $data['code'] === 0 && !empty($data['data']['list'])) {
+                                $creativeDetail = $data['data']['list'][0];
+                                $imageUrls = $creativeDetail['image_urls'] ?? [];
+                                $videoInfo = $creativeDetail['video_info'] ?? [];
+                                if (!empty($imageUrls)) {
+                                    $thumbnailUrl = is_array($imageUrls) ? reset($imageUrls) : $imageUrls;
+                                    $imageUrl = $thumbnailUrl;
+                                }
+                                if (!empty($videoInfo)) {
+                                    $videoUrl = is_array($videoInfo) ? ($videoInfo['video_url'] ?? ($videoInfo['preview_url'] ?? null)) : null;
+                                    if (empty($thumbnailUrl)) {
+                                        $thumbnailUrl = is_array($videoInfo) ? ($videoInfo['cover_url'] ?? ($videoInfo['preview_url'] ?? null)) : null;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('TikTok creative detail fetch failed', [
+                            'creative_id' => $creativeId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
+                \App\Models\AdCreative::updateOrCreate(
+                    [
+                        'platform' => 'tiktok',
+                        'external_creative_id' => (string) $adId,
+                    ],
+                    [
+                        'tenant_id' => $account->tenant_id,
+                        'ad_account_id' => $account->id,
+                        'ad_campaign_id' => $adCampaignId,
+                        'name' => $adName,
+                        'thumbnail_url' => $thumbnailUrl,
+                        'image_url' => $imageUrl,
+                        'video_url' => $videoUrl,
+                        'status' => $ad['status'] ?? null,
+                        'metadata' => [
+                            'creative_id' => $creativeId,
+                            'adgroup_id' => $ad['adgroup_id'] ?? null,
+                            'external_campaign_id' => $externalCampaignId,
+                            'creative_type' => $creativeType,
+                        ],
+                    ]
+                );
+                $synced++;
+            }
+
+            Log::info('TikTok creatives sync completed', [
+                'account_id' => $account->id,
+                'synced' => $synced,
+            ]);
+
+            return ['success' => true, 'synced' => $synced];
+        } catch (\Exception $e) {
+            Log::error('TikTok creatives sync failed', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
     public function isAvailable(): bool
     {
         return !empty($this->getClientKey()) && !empty($this->getClientSecret());
@@ -545,6 +746,97 @@ class TikTokAdsService
                 'message' => 'TikTok Ads connection test failed',
                 'error' => $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Fetch total lifetime spend for an ad account directly from TikTok API.
+     * Returns spend in the account's original currency.
+     */
+    public function fetchAccountTotalSpend(AdAccount $account): ?float
+    {
+        try {
+            $integration = $account->integration;
+            if (!$integration) {
+                Log::warning('TikTok fetchAccountTotalSpend: no integration', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $accessToken = $integration->app_config['access_token'] ?? null;
+            if (!$accessToken) {
+                Log::warning('TikTok fetchAccountTotalSpend: no access token', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $advertiserId = $account->external_account_id;
+
+            // TikTok API max date span is 365 days; query in chunks for completeness
+            $endDate = now();
+            $earliestDate = Carbon::parse('2020-01-01');
+            $totalSpend = 0.0;
+
+            $currentEnd = $endDate->copy();
+            while ($currentEnd->greaterThanOrEqualTo($earliestDate)) {
+                $currentStart = $currentEnd->copy()->subDays(364);
+                if ($currentStart->lessThan($earliestDate)) {
+                    $currentStart = $earliestDate->copy();
+                }
+
+                $response = Http::withHeaders([
+                    'Access-Token' => $accessToken,
+                ])->get(self::API_BASE_URL . '/report/integrated/get/', [
+                    'advertiser_id' => $advertiserId,
+                    'report_type' => 'BASIC',
+                    'dimensions' => json_encode(['advertiser_id']),
+                    'metrics' => json_encode(['spend']),
+                    'data_level' => 'AUCTION_ADVERTISER',
+                    'start_date' => $currentStart->format('Y-m-d'),
+                    'end_date' => $currentEnd->format('Y-m-d'),
+                ]);
+
+                if (!$response->successful()) {
+                    Log::warning('TikTok fetchAccountTotalSpend API failed', [
+                        'account_id' => $account->id,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    return null;
+                }
+
+                $data = $response->json();
+                if (!isset($data['code']) || $data['code'] !== 0) {
+                    Log::warning('TikTok fetchAccountTotalSpend API returned error', [
+                        'account_id' => $account->id,
+                        'code' => $data['code'] ?? null,
+                        'message' => $data['message'] ?? null,
+                    ]);
+                    return null;
+                }
+
+                $results = $data['data']['list'] ?? [];
+                foreach ($results as $result) {
+                    $metrics = $result['metrics'] ?? [];
+                    $totalSpend += (float) ($metrics['spend'] ?? 0);
+                }
+
+                $currentEnd = $currentStart->copy()->subDay();
+                if ($currentEnd->lessThan($earliestDate)) {
+                    break;
+                }
+            }
+
+            Log::info('TikTok fetchAccountTotalSpend success', [
+                'account_id' => $account->id,
+                'spend' => $totalSpend,
+            ]);
+
+            return $totalSpend;
+        } catch (\Exception $e) {
+            Log::error('TikTok fetchAccountTotalSpend error', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
         }
     }
 }

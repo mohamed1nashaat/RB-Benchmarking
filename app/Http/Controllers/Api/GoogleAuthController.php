@@ -36,12 +36,12 @@ class GoogleAuthController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error getting Google OAuth URL', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to generate authorization URL',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -81,10 +81,10 @@ class GoogleAuthController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error handling Google OAuth callback', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
-            return redirect('/integrations?google_auth=error&message=' . urlencode('Authorization failed: ' . $e->getMessage()));
+            return redirect('/integrations?google_auth=error&message=' . urlencode('Authorization failed'));
         }
     }
 
@@ -107,7 +107,7 @@ class GoogleAuthController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error checking Google auth status', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -155,13 +155,13 @@ class GoogleAuthController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error testing Google Sheets connection', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'success' => false,
                 'error' => 'Connection test failed',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }

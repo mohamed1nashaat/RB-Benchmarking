@@ -40,6 +40,38 @@ class SyncMonitoringService
     }
 
     /**
+     * Record partial success — sync ran but produced degraded results (e.g., some auth errors, zero data)
+     */
+    public function recordPartialSuccess(string $platform, int $integrationId, array $stats, string $warning): void
+    {
+        $key = self::CACHE_PREFIX . "{$platform}:{$integrationId}";
+        $existing = Cache::get($key, []);
+
+        $data = [
+            'platform' => $platform,
+            'integration_id' => $integrationId,
+            'last_success' => now()->toIso8601String(),
+            'last_warning' => now()->toIso8601String(),
+            'last_warning_message' => $warning,
+            'last_stats' => $stats,
+            'health_override' => 'warning',
+            'consecutive_failures' => 0,
+            'total_syncs' => $this->incrementCounter($key, 'total_syncs'),
+            'total_successes' => $this->incrementCounter($key, 'total_successes'),
+            'total_partial' => $this->incrementCounter($key, 'total_partial'),
+        ];
+
+        Cache::put($key, array_merge($existing, $data), now()->addDays(7));
+
+        Log::warning("Sync partial success recorded", [
+            'platform' => $platform,
+            'integration_id' => $integrationId,
+            'stats' => $stats,
+            'warning' => $warning,
+        ]);
+    }
+
+    /**
      * Record sync failure
      */
     public function recordFailure(string $platform, int $integrationId, string $error): void
@@ -86,7 +118,7 @@ class SyncMonitoringService
         $threshold = now()->subHours(self::ALERT_THRESHOLD_HOURS);
 
         $integrations = Integration::where('status', 'active')
-            ->whereIn('platform', ['facebook', 'google', 'linkedin', 'snapchat', 'tiktok'])
+            ->whereIn('platform', ['facebook', 'google', 'linkedin', 'snapchat', 'tiktok', 'twitter'])
             ->get();
 
         foreach ($integrations as $integration) {
@@ -97,7 +129,7 @@ class SyncMonitoringService
                 $staleIntegrations[] = [
                     'platform' => $integration->platform,
                     'integration_id' => $integration->id,
-                    'tenant' => $integration->tenant->name,
+                    'tenant' => $integration->tenant?->name ?? 'No Tenant',
                     'issue' => 'Never synced',
                     'severity' => 'high'
                 ];
@@ -110,7 +142,7 @@ class SyncMonitoringService
                 $staleIntegrations[] = [
                     'platform' => $integration->platform,
                     'integration_id' => $integration->id,
-                    'tenant' => $integration->tenant->name,
+                    'tenant' => $integration->tenant?->name ?? 'No Tenant',
                     'issue' => "Last sync: {$lastSuccess->diffForHumans()}",
                     'severity' => 'medium'
                 ];
@@ -136,7 +168,7 @@ class SyncMonitoringService
         $highErrorRates = [];
 
         $integrations = Integration::where('status', 'active')
-            ->whereIn('platform', ['facebook', 'google', 'linkedin', 'snapchat', 'tiktok'])
+            ->whereIn('platform', ['facebook', 'google', 'linkedin', 'snapchat', 'tiktok', 'twitter'])
             ->get();
 
         foreach ($integrations as $integration) {
@@ -156,7 +188,7 @@ class SyncMonitoringService
                 $highErrorRates[] = [
                     'platform' => $integration->platform,
                     'integration_id' => $integration->id,
-                    'tenant' => $integration->tenant->name,
+                    'tenant' => $integration->tenant?->name ?? 'No Tenant',
                     'error_rate' => round($errorRate * 100, 2) . '%',
                     'total_syncs' => $totalSyncs,
                     'total_failures' => $totalFailures,
@@ -188,7 +220,7 @@ class SyncMonitoringService
         ];
 
         $integrations = Integration::where('status', 'active')
-            ->whereIn('platform', ['facebook', 'google', 'linkedin', 'snapchat', 'tiktok'])
+            ->whereIn('platform', ['facebook', 'google', 'linkedin', 'snapchat', 'tiktok', 'twitter'])
             ->get();
 
         foreach ($integrations as $integration) {
@@ -202,16 +234,25 @@ class SyncMonitoringService
 
             $successRate = $totalSyncs > 0 ? ($totalSuccesses / $totalSyncs) * 100 : 0;
 
+            $health = $this->determineHealth($consecutiveFailures, $successRate);
+
+            // Override health if a partial success flagged a warning
+            if ($health === 'good' && ($data['health_override'] ?? null) === 'warning') {
+                $health = 'warning';
+            }
+
             $platformData = [
                 'platform' => $integration->platform,
                 'integration_id' => $integration->id,
-                'tenant' => $integration->tenant->name,
+                'tenant' => $integration->tenant?->name ?? 'No Tenant',
                 'last_success' => $data['last_success'] ?? null,
                 'last_failure' => $data['last_failure'] ?? null,
+                'last_warning' => $data['last_warning'] ?? null,
+                'last_warning_message' => $data['last_warning_message'] ?? null,
                 'consecutive_failures' => $consecutiveFailures,
                 'total_syncs' => $totalSyncs,
                 'success_rate' => round($successRate, 2),
-                'health' => $this->determineHealth($consecutiveFailures, $successRate)
+                'health' => $health,
             ];
 
             $report['platforms'][] = $platformData;
@@ -234,13 +275,16 @@ class SyncMonitoringService
      */
     private function sendAlert(string $subject, string $message): void
     {
-        Log::channel('slack')->critical($subject, ['message' => $message]);
+        try {
+            if (config('logging.channels.slack.url')) {
+                Log::channel('slack')->critical($subject, ['message' => $message]);
+            }
+        } catch (\Exception $e) {
+            // Slack channel not configured or unavailable
+        }
 
-        // Can add additional notification channels here:
-        // - Email
-        // - Slack webhook
-        // - SMS
-        // - PagerDuty
+        // Always log to default channel as fallback
+        Log::critical($subject, ['message' => $message]);
     }
 
     /**

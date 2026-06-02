@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportHistory extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'scheduled_report_id',
@@ -32,20 +33,7 @@ class ReportHistory extends Model
     /**
      * Boot the model
      */
-    protected static function booted(): void
-    {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && auth()->user()->tenant_id) {
-                $builder->where('tenant_id', auth()->user()->tenant_id);
-            }
-        });
-
-        static::creating(function ($history) {
-            if (!$history->tenant_id && auth()->check()) {
-                $history->tenant_id = auth()->user()->tenant_id;
-            }
-        });
-    }
+    // tenant_id auto-assignment handled by BelongsToTenant trait
 
     /**
      * Relationships

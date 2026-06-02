@@ -520,7 +520,7 @@ class AdAccounts extends Component
             ->whereIn('id', AdAccount::select('integration_id'))
             ->pluck('platform')
             ->toArray();
-        $countries = ['SA' => 'Saudi Arabia', 'US' => 'United States'];
+        $countries = ['Saudi Arabia' => 'Saudi Arabia', 'United States' => 'United States', 'Egypt' => 'Egypt'];
         $clients = Tenant::orderBy('name')->get(['id', 'name']);
 
         $bulkAvailableCategories = $this->bulkIndustry

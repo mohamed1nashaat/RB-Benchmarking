@@ -157,9 +157,7 @@ class SyncGoogleAdsCampaigns extends Command
             $this->error("Error syncing integration {$integration->id}: " . $e->getMessage());
             Log::error('Google Ads sync failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'error' => $e->getMessage(),]);
 
             // Detect auth/token errors and mark integration for re-authorization
             $msg = $e->getMessage();

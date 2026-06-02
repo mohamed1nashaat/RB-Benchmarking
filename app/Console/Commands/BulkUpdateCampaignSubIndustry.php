@@ -99,7 +99,7 @@ class BulkUpdateCampaignSubIndustry extends Command
             $this->info('NULL ONLY MODE - Only updating campaigns with null sub_industry');
         }
 
-        $query = AdCampaign::withoutGlobalScopes()->with('adAccount');
+        $query = AdCampaign::query()->with('adAccount');
         if ($nullOnly) {
             $query->whereNull('sub_industry');
         }
@@ -198,7 +198,7 @@ class BulkUpdateCampaignSubIndustry extends Command
 
     protected function listCampaigns(): int
     {
-        $campaigns = AdCampaign::withoutGlobalScopes()
+        $campaigns = AdCampaign::query()
             ->with('adAccount')
             ->orderBy('sub_industry')
             ->orderBy('name')

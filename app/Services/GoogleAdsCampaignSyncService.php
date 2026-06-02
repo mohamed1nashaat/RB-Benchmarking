@@ -86,9 +86,7 @@ class GoogleAdsCampaignSyncService
         } catch (\Exception $e) {
             Log::error('Campaign sync failed', [
                 'account_id' => $account->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'error' => $e->getMessage(),]);
 
             throw $e;
         }
@@ -148,6 +146,10 @@ class GoogleAdsCampaignSyncService
                     'status' => $statusCode,
                     'body' => $responseBody
                 ]);
+
+                if ($statusCode === 401 || $statusCode === 403) {
+                    throw new \Exception("AUTH_FAILED: Google Ads API returned {$statusCode} - {$responseBody}");
+                }
 
                 throw new \Exception("Google Ads API error: {$statusCode} - {$responseBody}");
             }
@@ -231,17 +233,28 @@ class GoogleAdsCampaignSyncService
 
             $campaigns = [];
 
-            // Parse campaign data from SDK response
-            foreach ($response->getPage()->getIterator() as $googleAdsRow) {
+            // Parse campaign data from SDK response (iterateAllElements handles pagination)
+            foreach ($response->iterateAllElements() as $googleAdsRow) {
                 $campaign = $googleAdsRow->getCampaign();
 
                 if ($campaign) {
+                    // SDK returns enums as integers — convert to readable strings
+                    $channelType = $campaign->getAdvertisingChannelType();
+                    $channelTypeStr = is_int($channelType)
+                        ? \Google\Ads\GoogleAds\V22\Enums\AdvertisingChannelTypeEnum\AdvertisingChannelType::name($channelType)
+                        : $channelType;
+
+                    $biddingStrategy = $campaign->getBiddingStrategyType();
+                    $biddingStrategyStr = is_int($biddingStrategy)
+                        ? \Google\Ads\GoogleAds\V22\Enums\BiddingStrategyTypeEnum\BiddingStrategyType::name($biddingStrategy)
+                        : $biddingStrategy;
+
                     $campaigns[] = [
                         'external_id' => (string)$campaign->getId(),
                         'name' => $campaign->getName(),
                         'status' => $this->mapGoogleAdsStatus($campaign->getStatus()),
-                        'channel_type' => $campaign->getAdvertisingChannelType(),
-                        'bidding_strategy' => $campaign->getBiddingStrategyType(),
+                        'channel_type' => $channelTypeStr,
+                        'bidding_strategy' => $biddingStrategyStr,
                         'start_date' => $campaign->getStartDate(),
                         'end_date' => $campaign->getEndDate() ?: null,
                         'optimization_goals' => [], // SDK returns this differently
@@ -338,9 +351,14 @@ class GoogleAdsCampaignSyncService
     /**
      * Map Google Ads campaign status to local status
      */
-    private function mapGoogleAdsStatus(string $googleStatus): string
+    private function mapGoogleAdsStatus(mixed $googleStatus): string
     {
-        return match ($googleStatus) {
+        // SDK returns integer enums: UNSPECIFIED=0, UNKNOWN=1, ENABLED=2, PAUSED=3, REMOVED=4
+        $statusStr = is_int($googleStatus)
+            ? \Google\Ads\GoogleAds\V22\Enums\CampaignStatusEnum\CampaignStatus::name($googleStatus)
+            : strtoupper((string) $googleStatus);
+
+        return match ($statusStr) {
             'ENABLED' => 'active',
             'PAUSED' => 'paused',
             'REMOVED' => 'archived',

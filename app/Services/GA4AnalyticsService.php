@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Integration;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -30,9 +31,16 @@ class GA4AnalyticsService
             return $config['access_token'] ?? null;
         }
 
+        $cacheKey = 'google_token:' . $integration->id;
+        $cached = Cache::get($cacheKey);
+        if ($cached) {
+            return $cached;
+        }
+
         $tokenData = $this->googleAdsService->refreshAccessToken($refreshToken);
 
         if ($tokenData && isset($tokenData['access_token'])) {
+            Cache::put($cacheKey, $tokenData['access_token'], 300);
             return $tokenData['access_token'];
         }
 
@@ -94,6 +102,12 @@ class GA4AnalyticsService
         string $startDate,
         string $endDate
     ): array {
+        $cacheKey = "ga4:report:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $accessToken = $this->getAccessToken($integration);
         if (!$accessToken) {
             return ['summary' => [], 'timeseries' => [], 'top_pages' => [], 'traffic_sources' => [], 'devices' => [], 'geo' => []];
@@ -105,15 +119,52 @@ class GA4AnalyticsService
         $trafficSources = $this->fetchTrafficSources($accessToken, $propertyId, $startDate, $endDate);
         $devices = $this->fetchDevices($accessToken, $propertyId, $startDate, $endDate);
         $geo = $this->fetchGeo($accessToken, $propertyId, $startDate, $endDate);
+        $browsers = $this->fetchBrowserData($accessToken, $propertyId, $startDate, $endDate);
 
-        return [
+        $result = [
             'summary' => $summary,
             'timeseries' => $timeseries,
             'top_pages' => $topPages,
             'traffic_sources' => $trafficSources,
             'devices' => $devices,
             'geo' => $geo,
+            'browsers' => $browsers,
         ];
+
+        // Conditionally fetch ecommerce data
+        if (($summary['ecommerce_purchases'] ?? 0) > 0 || ($summary['total_revenue'] ?? 0) > 0) {
+            $result['top_ecommerce_pages'] = $this->fetchTopEcommercePages($accessToken, $propertyId, $startDate, $endDate);
+            $result['top_products'] = $this->fetchTopProducts($accessToken, $propertyId, $startDate, $endDate, 5, false);
+            $result['least_products'] = $this->fetchTopProducts($accessToken, $propertyId, $startDate, $endDate, 5, true);
+        }
+
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    /**
+     * Get summary-only report (no pages/traffic/devices) — used for period comparison.
+     */
+    public function getSummaryOnly(
+        Integration $integration,
+        string $propertyId,
+        string $startDate,
+        string $endDate
+    ): array {
+        $cacheKey = "ga4:summary:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) {
+            return [];
+        }
+
+        $result = $this->fetchSummary($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
     }
 
     protected function fetchSummary(string $accessToken, string $propertyId, string $startDate, string $endDate): array
@@ -123,11 +174,12 @@ class GA4AnalyticsService
                 'Authorization' => "Bearer {$accessToken}",
             ])->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
                 'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+                // GA4 Data API limits to 10 metrics per request
                 'metrics' => [
                     ['name' => 'sessions'],
                     ['name' => 'totalUsers'],
                     ['name' => 'bounceRate'],
-                    ['name' => 'conversions'],
+                    ['name' => 'keyEvents'],
                     ['name' => 'screenPageViews'],
                     ['name' => 'averageSessionDuration'],
                     ['name' => 'newUsers'],
@@ -138,17 +190,19 @@ class GA4AnalyticsService
             ]);
 
             if (!$response->successful()) {
-                Log::warning('GA4 fetchSummary failed', ['status' => $response->status()]);
+                Log::warning('GA4 fetchSummary failed', ['status' => $response->status(), 'body' => $response->body()]);
                 return [];
             }
 
             $data = $response->json();
             $row = $data['rows'][0]['metricValues'] ?? [];
 
+            $bounceRate = round((float) ($row[2]['value'] ?? 0) * 100, 1);
+
             return [
                 'sessions' => (int) ($row[0]['value'] ?? 0),
                 'total_users' => (int) ($row[1]['value'] ?? 0),
-                'bounce_rate' => round((float) ($row[2]['value'] ?? 0) * 100, 1),
+                'bounce_rate' => $bounceRate,
                 'conversions' => (int) ($row[3]['value'] ?? 0),
                 'page_views' => (int) ($row[4]['value'] ?? 0),
                 'avg_session_duration' => round((float) ($row[5]['value'] ?? 0), 1),
@@ -156,6 +210,7 @@ class GA4AnalyticsService
                 'active_users' => (int) ($row[7]['value'] ?? 0),
                 'ecommerce_purchases' => (int) ($row[8]['value'] ?? 0),
                 'total_revenue' => round((float) ($row[9]['value'] ?? 0), 2),
+                'engagement_rate' => round(100 - $bounceRate, 1),
             ];
         } catch (\Exception $e) {
             Log::error('GA4 fetchSummary error', ['error' => $e->getMessage()]);
@@ -208,6 +263,111 @@ class GA4AnalyticsService
         }
     }
 
+    public function getTopPages(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "ga4:top_pages:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchTopPages($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    public function getTrafficSources(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "ga4:traffic_sources:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchTrafficSources($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    public function getDevices(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "ga4:devices:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchDevices($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    public function getGeo(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "ga4:geo:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchGeo($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    public function getBrowsers(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "ga4:browsers:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchBrowserData($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    public function getTopEcommercePages(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $cacheKey = "ga4:ecom_pages:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}";
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchTopEcommercePages($accessToken, $propertyId, $startDate, $endDate);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
+    public function getTopProducts(Integration $integration, string $propertyId, string $startDate, string $endDate, int $limit = 5, bool $ascending = false): array
+    {
+        $cacheKey = "ga4:products:{$integration->id}:{$propertyId}:{$startDate}:{$endDate}:{$limit}:" . ($ascending ? '1' : '0');
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+        $result = $this->fetchTopProducts($accessToken, $propertyId, $startDate, $endDate, $limit, $ascending);
+        Cache::put($cacheKey, $result, 900);
+        return $result;
+    }
+
     protected function fetchTopPages(string $accessToken, string $propertyId, string $startDate, string $endDate): array
     {
         try {
@@ -220,9 +380,10 @@ class GA4AnalyticsService
                     ['name' => 'screenPageViews'],
                     ['name' => 'totalUsers'],
                     ['name' => 'sessions'],
+                    ['name' => 'totalRevenue'],
                 ],
                 'orderBys' => [['metric' => ['metricName' => 'screenPageViews'], 'desc' => true]],
-                'limit' => 10,
+                'limit' => 100,
             ]);
 
             if (!$response->successful()) {
@@ -238,6 +399,7 @@ class GA4AnalyticsService
                     'page_views' => (int) ($row['metricValues'][0]['value'] ?? 0),
                     'users' => (int) ($row['metricValues'][1]['value'] ?? 0),
                     'sessions' => (int) ($row['metricValues'][2]['value'] ?? 0),
+                    'revenue' => round((float) ($row['metricValues'][3]['value'] ?? 0), 2),
                 ];
             }
 
@@ -259,9 +421,11 @@ class GA4AnalyticsService
                 'metrics' => [
                     ['name' => 'sessions'],
                     ['name' => 'totalRevenue'],
+                    ['name' => 'totalUsers'],
+                    ['name' => 'engagementRate'],
                 ],
                 'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
-                'limit' => 15,
+                'limit' => 50,
             ]);
 
             if (!$response->successful()) {
@@ -271,19 +435,26 @@ class GA4AnalyticsService
             $data = $response->json();
             $sources = [];
             $totalSessions = 0;
+            $totalRevenue = 0;
 
-            // First pass: sum total sessions
+            // First pass: sum totals
             foreach ($data['rows'] ?? [] as $row) {
                 $totalSessions += (int) ($row['metricValues'][0]['value'] ?? 0);
+                $totalRevenue += (float) ($row['metricValues'][1]['value'] ?? 0);
             }
 
             foreach ($data['rows'] ?? [] as $row) {
                 $sessions = (int) ($row['metricValues'][0]['value'] ?? 0);
+                $revenue = round((float) ($row['metricValues'][1]['value'] ?? 0), 2);
                 $sources[] = [
                     'channel' => $row['dimensionValues'][0]['value'] ?? 'Unknown',
                     'sessions' => $sessions,
                     'share' => $totalSessions > 0 ? round(($sessions / $totalSessions) * 100, 1) : 0,
-                    'revenue' => round((float) ($row['metricValues'][1]['value'] ?? 0), 2),
+                    'revenue' => $revenue,
+                    'users' => (int) ($row['metricValues'][2]['value'] ?? 0),
+                    'engagement_rate' => round((float) ($row['metricValues'][3]['value'] ?? 0) * 100, 1),
+                    'rev_share' => $totalRevenue > 0 ? round(($revenue / $totalRevenue) * 100, 1) : 0,
+                    'rev_per_session' => $sessions > 0 ? round($revenue / $sessions, 2) : 0,
                 ];
             }
 
@@ -334,6 +505,149 @@ class GA4AnalyticsService
             return $devices;
         } catch (\Exception $e) {
             Log::error('GA4 fetchDevices error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchTopEcommercePages(string $accessToken, string $propertyId, string $startDate, string $endDate): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$accessToken}",
+            ])->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+                'dimensions' => [['name' => 'itemName']],
+                'metrics' => [
+                    ['name' => 'itemsViewed'],
+                    ['name' => 'itemsPurchased'],
+                    ['name' => 'itemRevenue'],
+                ],
+                'orderBys' => [['metric' => ['metricName' => 'itemRevenue'], 'desc' => true]],
+                'limit' => 20,
+            ]);
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            $data = $response->json();
+            $products = [];
+
+            foreach ($data['rows'] ?? [] as $row) {
+                $name = $row['dimensionValues'][0]['value'] ?? '';
+                if ($name === '' || $name === '(not set)' || ctype_digit($name)) {
+                    continue;
+                }
+
+                $products[] = [
+                    'name' => $name,
+                    'views' => (int) ($row['metricValues'][0]['value'] ?? 0),
+                    'purchases' => (int) ($row['metricValues'][1]['value'] ?? 0),
+                    'revenue' => round((float) ($row['metricValues'][2]['value'] ?? 0), 2),
+                ];
+            }
+
+            return array_slice($products, 0, 5);
+        } catch (\Exception $e) {
+            Log::error('GA4 fetchTopEcommercePages error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchTopProducts(string $accessToken, string $propertyId, string $startDate, string $endDate, int $limit = 5, bool $ascending = false): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$accessToken}",
+            ])->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+                'dimensions' => [['name' => 'itemName']],
+                'metrics' => [
+                    ['name' => 'itemsViewed'],
+                    ['name' => 'totalUsers'],
+                    ['name' => 'engagementRate'],
+                ],
+                'orderBys' => [['metric' => ['metricName' => 'itemsViewed'], 'desc' => !$ascending]],
+                'limit' => max($limit * 4, 20),
+            ]);
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            $data = $response->json();
+            $products = [];
+
+            foreach ($data['rows'] ?? [] as $row) {
+                $name = $row['dimensionValues'][0]['value'] ?? '';
+                if ($name === '' || $name === '(not set)' || ctype_digit($name)) {
+                    continue;
+                }
+
+                $products[] = [
+                    'name' => $name,
+                    'views' => (int) ($row['metricValues'][0]['value'] ?? 0),
+                    'users' => (int) ($row['metricValues'][1]['value'] ?? 0),
+                    'engagement_rate' => round((float) ($row['metricValues'][2]['value'] ?? 0) * 100, 1),
+                ];
+            }
+
+            return array_slice($products, 0, $limit);
+        } catch (\Exception $e) {
+            Log::error('GA4 fetchTopProducts error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchBrowserData(string $accessToken, string $propertyId, string $startDate, string $endDate): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$accessToken}",
+            ])->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+                'dimensions' => [['name' => 'browser']],
+                'metrics' => [
+                    ['name' => 'totalUsers'],
+                    ['name' => 'sessions'],
+                    ['name' => 'totalRevenue'],
+                    ['name' => 'engagementRate'],
+                ],
+                'orderBys' => [['metric' => ['metricName' => 'totalUsers'], 'desc' => true]],
+                'limit' => 10,
+            ]);
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            $data = $response->json();
+            $browsers = [];
+            $totalUsers = 0;
+            $totalRevenue = 0;
+
+            foreach ($data['rows'] ?? [] as $row) {
+                $totalUsers += (int) ($row['metricValues'][0]['value'] ?? 0);
+                $totalRevenue += (float) ($row['metricValues'][2]['value'] ?? 0);
+            }
+
+            foreach ($data['rows'] ?? [] as $row) {
+                $users = (int) ($row['metricValues'][0]['value'] ?? 0);
+                $revenue = round((float) ($row['metricValues'][2]['value'] ?? 0), 2);
+                $browsers[] = [
+                    'browser' => $row['dimensionValues'][0]['value'] ?? 'Unknown',
+                    'users' => $users,
+                    'sessions' => (int) ($row['metricValues'][1]['value'] ?? 0),
+                    'share' => $totalUsers > 0 ? round(($users / $totalUsers) * 100, 1) : 0,
+                    'revenue' => $revenue,
+                    'rev_share' => $totalRevenue > 0 ? round(($revenue / $totalRevenue) * 100, 1) : 0,
+                    'engagement_rate' => round((float) ($row['metricValues'][3]['value'] ?? 0) * 100, 1),
+                ];
+            }
+
+            return $browsers;
+        } catch (\Exception $e) {
+            Log::error('GA4 fetchBrowserData error', ['error' => $e->getMessage()]);
             return [];
         }
     }

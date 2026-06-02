@@ -97,12 +97,12 @@ class InvitationController extends Controller
             ]);
         } catch (\InvalidArgumentException $e) {
             return response()->json([
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to accept invitation', [
                 'token' => substr($token, 0, 10) . '...',
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([

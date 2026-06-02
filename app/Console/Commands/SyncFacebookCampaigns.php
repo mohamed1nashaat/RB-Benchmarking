@@ -2,16 +2,32 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AdAccount;
 use App\Models\Integration;
 use App\Services\CategoryMapper;
+use App\Services\IndustryDetectionService;
+use App\Services\SyncMonitoringService;
+use App\Traits\RefreshesFacebookToken;
+use App\Traits\TracksSyncProgress;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class SyncFacebookCampaigns extends Command
 {
+    use TracksSyncProgress, RefreshesFacebookToken;
     protected $signature = 'facebook:sync-campaigns {integration_id?}';
     protected $description = 'Sync campaigns from Facebook for all or specific integration';
+
+    private SyncMonitoringService $monitoringService;
+    private IndustryDetectionService $industryDetectionService;
+
+    public function __construct(SyncMonitoringService $monitoringService, IndustryDetectionService $industryDetectionService)
+    {
+        parent::__construct();
+        $this->monitoringService = $monitoringService;
+        $this->industryDetectionService = $industryDetectionService;
+    }
 
     public function handle()
     {
@@ -28,8 +44,8 @@ class SyncFacebookCampaigns extends Command
         }
 
         if ($integrations->isEmpty()) {
-            $this->error('No Facebook integrations found.');
-            return 1;
+            $this->info('No active Facebook integrations found — nothing to sync');
+            return 0;
         }
 
         foreach ($integrations as $integration) {
@@ -43,32 +59,42 @@ class SyncFacebookCampaigns extends Command
     private function syncCampaignsForIntegration(Integration $integration)
     {
         try {
+            $this->initSyncProgress($integration->id);
+
             $config = $integration->app_config;
-            
+
             // Ensure config is an array
             if (is_string($config)) {
                 $config = json_decode($config, true);
             }
-            
+
             if (!is_array($config) || !isset($config['access_token'])) {
                 $this->error("Invalid app config for integration {$integration->id}");
                 return;
             }
-            
-            $accessToken = $config['access_token'];
+
+            $accessToken = $this->ensureValidFacebookToken($integration);
+            if (!$accessToken) {
+                $this->error("No valid access token for integration {$integration->id}");
+                return;
+            }
 
             $this->info("Access token: " . substr($accessToken, 0, 20) . "...");
 
-            $adAccounts = $integration->adAccounts;
-            $this->info("Found {$adAccounts->count()} ad accounts to sync");
+            // Discover new ad accounts from Facebook API
+            $this->discoverFacebookAccounts($integration, $accessToken);
+
+            $adAccounts = $integration->adAccounts()->get();
+            $this->reportStep("Found {$adAccounts->count()} ad accounts to sync");
 
             $totalSynced = 0;
             $totalCreated = 0;
             $totalUpdated = 0;
+            $authFailures = 0;
             $categoryMapper = app(CategoryMapper::class);
 
             foreach ($adAccounts as $adAccount) {
-                $this->info("Syncing campaigns for ad account: {$adAccount->account_name} ({$adAccount->external_account_id})");
+                $this->reportCurrentStep("Syncing: {$adAccount->account_name}");
 
                 // Fetch ALL campaigns for this ad account with pagination
                 $url = "https://graph.facebook.com/v23.0/{$adAccount->external_account_id}/campaigns";
@@ -84,6 +110,7 @@ class SyncFacebookCampaigns extends Command
                 $allCampaigns = [];
                 $nextUrl = null;
                 $pageCount = 0;
+                $accountAuthFailed = false;
 
                 do {
                     $campaignsResponse = Http::get($nextUrl ?? $url, $nextUrl ? [] : $params);
@@ -99,12 +126,31 @@ class SyncFacebookCampaigns extends Command
                         // Check for next page
                         $nextUrl = $responseData['paging']['next'] ?? null;
                     } else {
-                        $this->error("API call failed: " . $campaignsResponse->body());
+                        $body = $campaignsResponse->json();
+                        $errorCode = $body['error']['code'] ?? 0;
+
+                        if ($errorCode === 190) {
+                            $this->error("Auth token invalid for account {$adAccount->account_name}: " . ($body['error']['message'] ?? 'OAuthException'));
+                            $authFailures++;
+                            $accountAuthFailed = true;
+                        } else {
+                            $this->error("API call failed: " . $campaignsResponse->body());
+                        }
                         break;
                     }
                 } while ($nextUrl);
 
-                $this->info("Total campaigns fetched: " . count($allCampaigns) . " across {$pageCount} pages");
+                // Early exit: if 3+ accounts fail with auth errors, token is dead
+                if ($authFailures >= 3) {
+                    $this->warn("3+ auth failures — token is invalid, stopping sync early");
+                    break;
+                }
+
+                if ($accountAuthFailed) {
+                    continue;
+                }
+
+                $this->reportStep("Fetched " . count($allCampaigns) . " campaigns for {$adAccount->account_name}", 'success');
 
                 if (!empty($allCampaigns)) {
                     foreach ($allCampaigns as $campaign) {
@@ -124,10 +170,14 @@ class SyncFacebookCampaigns extends Command
                                 'external_campaign_id' => $campaign['id'],
                             ],
                             [
-                                'tenant_id' => $integration->tenant_id,
+                                'tenant_id' => $adAccount->tenant_id,
                                 'name' => $campaign['name'],
                                 'objective' => $objective,
-                                'status' => $campaign['status'] === 'ACTIVE' ? 'active' : 'paused',
+                                'status' => match ($campaign['status'] ?? 'PAUSED') {
+                                    'ACTIVE' => 'active',
+                                    'DELETED', 'ARCHIVED' => 'archived',
+                                    default => 'paused',
+                                },
                                 'channel_type' => 'Facebook',
                                 'funnel_stage' => $funnelStage,
                                 'sub_industry' => $detectedCategory,
@@ -153,18 +203,40 @@ class SyncFacebookCampaigns extends Command
                 }
             }
 
-            $this->info("=== Summary ===");
-            $this->info("Total campaigns synced: $totalSynced");
-            $this->info("Total campaigns created: $totalCreated");
-            $this->info("Total campaigns updated: $totalUpdated");
-            $this->info("Successfully completed sync for integration {$integration->id}");
+            // If ALL accounts failed with auth errors, record as failure
+            if ($authFailures > 0 && $totalSynced === 0) {
+                $this->error("OAuth token invalidated — all {$authFailures} account(s) failed with auth errors");
+                $this->monitoringService->recordFailure('facebook', $integration->id, 'OAuth token invalidated — re-authorization required');
+                $integration->update(['status' => 'needs_reauth']);
+                $this->failSyncProgress('OAuth token invalidated');
+                return;
+            }
+
+            $this->reportStep("Sync complete: {$totalSynced} campaigns ({$totalCreated} new, {$totalUpdated} updated)", 'success');
+
+            $stats = [
+                'campaigns_synced' => $totalSynced,
+                'campaigns_created' => $totalCreated,
+                'campaigns_updated' => $totalUpdated,
+                'auth_failures' => $authFailures,
+            ];
+
+            if ($authFailures > 0 && $totalSynced > 0) {
+                $this->monitoringService->recordPartialSuccess('facebook', $integration->id, $stats, "{$authFailures} accounts failed with auth errors");
+            } else {
+                $this->monitoringService->recordSuccess('facebook', $integration->id, $stats);
+            }
+
+            $this->completeSyncProgress(['campaigns_synced' => $totalSynced, 'accounts_processed' => $adAccounts->count()]);
 
         } catch (\Exception $e) {
+            $this->failSyncProgress($e->getMessage());
             $this->error("Error syncing campaigns: " . $e->getMessage());
             Log::error('Facebook campaigns sync failed', [
                 'integration_id' => $integration->id,
                 'error' => $e->getMessage(),
             ]);
+            $this->monitoringService->recordFailure('facebook', $integration->id, $e->getMessage());
         }
     }
 
@@ -179,4 +251,48 @@ class SyncFacebookCampaigns extends Command
         };
     }
 
+    private function discoverFacebookAccounts(Integration $integration, string $accessToken): void
+    {
+        try {
+            $response = Http::get('https://graph.facebook.com/v23.0/me/adaccounts', [
+                'access_token' => $accessToken,
+                'fields' => 'id,name,account_status,currency',
+                'limit' => 500,
+            ]);
+
+            if (!$response->successful()) {
+                $this->warn('Could not fetch Facebook ad accounts for discovery: ' . $response->status());
+                return;
+            }
+
+            $apiAccounts = $response->json()['data'] ?? [];
+            $newCount = 0;
+
+            foreach ($apiAccounts as $account) {
+                $existing = AdAccount::withoutGlobalScopes()
+                    ->where('integration_id', $integration->id)
+                    ->where('external_account_id', $account['id'])
+                    ->exists();
+
+                if (!$existing) {
+                    AdAccount::create([
+                        'integration_id' => $integration->id,
+                        'external_account_id' => $account['id'],
+                        'account_name' => $account['name'],
+                        'status' => ($account['account_status'] ?? 0) === 1 ? 'active' : 'inactive',
+                        'industry' => $this->industryDetectionService->detectIndustry($account['name'] ?? ''),
+                        'tenant_id' => $integration->tenant_id,
+                        'account_config' => ['currency' => $account['currency'] ?? 'USD'],
+                    ]);
+                    $newCount++;
+                }
+            }
+
+            if ($newCount > 0) {
+                $this->info("Discovered {$newCount} new Facebook ad account(s)");
+            }
+        } catch (\Exception $e) {
+            $this->warn('Account discovery failed: ' . $e->getMessage());
+        }
+    }
 }

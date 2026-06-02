@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AdAccount extends Model
 {
+    use HasFactory, BelongsToTenant, SoftDeletes;
     protected $fillable = [
         'tenant_id',
         'integration_id',
@@ -17,8 +21,10 @@ class AdAccount extends Model
         'currency',
         'status',
         'industry',
+        'industry_id',
         'country',
         'category',
+        'sub_industry',
         'account_config',
         'data_verification_status',
         'verification_notes',
@@ -31,49 +37,6 @@ class AdAccount extends Model
         'account_config' => 'array',
         'last_metrics_sync_at' => 'datetime',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check()) {
-                $user = auth()->user();
-
-                // Super admin detection
-                $isSuperAdmin = (app()->bound('is_super_admin') && app('is_super_admin'))
-                               || $user->id === 1
-                               || $user->email === 'technical@redbananas.com';
-
-                // Check if user has admin role in any tenant
-                $hasAdminRole = $user->tenants()
-                    ->wherePivot('role', 'admin')
-                    ->exists();
-
-                // Skip tenant filtering for super admins OR users with admin role
-                if ($isSuperAdmin || $hasAdminRole) {
-                    \Log::info('AdAccount global scope: Admin detected - skipping tenant filter', [
-                        'user_id' => $user->id,
-                        'email' => $user->email,
-                        'is_super_admin' => $isSuperAdmin,
-                        'has_admin_role' => $hasAdminRole,
-                    ]);
-                    return; // Skip tenant filtering entirely
-                }
-
-                // For regular users (viewers): filter by current tenant
-                $tenantId = (app()->bound('current_tenant_id') ? app('current_tenant_id') : null)
-                           ?? session('current_tenant_id');
-
-                \Log::info('AdAccount global scope: Viewer tenant filtering', [
-                    'user_id' => $user->id,
-                    'tenant_id' => $tenantId,
-                ]);
-
-                if ($tenantId) {
-                    $builder->where('tenant_id', $tenantId);
-                }
-            }
-        });
-    }
 
     public function tenant(): BelongsTo
     {
@@ -113,6 +76,11 @@ class AdAccount extends Model
     }
     
 
+    public function industry(): BelongsTo
+    {
+        return $this->belongsTo(Industry::class);
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
@@ -121,5 +89,31 @@ class AdAccount extends Model
     public function getPlatform(): string
     {
         return $this->integration->platform;
+    }
+
+    /**
+     * Resolve the tenant_id to use when syncing an ad account.
+     *
+     * ALWAYS use this in sync code instead of hardcoding $integration->tenant_id.
+     * Preserves any manually-assigned client on existing accounts; falls back to
+     * the integration's tenant only when the account does not exist yet.
+     *
+     * Usage in updateOrCreate:
+     *   'tenant_id' => AdAccount::syncTenantId($integration->id, $account['id'], $integration->tenant_id),
+     */
+    public static function syncTenantId(int $integrationId, string $externalAccountId, ?int $fallbackTenantId): ?int
+    {
+        $existing = static::withoutGlobalScopes()
+            ->where('integration_id', $integrationId)
+            ->where('external_account_id', $externalAccountId)
+            ->first(['id', 'tenant_id']);
+
+        // Existing account — preserve whatever tenant is set (including intentional null).
+        if ($existing !== null) {
+            return $existing->tenant_id;
+        }
+
+        // New account — default to the integration's tenant.
+        return $fallbackTenantId;
     }
 }

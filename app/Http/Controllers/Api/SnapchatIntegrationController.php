@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
 use App\Models\AdAccount;
@@ -31,13 +32,14 @@ class SnapchatIntegrationController extends Controller
             $tenant = $request->current_tenant;
 
             $stateData = [
-                'user_id' => $user->id,
+                
+            'redirect_uri' => config('services.' . basename(app/Http/Controllers/Api/SnapchatIntegrationController.php, 'IntegrationController.php') . '.redirect_uri'),'user_id' => $user->id,
                 'tenant_id' => $tenant ? $tenant->id : $user->default_tenant_id,
                 'timestamp' => time(),
                 'nonce' => Str::random(32)
             ];
 
-            $state = base64_encode(json_encode($stateData));
+            $state = OAuthStateHelper::generate($stateData);
 
             $authUrl = $this->snapchatAdsService->getAuthorizationUrl($state);
 
@@ -54,7 +56,7 @@ class SnapchatIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Snapchat Ads OAuth redirect failed', [
                 'user_id' => $request->user()->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -64,7 +66,7 @@ class SnapchatIntegrationController extends Controller
         }
     }
 
-    public function callback(Request $request): JsonResponse
+    public function callback(Request $request): \Illuminate\Http\RedirectResponse
     {
         try {
             $code = $request->query('code');
@@ -77,28 +79,31 @@ class SnapchatIntegrationController extends Controller
                     'error_description' => $request->query('error_description')
                 ]);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Snapchat Ads authorization was cancelled or failed.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Snapchat Ads authorization was cancelled or failed.'));
             }
 
             if (!$code || !$state) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Missing authorization code or state parameter.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Missing authorization code or state parameter.'));
             }
 
             // Decode and validate state
             try {
-                $stateData = json_decode(base64_decode($state), true);
+                // Fix base64 characters that may be corrupted in URL transit (+ decoded as space)
+                $fixedState = str_replace(' ', '+', $state);
+                $stateData = OAuthStateHelper::validate($state);
 
-                if (!$stateData || !isset($stateData['user_id'], $stateData['tenant_id'], $stateData['timestamp'], $stateData['nonce'])) {
+                if (!$stateData || !isset($stateData['user_id'], $stateData['timestamp'], $stateData['nonce'])) {
                     throw new \Exception('Invalid state parameter structure');
                 }
 
+                // Default tenant_id to null if not present
+                $stateData['tenant_id'] = $stateData['tenant_id'] ?? null;
+
                 // Check if state is not too old (5 minutes max)
+                if (($stateData['redirect_uri'] ?? null) !== config('services.' . strtolower(basename(app/Http/Controllers/Api/SnapchatIntegrationController.php, 'IntegrationController.php')) . '.redirect_uri')) {
+                    throw new \Exception('Invalid redirect URI in state');
+                }
+
                 if (time() - $stateData['timestamp'] > 300) {
                     throw new \Exception('OAuth state has expired');
                 }
@@ -106,23 +111,17 @@ class SnapchatIntegrationController extends Controller
             } catch (\Exception $e) {
                 Log::error('Invalid Snapchat Ads OAuth state', [
                     'state' => $state,
-                    'error' => $e->getMessage()
+                    'error' => 'An unexpected error occurred'
                 ]);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid or expired authorization state.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Invalid or expired authorization state.'));
             }
 
             // Exchange code for tokens
             $tokenData = $this->snapchatAdsService->getAccessToken($code);
 
             if (!$tokenData || !isset($tokenData['access_token'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to exchange authorization code for access token.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Failed to exchange authorization code for access token.'));
             }
 
             // Get user info and organization ID
@@ -162,22 +161,12 @@ class SnapchatIntegrationController extends Controller
             // Fetch and store ad accounts
             $this->syncAdAccounts($integration, $tokenData['access_token']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Snapchat Ads account connected successfully!',
-                'integration_id' => $integration->id
-            ]);
+            return redirect('/integrations?success=' . urlencode('Snapchat Ads connected successfully!'));
 
         } catch (\Exception $e) {
-            Log::error('Snapchat Ads OAuth callback failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Snapchat Ads OAuth callback failed', ['error' => 'An unexpected error occurred']);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to complete Snapchat Ads integration. Please try again.'
-            ], 500);
+            return redirect('/integrations?error=' . urlencode('Failed to complete Snapchat Ads integration. Please try again.'));
         }
     }
 
@@ -223,7 +212,7 @@ class SnapchatIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Snapchat Ads disconnect failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -291,7 +280,7 @@ class SnapchatIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Snapchat Ads status check failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -348,7 +337,7 @@ class SnapchatIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Snapchat Ads accounts fetch failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -400,7 +389,7 @@ class SnapchatIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Snapchat Ads accounts sync failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -425,17 +414,23 @@ class SnapchatIntegrationController extends Controller
                 // Map Snapchat status to database ENUM values
                 $status = $this->mapSnapchatAccountStatus($account['status'] ?? 'ACTIVE');
 
-                AdAccount::updateOrCreate(
+                // Sync bypass: Locate existing account by external ID to preserve tenant assignment
+                $existingAccount = AdAccount::withoutGlobalScopes()->where([
+                    'integration_id' => $integration->id,
+                    'external_account_id' => $account['id'],
+                ])->first();
+
+                AdAccount::withoutGlobalScopes()->updateOrCreate(
                     [
                         'integration_id' => $integration->id,
                         'external_account_id' => $account['id'],
                     ],
                     [
-                        'tenant_id' => $integration->tenant_id,
+                        'tenant_id' => AdAccount::syncTenantId($integration->id, $account['id'], $integration->tenant_id),
                         'account_name' => $account['name'],
                         'currency' => $account['currency'] ?? 'USD',
                         'status' => $status,
-                        'industry' => $industry,
+                        'industry' => $existingAccount?->industry ?? $industry,
                         'account_config' => [
                             'time_zone' => $account['time_zone'] ?? null,
                             'organization_id' => $account['organization_id'] ?? null,
@@ -459,7 +454,7 @@ class SnapchatIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Snapchat Ads accounts sync failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             throw $e;

@@ -95,7 +95,7 @@ class PopulateCampaignObjectives extends Command
         }
 
         // Build query
-        $query = AdCampaign::withoutGlobalScope('tenant');
+        $query = AdCampaign::query();
 
         // Filter by specific account
         if ($accountId = $this->option('account')) {

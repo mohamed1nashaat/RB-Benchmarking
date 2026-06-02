@@ -54,82 +54,77 @@ class RefreshSnapchatToken extends Command
 
             $config = $integration->app_config;
             $refreshToken = $config['refresh_token'] ?? null;
-            $expiresAt = $config['expires_at'] ?? $config['token_expires_at'] ?? null;
 
             if (!$refreshToken) {
                 $this->error('No refresh token available. User needs to reconnect Snapchat.');
                 return Command::FAILURE;
             }
 
-            // Check if token needs refresh (expires in less than 30 minutes or force flag)
-            $needsRefresh = $this->option('force');
-
+            // Show current token status
+            $expiresAt = $config['expires_at'] ?? $config['token_expires_at'] ?? null;
             if ($expiresAt) {
                 $expiresTimestamp = is_numeric($expiresAt) ? $expiresAt : strtotime($expiresAt);
-                $minutesUntilExpiry = ($expiresTimestamp - time()) / 60;
-
+                $minutesUntilExpiry = round(($expiresTimestamp - time()) / 60, 1);
                 $this->info("Token expires in {$minutesUntilExpiry} minutes");
+            }
 
-                if ($minutesUntilExpiry < 30) {
-                    $needsRefresh = true;
-                    $this->info('Token expiring soon, will refresh');
+            if ($this->option('force')) {
+                // Force mode: directly call refreshAccessToken
+                $this->info('Force-refreshing Snapchat access token...');
+
+                $tokenResponse = $this->snapchatAdsService->refreshAccessToken($refreshToken);
+
+                if (isset($tokenResponse['error'])) {
+                    $this->error('Token refresh failed: ' . ($tokenResponse['message'] ?? $tokenResponse['error']));
+                    Log::error('Snapchat token refresh failed', [
+                        'integration_id' => $integration->id,
+                        'error' => $tokenResponse
+                    ]);
+                    return Command::FAILURE;
                 }
-            } else {
-                // No expiry info, refresh to be safe
-                $needsRefresh = true;
-                $this->info('No expiry info, will refresh');
-            }
 
-            if (!$needsRefresh) {
-                $this->info('Token is still valid, no refresh needed');
-                return Command::SUCCESS;
-            }
+                // Update the integration with new tokens
+                $config['access_token'] = $tokenResponse['access_token'];
+                if (isset($tokenResponse['refresh_token'])) {
+                    $config['refresh_token'] = $tokenResponse['refresh_token'];
+                }
+                $expiresIn = $tokenResponse['expires_in'] ?? 3600;
+                $config['token_expires_at'] = time() + $expiresIn;
+                $config['last_refreshed_at'] = now()->toISOString();
 
-            // Refresh the token
-            $this->info('Refreshing Snapchat access token...');
+                $integration->update(['app_config' => $config]);
 
-            $tokenResponse = $this->snapchatAdsService->refreshAccessToken($refreshToken);
+                $this->info('Token refreshed successfully!');
+                $this->info("New token expires in {$expiresIn} seconds (" . round($expiresIn / 60) . " minutes)");
 
-            if (isset($tokenResponse['error'])) {
-                $this->error('Token refresh failed: ' . ($tokenResponse['message'] ?? $tokenResponse['error']));
-                Log::error('Snapchat token refresh failed', [
+                Log::info('Snapchat token force-refreshed', [
                     'integration_id' => $integration->id,
-                    'error' => $tokenResponse
+                    'expires_in' => $expiresIn
                 ]);
-                return Command::FAILURE;
+            } else {
+                // Normal mode: use shared ensureValidToken (refreshes only if expiring within 10 min)
+                $this->info('Checking if token needs refresh...');
+
+                $newToken = $this->snapchatAdsService->ensureValidToken($integration);
+
+                if (!$newToken) {
+                    $this->error('Token validation failed — no valid token returned');
+                    return Command::FAILURE;
+                }
+
+                $oldToken = $config['access_token'] ?? '';
+                if ($newToken !== $oldToken) {
+                    $this->info('Token was refreshed successfully!');
+                } else {
+                    $this->info('Token is still valid, no refresh needed');
+                }
             }
-
-            // Update the integration with new tokens
-            $config['access_token'] = $tokenResponse['access_token'];
-
-            if (isset($tokenResponse['refresh_token'])) {
-                $config['refresh_token'] = $tokenResponse['refresh_token'];
-            }
-
-            // Calculate new expiry time
-            $expiresIn = $tokenResponse['expires_in'] ?? 3600;
-            $config['expires_at'] = time() + $expiresIn;
-            $config['token_expires_at'] = time() + $expiresIn;
-            $config['last_refreshed_at'] = now()->toISOString();
-
-            $integration->update(['app_config' => $config]);
-
-            $this->info('Token refreshed successfully!');
-            $this->info("New token expires in {$expiresIn} seconds (" . round($expiresIn / 60) . " minutes)");
-
-            Log::info('Snapchat token refreshed successfully', [
-                'integration_id' => $integration->id,
-                'expires_in' => $expiresIn
-            ]);
 
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
             $this->error('Token refresh failed: ' . $e->getMessage());
-            Log::error('Snapchat token refresh exception', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Snapchat token refresh exception', ['error' => $e->getMessage()]);
             return Command::FAILURE;
         }
     }

@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class Alert extends Model
 {
+    use HasFactory, BelongsToTenant;
+
     protected $fillable = [
         'tenant_id',
         'user_id',
@@ -26,18 +30,6 @@ class Alert extends Model
         'is_active' => 'boolean',
         'last_triggered_at' => 'datetime',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check()) {
-                $tenantId = session('current_tenant_id') ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
-                if ($tenantId) {
-                    $builder->where('tenant_id', $tenantId);
-                }
-            }
-        });
-    }
 
     public function tenant(): BelongsTo
     {

@@ -481,9 +481,7 @@ class GoogleAdsService
                 } catch (\Exception $e) {
                     Log::error('Failed to fetch customer details', [
                         'customer_id' => $customerId,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+                        'error' => $e->getMessage(),]);
 
                     $failedAccounts[] = [
                         'customer_id' => $customerId,
@@ -501,6 +499,19 @@ class GoogleAdsService
                 ]);
             }
 
+            // Deduplicate by account ID (same account may appear as accessible customer AND managed sub-account)
+            $uniqueAccounts = [];
+            foreach ($accounts as $account) {
+                $key = (string) $account['id'];
+                if (!isset($uniqueAccounts[$key])) {
+                    $uniqueAccounts[$key] = $account;
+                } elseif (!empty($account['parent_manager_id']) && empty($uniqueAccounts[$key]['parent_manager_id'])) {
+                    // Prefer version with parent_manager_id (from getManagedAccounts)
+                    $uniqueAccounts[$key] = $account;
+                }
+            }
+            $accounts = array_values($uniqueAccounts);
+
             Log::info('Google Ads accounts fetched successfully using SDK', [
                 'accounts_count' => count($accounts),
                 'failed_count' => count($failedAccounts)
@@ -512,10 +523,7 @@ class GoogleAdsService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Google Ads accounts fetch failed with SDK', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Google Ads accounts fetch failed with SDK', ['error' => $e->getMessage()]);
             return [
                 'accounts' => [],
                 'failed' => []
@@ -532,8 +540,8 @@ class GoogleAdsService
             $googleAdsClient = $this->buildGoogleAdsClient($refreshToken);
             $googleAdsServiceClient = $googleAdsClient->getGoogleAdsServiceClient();
 
-            // Query for customer clients (managed accounts)
-            $query = 'SELECT customer_client.id, customer_client.descriptive_name, customer_client.currency_code, customer_client.time_zone, customer_client.status, customer_client.manager, customer_client.test_account FROM customer_client WHERE customer_client.status = "ENABLED"';
+            // Query for ALL customer clients (including canceled/closed — they have historical data)
+            $query = 'SELECT customer_client.id, customer_client.descriptive_name, customer_client.currency_code, customer_client.time_zone, customer_client.status, customer_client.manager, customer_client.test_account, customer_client.level FROM customer_client';
 
             // Create search request
             $searchRequest = new SearchGoogleAdsRequest([
@@ -543,7 +551,8 @@ class GoogleAdsService
 
             $response = $googleAdsServiceClient->search($searchRequest);
 
-            foreach ($response->getPage()->getIterator() as $googleAdsRow) {
+            // iterateAllElements() handles pagination automatically
+            foreach ($response->iterateAllElements() as $googleAdsRow) {
                 $customerClient = $googleAdsRow->getCustomerClient();
                 $clientId = $customerClient->getId();
 
@@ -863,9 +872,7 @@ class GoogleAdsService
         try {
             $cleanCustomerId = str_replace('-', '', $customerId);
 
-            Log::info('Attempting to fetch ad groups from Google Ads API', [
-                'customer_id' => $customerId,
-            ]);
+            Log::info('Attempting to fetch ad groups from Google Ads API', ['customer_id' => $customerId]);
 
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$accessToken}",
@@ -920,9 +927,7 @@ class GoogleAdsService
         try {
             $cleanCustomerId = str_replace('-', '', $customerId);
 
-            Log::info('Attempting to fetch ads from Google Ads API', [
-                'customer_id' => $customerId,
-            ]);
+            Log::info('Attempting to fetch ads from Google Ads API', ['customer_id' => $customerId]);
 
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$accessToken}",
@@ -1117,12 +1122,18 @@ class GoogleAdsService
         }
     }
 
-    private function mapGoogleAdsStatus(string $status): string
+    private function mapGoogleAdsStatus(mixed $status): string
     {
-        return match (strtoupper($status)) {
+        // Google Ads API returns status as integer enum (CustomerStatusEnum\CustomerStatus)
+        // UNSPECIFIED=0, UNKNOWN=1, ENABLED=2, CANCELED=3, SUSPENDED=4, CLOSED=5
+        $statusStr = is_int($status)
+            ? \Google\Ads\GoogleAds\V22\Enums\CustomerStatusEnum\CustomerStatus::name($status)
+            : strtoupper((string) $status);
+
+        return match ($statusStr) {
             'ENABLED' => 'active',
             'PAUSED', 'SUSPENDED' => 'paused',
-            'REMOVED' => 'archived',
+            'CANCELED', 'CLOSED', 'REMOVED' => 'canceled',
             default => 'active',
         };
     }
@@ -1197,5 +1208,283 @@ class GoogleAdsService
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Sync ad creatives for a Google Ads ad account
+     *
+     * Note: Google Ads API does not expose simple image thumbnails for all ad types.
+     * We store ad names, campaign linkage, and text assets (headlines/descriptions)
+     * so the dashboard can show meaningful previews in the Top Ads section.
+     */
+    public function syncCreativesForAccount(\App\Models\AdAccount $account, string $accessToken, ?string $refreshToken = null): array
+    {
+        try {
+            $cleanCustomerId = str_replace('-', '', $account->external_account_id);
+            $loginCustomerId = $account->account_config['parent_manager_id'] ?? null;
+            if ($loginCustomerId) {
+                $loginCustomerId = str_replace('-', '', $loginCustomerId);
+            }
+
+            Log::info('Starting Google Ads creatives sync', [
+                'account_id' => $account->id,
+                'customer_id' => $cleanCustomerId,
+                'login_customer_id' => $loginCustomerId,
+                'using_sdk' => $refreshToken ? 'yes' : 'no',
+            ]);
+
+            // Build lookup map of external campaign IDs to internal campaign IDs
+            $campaignMap = \App\Models\AdCampaign::where('ad_account_id', $account->id)
+                ->pluck('id', 'external_campaign_id')
+                ->toArray();
+
+            if ($refreshToken) {
+                $ads = $this->fetchCreativesFromSDK($cleanCustomerId, $refreshToken, $loginCustomerId);
+            } else {
+                $ads = $this->fetchCreativesFromAPI($cleanCustomerId, $accessToken, $loginCustomerId);
+            }
+
+            $synced = 0;
+            foreach ($ads as $adData) {
+                $externalCampaignId = $adData['campaign_id'] ?? null;
+                $adCampaignId = $externalCampaignId ? ($campaignMap[$externalCampaignId] ?? null) : null;
+
+                \App\Models\AdCreative::updateOrCreate(
+                    [
+                        'platform' => 'google',
+                        'external_creative_id' => $adData['id'] ?? '',
+                    ],
+                    [
+                        'tenant_id' => $account->tenant_id,
+                        'ad_account_id' => $account->id,
+                        'ad_campaign_id' => $adCampaignId,
+                        'name' => $adData['name'],
+                        'thumbnail_url' => $adData['thumbnail_url'] ?? null,
+                        'image_url' => $adData['image_url'] ?? null,
+                        'video_url' => $adData['video_url'] ?? null,
+                        'status' => $adData['status'],
+                        'metadata' => $adData['metadata'] ?? [],
+                    ]
+                );
+                $synced++;
+            }
+
+            Log::info('Google Ads creatives sync completed', [
+                'account_id' => $account->id,
+                'synced' => $synced,
+            ]);
+
+            return ['success' => true, 'synced' => $synced];
+
+        } catch (\Exception $e) {
+            Log::error('Google Ads creatives sync failed', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Fetch creatives from Google Ads API using official SDK (V22)
+     */
+    private function fetchCreativesFromSDK(string $customerId, string $refreshToken, ?string $loginCustomerId = null): array
+    {
+        $oAuth2Credential = (new OAuth2TokenBuilder())
+            ->withClientId($this->getClientId())
+            ->withClientSecret($this->getClientSecret())
+            ->withRefreshToken($refreshToken)
+            ->build();
+
+        $clientBuilder = (new GoogleAdsClientBuilder())
+            ->withOAuth2Credential($oAuth2Credential)
+            ->withDeveloperToken($this->getDeveloperToken());
+
+        if ($loginCustomerId) {
+            $clientBuilder->withLoginCustomerId($loginCustomerId);
+        }
+
+        $googleAdsClient = $clientBuilder->build();
+        $googleAdsServiceClient = $googleAdsClient->getGoogleAdsServiceClient();
+
+        $query = 'SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status, campaign.id, campaign.name, ad_group_ad.ad.final_urls, ad_group_ad.ad.responsive_search_ad.headlines, ad_group_ad.ad.responsive_search_ad.descriptions, ad_group_ad.ad.responsive_display_ad.marketing_images, ad_group_ad.ad.image_ad.image_url FROM ad_group_ad';
+
+        $searchRequest = new SearchGoogleAdsRequest([
+            'customer_id' => $customerId,
+            'query' => $query,
+        ]);
+
+        $response = $googleAdsServiceClient->search($searchRequest);
+        $ads = [];
+
+        foreach ($response->iterateAllElements() as $googleAdsRow) {
+            $adGroupAd = $googleAdsRow->getAdGroupAd();
+            $ad = $adGroupAd ? $adGroupAd->getAd() : null;
+            $campaign = $googleAdsRow->getCampaign();
+
+            if (!$ad) {
+                continue;
+            }
+
+            $adId = $ad->getId();
+            $adName = $ad->getName() ?: null;
+            $headlines = [];
+            $descriptions = [];
+            $imageUrl = null;
+            $thumbnailUrl = null;
+
+            $rsa = $ad->getResponsiveSearchAd();
+            if ($rsa) {
+                foreach ($rsa->getHeadlines() as $h) {
+                    $headlines[] = $h->getText();
+                }
+                foreach ($rsa->getDescriptions() as $d) {
+                    $descriptions[] = $d->getText();
+                }
+            }
+
+            // Try image ad (legacy image ads have direct image URLs)
+            $imageAd = $ad->getImageAd();
+            if ($imageAd) {
+                $imageUrl = $imageAd->getImageUrl() ?: null;
+            }
+
+            // Try responsive display ad images — asset resource names are not displayable URLs
+            // Skip storing asset references; they require separate Asset API calls to resolve
+            if (empty($imageUrl)) {
+                $rda = $ad->getResponsiveDisplayAd();
+                if ($rda) {
+                    $marketingImages = $rda->getMarketingImages();
+                    if ($marketingImages && count($marketingImages) > 0) {
+                        $firstImage = iterator_to_array($marketingImages)[0];
+                        // asset_id can be used to construct a serving URL
+                        $assetId = null;
+                        if (method_exists($firstImage, 'getAssetId')) {
+                            $assetId = $firstImage->getAssetId();
+                        }
+                        if ($assetId) {
+                            $imageUrl = 'https://tpc.googlesyndication.com/pagead/imgad?id=' . $assetId;
+                        }
+                    }
+                }
+            }
+
+            if (empty($adName) && !empty($headlines)) {
+                $adName = $headlines[0];
+            }
+            if (empty($adName)) {
+                $adName = 'Google Ad ' . $adId;
+            }
+
+            // Use image_url as thumbnail if we have one
+            $thumbnailUrl = $imageUrl;
+
+            $ads[] = [
+                'id' => (string) $adId,
+                'name' => $adName,
+                'status' => $this->mapGoogleAdsCampaignStatus($adGroupAd->getStatus() ? \Google\Ads\GoogleAds\V22\Enums\AdGroupAdStatusEnum\AdGroupAdStatus::name($adGroupAd->getStatus()) : 'ENABLED'),
+                'campaign_id' => $campaign ? (string) $campaign->getId() : null,
+                'thumbnail_url' => $thumbnailUrl,
+                'image_url' => $imageUrl,
+                'video_url' => null,
+                'metadata' => [
+                    'external_campaign_id' => $campaign ? (string) $campaign->getId() : null,
+                    'campaign_name' => $campaign ? $campaign->getName() : null,
+                    'final_urls' => $ad->getFinalUrls() ? iterator_to_array($ad->getFinalUrls()) : [],
+                    'headlines' => $headlines,
+                    'descriptions' => $descriptions,
+                ],
+            ];
+        }
+
+        return $ads;
+    }
+
+    /**
+     * Fetch creatives from Google Ads API using REST (v22 fallback)
+     */
+    private function fetchCreativesFromAPI(string $customerId, string $accessToken, ?string $loginCustomerId = null): array
+    {
+        $headers = [
+            'Authorization' => "Bearer {$accessToken}",
+            'developer-token' => $this->getDeveloperToken(),
+        ];
+
+        if ($loginCustomerId) {
+            $headers['login-customer-id'] = $loginCustomerId;
+        }
+
+        $response = Http::withHeaders($headers)->post("https://googleads.googleapis.com/v22/customers/{$customerId}/googleAds:search", [
+            'query' => 'SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status, campaign.id, campaign.name, ad_group_ad.ad.final_urls, ad_group_ad.ad.responsive_search_ad.headlines, ad_group_ad.ad.responsive_search_ad.descriptions, ad_group_ad.ad.responsive_display_ad.marketing_images, ad_group_ad.ad.image_ad.image_url FROM ad_group_ad'
+        ]);
+
+        if (!$response->successful()) {
+            Log::error('Failed to fetch Google Ads creatives via REST', [
+                'customer_id' => $customerId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new \Exception("Google Ads API error: {$response->status()} - {$response->body()}");
+        }
+
+        $results = $response->json()['results'] ?? [];
+        $ads = [];
+
+        foreach ($results as $result) {
+            $adGroupAd = $result['adGroupAd'] ?? [];
+            $ad = $adGroupAd['ad'] ?? [];
+            $campaign = $result['campaign'] ?? [];
+
+            $adId = $ad['id'] ?? '';
+            $adName = $ad['name'] ?? null;
+            $headlines = $ad['responsiveSearchAd']['headlines'] ?? [];
+            if (empty($adName) && !empty($headlines)) {
+                $adName = $headlines[0]['text'] ?? 'Google Ad';
+            }
+            if (empty($adName)) {
+                $adName = 'Google Ad ' . $adId;
+            }
+
+            // Try to extract image URLs
+            $imageUrl = null;
+            $thumbnailUrl = null;
+
+            // Image ad (legacy) — has direct image URL
+            if (!empty($ad['imageAd']['imageUrl'])) {
+                $imageUrl = $ad['imageAd']['imageUrl'];
+            }
+
+            // Responsive display ad images — asset references are not displayable URLs
+            if (empty($imageUrl)) {
+                $rdaImages = $ad['responsiveDisplayAd']['marketingImages'] ?? [];
+                if (!empty($rdaImages)) {
+                    $firstImage = $rdaImages[0];
+                    $assetId = $firstImage['assetId'] ?? null;
+                    if ($assetId) {
+                        $imageUrl = 'https://tpc.googlesyndication.com/pagead/imgad?id=' . $assetId;
+                    }
+                }
+            }
+
+            $thumbnailUrl = $imageUrl;
+
+            $ads[] = [
+                'id' => (string) $adId,
+                'name' => $adName,
+                'status' => $this->mapGoogleAdsCampaignStatus($adGroupAd['status'] ?? 'ENABLED'),
+                'campaign_id' => $campaign['id'] ?? null,
+                'thumbnail_url' => $thumbnailUrl,
+                'image_url' => $imageUrl,
+                'video_url' => null,
+                'metadata' => [
+                    'external_campaign_id' => $campaign['id'] ?? null,
+                    'campaign_name' => $campaign['name'] ?? null,
+                    'final_urls' => $ad['finalUrls'] ?? [],
+                    'headlines' => array_column($headlines, 'text'),
+                    'descriptions' => array_column($ad['responsiveSearchAd']['descriptions'] ?? [], 'text'),
+                ],
+            ];
+        }
+
+        return $ads;
     }
 }

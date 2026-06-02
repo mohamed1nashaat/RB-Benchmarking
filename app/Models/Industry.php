@@ -33,7 +33,7 @@ class Industry extends Model
 
     public function adAccounts(): HasMany
     {
-        return $this->hasMany(AdAccount::class, 'industry', 'name');
+        return $this->hasMany(AdAccount::class);
     }
 
     public function scopeActive(Builder $query): Builder

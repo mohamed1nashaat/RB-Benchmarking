@@ -204,42 +204,83 @@ class ClientDashboardService
 
         [$startDate, $endDate] = $this->getDateRange($filters);
 
-        return $query->get()
-            ->map(function ($account) use ($startDate, $endDate) {
-                $currency = $account->currency ?? 'USD';
+        $accounts = $query->get();
 
-                // Calculate spend within date range for the account
+        // Pre-load all campaigns and their spend to avoid N+1
+        $accountIds = $accounts->pluck('id')->toArray();
+        $allCampaigns = collect();
+        $campaignSpends = [];
+
+        if (!empty($accountIds)) {
+            $allCampaigns = DB::table('ad_campaigns')
+                ->whereIn('ad_account_id', $accountIds)
+                ->select('id', 'ad_account_id', 'name', 'status', 'objective', 'funnel_stage')
+                ->orderBy('name')
+                ->get()
+                ->groupBy('ad_account_id');
+
+            $allCampaignIds = $allCampaigns->flatten()->pluck('id')->toArray();
+
+            if (!empty($allCampaignIds)) {
                 $spendQuery = DB::table('ad_metrics')
-                    ->where('ad_account_id', $account->id);
+                    ->select('ad_campaign_id', DB::raw('SUM(spend) as total_spend'))
+                    ->whereIn('ad_campaign_id', $allCampaignIds);
 
                 if ($startDate && $endDate) {
                     $spendQuery->whereBetween('date', [$startDate, $endDate]);
                 }
 
-                $totalSpend = $spendQuery->sum('spend');
+                $campaignSpends = $spendQuery->groupBy('ad_campaign_id')->pluck('total_spend', 'ad_campaign_id')->toArray();
+            }
+        }
 
-                // Calculate last 7 days spend for health indicator (always recent)
-                $recentSpend = DB::table('ad_metrics')
-                    ->where('ad_account_id', $account->id)
-                    ->where('date', '>=', Carbon::now()->subDays(7))
-                    ->sum('spend');
+        return $accounts->map(function ($account) use ($startDate, $endDate, $allCampaigns, $campaignSpends) {
+            $currency = $account->currency ?? 'USD';
 
-                // Convert spend to SAR based on account currency
-                $recentSpendSAR = $this->currencyService->convertToSAR((float) $recentSpend, $currency);
-                $totalSpendSAR = $this->currencyService->convertToSAR((float) $totalSpend, $currency);
+            // Calculate spend within date range for the account
+            $spendQuery = DB::table('ad_metrics')
+                ->where('ad_account_id', $account->id);
 
+            if ($startDate && $endDate) {
+                $spendQuery->whereBetween('date', [$startDate, $endDate]);
+            }
+
+            $totalSpend = $spendQuery->sum('spend');
+
+            // Calculate last 7 days spend for health indicator (always recent)
+            $recentSpend = DB::table('ad_metrics')
+                ->where('ad_account_id', $account->id)
+                ->where('date', '>=', Carbon::now()->subDays(7))
+                ->sum('spend');
+
+            // Convert spend to SAR based on account currency
+            $recentSpendSAR = $this->currencyService->convertToSAR((float) $recentSpend, $currency);
+            $totalSpendSAR = $this->currencyService->convertToSAR((float) $totalSpend, $currency);
+
+            $campaigns = $allCampaigns->get($account->id, collect())->map(function ($c) use ($currency, $campaignSpends) {
+                $rawSpend = $campaignSpends[$c->id] ?? 0;
                 return [
-                    'id' => $account->id,
-                    'name' => $account->account_name,
-                    'platform' => $account->integration->platform ?? 'Unknown',
-                    'status' => $account->status,
-                    'currency' => $currency,
-                    'total_spend' => $totalSpendSAR,
-                    'recent_spend' => $recentSpendSAR,
-                    'health' => $this->determineAccountHealth($recentSpendSAR, $account->status),
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'status' => $c->status,
+                    'objective' => $c->objective,
+                    'funnel_stage' => $c->funnel_stage,
+                    'spend' => $this->currencyService->convertToSAR((float) $rawSpend, $currency),
                 ];
-            })
-            ->toArray();
+            })->toArray();
+
+            return [
+                'id' => $account->id,
+                'name' => $account->account_name,
+                'platform' => $account->integration->platform ?? 'Unknown',
+                'status' => $account->status,
+                'currency' => $currency,
+                'total_spend' => $totalSpendSAR,
+                'recent_spend' => $recentSpendSAR,
+                'health' => $this->determineAccountHealth($recentSpendSAR, $account->status),
+                'campaigns' => $campaigns,
+            ];
+        })->toArray();
     }
 
     /**

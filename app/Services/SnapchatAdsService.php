@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\AdAccount;
+use App\Models\Integration;
+use App\Services\CategoryMapper;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
@@ -23,7 +26,10 @@ class SnapchatAdsService
         return config('services.snapchat.client_secret') ?: env('SNAPCHAT_CLIENT_SECRET', '');
     }
 
-    private const REDIRECT_URI = 'https://rb-benchmarks.redbananas.com/api/snapchat/oauth/callback';
+    private function getRedirectUri(): string
+    {
+        return config('services.snapchat.redirect_uri', 'https://rb-benchmarks.redbananas.com/api/snapchat/oauth/callback');
+    }
 
     /**
      * Get OAuth authorization URL for Snapchat
@@ -34,7 +40,7 @@ class SnapchatAdsService
 
         $params = http_build_query([
             'client_id' => $this->getClientId(),
-            'redirect_uri' => self::REDIRECT_URI,
+            'redirect_uri' => $this->getRedirectUri(),
             'response_type' => 'code',
             'scope' => 'snapchat-marketing-api',
             'state' => $state
@@ -54,7 +60,7 @@ class SnapchatAdsService
                 'client_secret' => $this->getClientSecret(),
                 'code' => $authCode,
                 'grant_type' => 'authorization_code',
-                'redirect_uri' => self::REDIRECT_URI,
+                'redirect_uri' => $this->getRedirectUri(),
             ]);
 
             if ($response->successful()) {
@@ -114,6 +120,101 @@ class SnapchatAdsService
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Ensure we have a valid access token, refreshing if needed.
+     * Shared method used by both SyncSnapchatMetrics and SyncSnapchatCampaigns.
+     */
+    public function ensureValidToken(Integration $integration): ?string
+    {
+        $config = $integration->app_config;
+        $accessToken = $config['access_token'] ?? null;
+        $refreshToken = $config['refresh_token'] ?? null;
+        $expiresAt = $config['expires_at'] ?? $config['token_expires_at'] ?? null;
+
+        if (!$accessToken) {
+            Log::warning('No Snapchat access token found', ['integration_id' => $integration->id]);
+            return null;
+        }
+
+        // Check if token is expired or expiring soon (less than 10 minutes)
+        $needsRefresh = false;
+        if ($expiresAt) {
+            $expiresTimestamp = is_numeric($expiresAt) ? $expiresAt : strtotime($expiresAt);
+            $minutesUntilExpiry = ($expiresTimestamp - time()) / 60;
+
+            if ($minutesUntilExpiry < 10) {
+                $needsRefresh = true;
+                Log::info("Snapchat token expires in {$minutesUntilExpiry} minutes, refreshing...", [
+                    'integration_id' => $integration->id,
+                ]);
+            }
+        }
+
+        if ($needsRefresh && $refreshToken) {
+            $lock = Cache::lock('snapchat_token_refresh_' . $integration->id, 30);
+
+            if ($lock->get()) {
+                try {
+                    // Re-read config in case another process already refreshed
+                    $integration->refresh();
+                    $config = $integration->app_config;
+                    $accessToken = $config['access_token'] ?? null;
+                    $expiresAt = $config['expires_at'] ?? $config['token_expires_at'] ?? null;
+
+                    // Check if still needs refresh after re-read
+                    $stillNeedsRefresh = true;
+                    if ($expiresAt) {
+                        $expiresTimestamp = is_numeric($expiresAt) ? $expiresAt : strtotime($expiresAt);
+                        $stillNeedsRefresh = (($expiresTimestamp - time()) / 60) < 10;
+                    }
+
+                    if ($stillNeedsRefresh) {
+                        $refreshToken = $config['refresh_token'] ?? $refreshToken;
+                        $tokenResponse = $this->refreshAccessToken($refreshToken);
+
+                        if (isset($tokenResponse['access_token'])) {
+                            $config['access_token'] = $tokenResponse['access_token'];
+
+                            if (isset($tokenResponse['refresh_token'])) {
+                                $config['refresh_token'] = $tokenResponse['refresh_token'];
+                            }
+
+                            $expiresIn = $tokenResponse['expires_in'] ?? 3600;
+                            $config['token_expires_at'] = time() + $expiresIn;
+                            $config['last_refreshed_at'] = now()->toISOString();
+
+                            $integration->update(['app_config' => $config]);
+
+                            Log::info('Snapchat token auto-refreshed', [
+                                'integration_id' => $integration->id,
+                                'expires_in' => $expiresIn,
+                            ]);
+
+                            return $tokenResponse['access_token'];
+                        } else {
+                            Log::error('Snapchat token refresh failed', [
+                                'integration_id' => $integration->id,
+                                'error' => $tokenResponse['message'] ?? 'Unknown error',
+                            ]);
+                            return $accessToken;
+                        }
+                    }
+
+                    return $accessToken;
+                } finally {
+                    $lock->release();
+                }
+            } else {
+                // Another process is refreshing — re-read and use the updated token
+                sleep(2);
+                $integration->refresh();
+                return $integration->app_config['access_token'] ?? $accessToken;
+            }
+        }
+
+        return $accessToken;
     }
 
     /**
@@ -321,7 +422,7 @@ class SnapchatAdsService
                             ->timeout(30)
                             ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/campaigns/{$task['campaign_id']}/stats", [
                                 'granularity' => 'DAY',
-                                'fields' => 'impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion,saves,shares,story_opens,story_completes',
+                                'fields' => 'impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion,saves,shares,story_opens,story_completes,conversion_purchases,conversion_purchases_value,conversion_add_cart,conversion_sign_ups',
                                 'start_time' => $task['start_time'],
                                 'end_time' => $task['end_time']
                             ]);
@@ -357,7 +458,7 @@ class SnapchatAdsService
                         ->timeout(30)
                         ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/campaigns/{$task['campaign_id']}/stats", [
                             'granularity' => 'DAY',
-                            'fields' => 'impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion,saves,shares,story_opens,story_completes',
+                            'fields' => 'impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion,saves,shares,story_opens,story_completes,conversion_purchases,conversion_purchases_value,conversion_add_cart,conversion_sign_ups',
                             'start_time' => $task['start_time'],
                             'end_time' => $task['end_time']
                         ]);
@@ -397,7 +498,13 @@ class SnapchatAdsService
                 $totals = $dailyStat['stats'] ?? [];
                 $startTime = $dailyStat['start_time'] ?? null;
 
-                if ((($totals['impressions'] ?? 0) > 0 || ($totals['spend'] ?? 0) > 0) && $startTime) {
+                $hasActivity = ($totals['impressions'] ?? 0) > 0
+                    || ($totals['spend'] ?? 0) > 0
+                    || ($totals['conversion_purchases'] ?? 0) > 0
+                    || ($totals['conversion_sign_ups'] ?? 0) > 0
+                    || ($totals['swipes'] ?? 0) > 0;
+
+                if ($hasActivity && $startTime) {
                     $date = substr($startTime, 0, 10);
 
                     $allStats->push([
@@ -419,6 +526,11 @@ class SnapchatAdsService
                         'shares' => $totals['shares'] ?? 0,
                         'story_opens' => $totals['story_opens'] ?? 0,
                         'story_completes' => $totals['story_completes'] ?? 0,
+                        'purchases' => $totals['conversion_purchases'] ?? 0,
+                        'purchase_value_micro' => $totals['conversion_purchases_value'] ?? 0,
+                        'purchase_value' => ($totals['conversion_purchases_value'] ?? 0) / 1000000,
+                        'add_to_cart' => $totals['conversion_add_cart'] ?? 0,
+                        'sign_ups' => $totals['conversion_sign_ups'] ?? 0,
                         'cpm' => $this->calculateCPM($totals['spend'] ?? 0, $totals['impressions'] ?? 0),
                         'ctr' => $this->calculateCTR($totals['swipes'] ?? 0, $totals['impressions'] ?? 0)
                     ]);
@@ -431,7 +543,7 @@ class SnapchatAdsService
      * Get TOTAL (lifetime) stats for campaigns - much faster than daily granularity
      * Use this for quick verification syncs or initial data checks
      */
-    public function getCampaignTotalStats(string $adAccountId, string $accessToken, array $campaignIds, string $startDate, string $endDate): Collection
+    public function getCampaignTotalStats(string $adAccountId, string $accessToken, array $campaignIds, string $startDate, string $endDate, string $timezone = 'UTC'): Collection
     {
         $allStats = collect();
 
@@ -443,9 +555,9 @@ class SnapchatAdsService
                         ->timeout(30)
                         ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/campaigns/{$campaignId}/stats", [
                             'granularity' => 'TOTAL',
-                            'fields' => 'impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion,saves,shares,story_opens,story_completes',
-                            'start_time' => $startDate . 'T00:00:00.000Z',
-                            'end_time' => $endDate . 'T00:00:00.000Z'
+                            'fields' => 'impressions,swipes,spend,quartile_1,quartile_2,quartile_3,view_completion,saves,shares,story_opens,story_completes,conversion_purchases,conversion_purchases_value,conversion_add_cart,conversion_sign_ups',
+                            'start_time' => \Carbon\Carbon::parse($startDate, $timezone)->startOfDay()->toIso8601String(),
+                            'end_time' => \Carbon\Carbon::parse($endDate, $timezone)->addDay()->startOfDay()->toIso8601String()
                         ]);
 
                     usleep(25000); // 25ms delay between requests (reduced for speed)
@@ -472,6 +584,13 @@ class SnapchatAdsService
                                     'video_views' => $stats['quartile_1'] ?? 0,
                                     'saves' => $stats['saves'] ?? 0,
                                     'shares' => $stats['shares'] ?? 0,
+                                    'purchases' => $stats['conversion_purchases'] ?? 0,
+                                    'purchase_value_micro' => $stats['conversion_purchases_value'] ?? 0,
+                                    'purchase_value' => ($stats['conversion_purchases_value'] ?? 0) / 1000000,
+                                    'add_to_cart' => $stats['conversion_add_cart'] ?? 0,
+                                    'sign_ups' => $stats['conversion_sign_ups'] ?? 0,
+                                    'story_opens' => $stats['story_opens'] ?? 0,
+                                    'story_completes' => $stats['story_completes'] ?? 0,
                                 ]);
                             }
                         }
@@ -522,6 +641,174 @@ class SnapchatAdsService
     }
 
     /**
+     * Sync ad creatives for a Snapchat ad account
+     */
+    public function syncCreativesForAccount(AdAccount $account, string $accessToken): array
+    {
+        try {
+            $synced = 0;
+            $campaignMap = \App\Models\AdCampaign::where('ad_account_id', $account->id)
+                ->pluck('id', 'external_campaign_id')
+                ->toArray();
+
+            $campaigns = $this->getCampaigns($account->external_account_id, $accessToken);
+            $campaignIds = $campaigns->pluck('id')->toArray();
+
+            // Fetch ad squads concurrently in pools of 20
+            $allAdSquads = collect();
+            foreach (array_chunk($campaignIds, 20) as $chunk) {
+                $responses = \Illuminate\Support\Facades\Http::pool(function ($pool) use ($chunk, $accessToken) {
+                    foreach ($chunk as $campaignId) {
+                        $pool->withToken($accessToken)
+                            ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/campaigns/{$campaignId}/adsquads");
+                    }
+                });
+
+                foreach ($chunk as $idx => $campaignId) {
+                    $response = $responses[$idx] ?? null;
+                    if ($response && $response->successful()) {
+                        $adSquads = collect($response->json()['adsquads'] ?? []);
+                        $allAdSquads = $allAdSquads->merge($adSquads->map(function ($item) use ($campaignId) {
+                            $adSquad = $item['adsquad'] ?? $item;
+                            return array_merge($adSquad, ['external_campaign_id' => $campaignId]);
+                        }));
+                    }
+                }
+            }
+
+            // Fetch ads concurrently in pools of 20
+            $allAds = collect();
+            $adSquadList = $allAdSquads->all();
+            foreach (array_chunk($adSquadList, 20) as $chunk) {
+                $responses = \Illuminate\Support\Facades\Http::pool(function ($pool) use ($chunk, $accessToken) {
+                    foreach ($chunk as $adSquad) {
+                        $pool->withToken($accessToken)
+                            ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/adsquads/{$adSquad['id']}/ads");
+                    }
+                });
+
+                foreach ($chunk as $idx => $adSquad) {
+                    $response = $responses[$idx] ?? null;
+                    if ($response && $response->successful()) {
+                        $ads = collect($response->json()['ads'] ?? []);
+                        $allAds = $allAds->merge($ads->map(fn($ad) => [
+                            'ad' => $ad['ad'] ?? $ad,
+                            'ad_squad_id' => $adSquad['id'],
+                            'external_campaign_id' => $adSquad['external_campaign_id'],
+                        ]));
+                    }
+                }
+            }
+
+            // Fetch creative assets for all ads concurrently
+            $creativeIds = $allAds->pluck('ad.creative_id')->filter()->unique()->values()->toArray();
+            $creativeMap = [];
+            foreach (array_chunk($creativeIds, 20) as $chunk) {
+                $responses = \Illuminate\Support\Facades\Http::pool(function ($pool) use ($chunk, $accessToken) {
+                    foreach ($chunk as $creativeId) {
+                        $pool->withToken($accessToken)
+                            ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/creatives/{$creativeId}");
+                    }
+                });
+
+                foreach ($chunk as $idx => $creativeId) {
+                    $response = $responses[$idx] ?? null;
+                    if ($response && $response->successful()) {
+                        $creativeData = $response->json()['creative'] ?? $response->json()['creatives'][0]['creative'] ?? null;
+                        if ($creativeData) {
+                            $creativeMap[$creativeId] = $creativeData;
+                        }
+                    }
+                }
+            }
+
+            // Fetch media assets for top snap media
+            $mediaIds = collect($creativeMap)->pluck('top_snap_media_id')->filter()->unique()->values()->toArray();
+            $mediaMap = [];
+            foreach (array_chunk($mediaIds, 20) as $chunk) {
+                $responses = \Illuminate\Support\Facades\Http::pool(function ($pool) use ($chunk, $accessToken) {
+                    foreach ($chunk as $mediaId) {
+                        $pool->withToken($accessToken)
+                            ->get(self::BASE_URL . '/' . self::SNAPCHAT_API_VERSION . "/media/{$mediaId}");
+                    }
+                });
+
+                foreach ($chunk as $idx => $mediaId) {
+                    $response = $responses[$idx] ?? null;
+                    if ($response && $response->successful()) {
+                        $mediaData = $response->json()['media'][0]['media'] ?? $response->json()['medias'][0]['media'] ?? null;
+                        if ($mediaData) {
+                            $mediaMap[$mediaId] = $mediaData;
+                        }
+                    }
+                }
+            }
+
+            // Bulk-upsert creatives in chunks to avoid long-running transactions
+            foreach ($allAds->chunk(100) as $chunk) {
+                foreach ($chunk as $item) {
+                    $adData = $item['ad'];
+                    $creativeId = $adData['creative_id'] ?? null;
+                    $externalCampaignId = $item['external_campaign_id'];
+                    $adCampaignId = $campaignMap[$externalCampaignId] ?? null;
+
+                    // Resolve image/thumbnail URLs
+                    $thumbnailUrl = null;
+                    $imageUrl = null;
+                    $videoUrl = null;
+                    $creativeData = $creativeMap[$creativeId] ?? null;
+                    if ($creativeData) {
+                        $mediaId = $creativeData['top_snap_media_id'] ?? null;
+                        $mediaData = $mediaId ? ($mediaMap[$mediaId] ?? null) : null;
+                        if ($mediaData) {
+                            $mediaType = $mediaData['type'] ?? '';
+                            $downloadLink = $mediaData['download_link'] ?? $mediaData['url'] ?? null;
+                            if ($mediaType === 'VIDEO') {
+                                $videoUrl = $downloadLink;
+                                $thumbnailUrl = $mediaData['thumbnail_url'] ?? $mediaData['preview_url'] ?? $downloadLink ?? null;
+                            } else {
+                                $imageUrl = $downloadLink;
+                                $thumbnailUrl = $downloadLink;
+                            }
+                        }
+                        // Fallback to creative-level preview
+                        if (empty($thumbnailUrl)) {
+                            $thumbnailUrl = $creativeData['preview_url'] ?? $creativeData['thumbnail_url'] ?? null;
+                        }
+                    }
+
+                    \App\Models\AdCreative::updateOrCreate(
+                        [
+                            'platform' => 'snapchat',
+                            'external_creative_id' => $adData['id'],
+                        ],
+                        [
+                            'tenant_id' => $account->tenant_id,
+                            'ad_account_id' => $account->id,
+                            'ad_campaign_id' => $adCampaignId,
+                            'name' => $adData['name'] ?? null,
+                            'thumbnail_url' => $thumbnailUrl,
+                            'image_url' => $imageUrl,
+                            'video_url' => $videoUrl,
+                            'status' => $adData['status'] ?? null,
+                            'metadata' => ['creative_id' => $creativeId, 'ad_squad_id' => $item['ad_squad_id'], 'external_campaign_id' => $externalCampaignId],
+                        ]
+                    );
+                    $synced++;
+                }
+            }
+
+            return ['success' => true, 'synced' => $synced];
+        } catch (\Exception $e) {
+            Log::error('Snapchat creatives sync failed', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
      * Get ad sets (Ad Squads in Snapchat terminology)
      */
     public function getAdSquads(string $campaignId, string $accessToken): Collection
@@ -534,11 +821,12 @@ class SnapchatAdsService
                 $data = $response->json();
                 $adSquads = collect($data['adsquads'] ?? []);
 
-                return $adSquads->map(function ($adSquad) {
+                return $adSquads->map(function ($item) {
+                    $adSquad = $item['adsquad'] ?? $item;
                     return [
-                        'id' => $adSquad['id'],
-                        'name' => $adSquad['name'],
-                        'campaign_id' => $adSquad['campaign_id'],
+                        'id' => $adSquad['id'] ?? null,
+                        'name' => $adSquad['name'] ?? null,
+                        'campaign_id' => $adSquad['campaign_id'] ?? null,
                         'status' => $adSquad['status'] ?? 'ACTIVE',
                         'type' => $adSquad['type'] ?? 'SNAP_ADS',
                         'placement_type' => $adSquad['placement_type'] ?? 'AUTOMATIC',
@@ -658,6 +946,7 @@ class SnapchatAdsService
             'CATALOG_SALES' => 'sales',
             'PIXEL_REACH' => 'awareness',
             'PIXEL_PURCHASE' => 'sales',
+            'WEB_CONVERSIONS' => 'sales',
             'APP_PROMOTION' => 'leads',
             'STORY_OPENS' => 'awareness',
         ];
@@ -727,7 +1016,7 @@ class SnapchatAdsService
             'DELETED' => 'inactive',
         ];
 
-        return $statusMap[strtoupper($snapchatStatus)] ?? 'active';
+        return $statusMap[strtoupper($snapchatStatus)] ?? 'inactive';
     }
 
     /**
@@ -863,5 +1152,59 @@ class SnapchatAdsService
         if ($swipeRate > 2 && $videoCompletion > 75) return 'High';
         if ($swipeRate > 1 && $videoCompletion > 50) return 'Medium';
         return 'Low';
+    }
+
+    /**
+     * Fetch total lifetime spend for an ad account directly from Snapchat API.
+     * Returns spend in the account's original currency.
+     */
+    public function fetchAccountTotalSpend(AdAccount $account): ?float
+    {
+        try {
+            $integration = $account->integration;
+            if (!$integration) {
+                Log::warning('Snapchat fetchAccountTotalSpend: no integration', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $accessToken = $this->ensureValidToken($integration);
+            if (!$accessToken) {
+                Log::warning('Snapchat fetchAccountTotalSpend: no valid access token', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $adAccountId = $account->external_account_id;
+
+            // Get all campaigns for this account
+            $campaigns = $this->getCampaigns($adAccountId, $accessToken);
+            if ($campaigns->isEmpty()) {
+                return 0.0;
+            }
+
+            $campaignIds = $campaigns->pluck('id')->toArray();
+
+            // Use wide date range for "all-time"
+            // Snapchat API requires start time no earlier than 2013/01/01
+            // Note: 2013-01-01 itself fails, use 2013-01-02
+            $startDate = '2013-01-02';
+            $endDate = now()->format('Y-m-d');
+
+            $totalStats = $this->getCampaignTotalStats($adAccountId, $accessToken, $campaignIds, $startDate, $endDate);
+            $totalSpend = $totalStats->sum('spend');
+
+            Log::info('Snapchat fetchAccountTotalSpend success', [
+                'account_id' => $account->id,
+                'spend' => $totalSpend,
+                'campaigns' => count($campaignIds),
+            ]);
+
+            return $totalSpend;
+        } catch (\Exception $e) {
+            Log::error('Snapchat fetchAccountTotalSpend error', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }
