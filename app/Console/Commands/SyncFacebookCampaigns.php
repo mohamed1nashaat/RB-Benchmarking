@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Console\Commands;
+use App\Models\Scopes\TenantScope;
 
 use App\Models\AdAccount;
 use App\Models\Integration;
@@ -269,7 +270,7 @@ class SyncFacebookCampaigns extends Command
             $newCount = 0;
 
             foreach ($apiAccounts as $account) {
-                $existing = AdAccount::withoutGlobalScopes()
+                $existing = AdAccount::withoutGlobalScope(TenantScope::class)
                     ->where('integration_id', $integration->id)
                     ->where('external_account_id', $account['id'])
                     ->exists();

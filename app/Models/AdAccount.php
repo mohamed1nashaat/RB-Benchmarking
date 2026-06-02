@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Models\Scopes\TenantScope;
 
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -103,7 +104,7 @@ class AdAccount extends Model
      */
     public static function syncTenantId(int $integrationId, string $externalAccountId, ?int $fallbackTenantId): ?int
     {
-        $existing = static::withoutGlobalScopes()
+        $existing = static::withoutGlobalScope(TenantScope::class)
             ->where('integration_id', $integrationId)
             ->where('external_account_id', $externalAccountId)
             ->first(['id', 'tenant_id']);

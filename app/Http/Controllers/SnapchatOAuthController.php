@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Scopes\TenantScope;
 
 use App\Models\Integration;
 use App\Models\AdAccount;
@@ -260,7 +261,7 @@ class SnapchatOAuthController extends Controller
 
             // Store ad accounts
             foreach ($adAccounts as $account) {
-                AdAccount::withoutGlobalScopes()->updateOrCreate(
+                AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                     [
                         'external_account_id' => $account['id'],
                         'integration_id' => $integration->id

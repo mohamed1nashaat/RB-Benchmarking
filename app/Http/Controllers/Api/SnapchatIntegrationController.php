@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+use App\Models\Scopes\TenantScope;
 
 use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
@@ -415,12 +416,12 @@ class SnapchatIntegrationController extends Controller
                 $status = $this->mapSnapchatAccountStatus($account['status'] ?? 'ACTIVE');
 
                 // Sync bypass: Locate existing account by external ID to preserve tenant assignment
-                $existingAccount = AdAccount::withoutGlobalScopes()->where([
+                $existingAccount = AdAccount::withoutGlobalScope(TenantScope::class)->where([
                     'integration_id' => $integration->id,
                     'external_account_id' => $account['id'],
                 ])->first();
 
-                AdAccount::withoutGlobalScopes()->updateOrCreate(
+                AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                     [
                         'integration_id' => $integration->id,
                         'external_account_id' => $account['id'],

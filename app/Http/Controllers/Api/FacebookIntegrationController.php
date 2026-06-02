@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+use App\Models\Scopes\TenantScope;
 
 use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
@@ -194,12 +195,12 @@ class FacebookIntegrationController extends Controller
 
                 // Sync bypass: We need to locate the existing ad account by external ID
                 // regardless of tenant, so we can preserve any manually-assigned tenant.
-                $existingAccount = \App\Models\AdAccount::withoutGlobalScopes()->where([
+                $existingAccount = \App\Models\AdAccount::withoutGlobalScope(TenantScope::class)->where([
                     'integration_id' => $integration->id,
                     'external_account_id' => $adAccount['id'],
                 ])->first();
 
-                \App\Models\AdAccount::withoutGlobalScopes()->updateOrCreate(
+                \App\Models\AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                     [
                         'integration_id' => $integration->id,
                         'external_account_id' => $adAccount['id'],

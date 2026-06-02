@@ -173,7 +173,7 @@ class AdAccounts extends Component
 
     public function updateAccountIndustry(int $accountId, string $industry): void
     {
-        $account = AdAccount::withoutGlobalScopes()->find($accountId);
+        $account = AdAccount::find($accountId);
         if ($account) {
             $account->update([
                 'industry' => $industry ?: null,
@@ -184,7 +184,7 @@ class AdAccounts extends Component
 
     public function updateAccountCountry(int $accountId, string $country): void
     {
-        $account = AdAccount::withoutGlobalScopes()->find($accountId);
+        $account = AdAccount::find($accountId);
         if ($account) {
             $account->update(['country' => $country ?: null]);
         }
@@ -192,7 +192,7 @@ class AdAccounts extends Component
 
     public function updateAccountCategory(int $accountId, string $category): void
     {
-        $account = AdAccount::withoutGlobalScopes()->find($accountId);
+        $account = AdAccount::find($accountId);
         if ($account) {
             $account->update(['category' => $category ?: null]);
         }
@@ -200,7 +200,7 @@ class AdAccounts extends Component
 
     public function updateAccountClient(int $accountId, string $clientId): void
     {
-        $account = AdAccount::withoutGlobalScopes()->find($accountId);
+        $account = AdAccount::find($accountId);
         if ($account) {
             $newTenantId = $clientId ? (int) $clientId : null;
             $account->update(['tenant_id' => $newTenantId]);

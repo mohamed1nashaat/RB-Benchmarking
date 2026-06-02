@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+use App\Models\Scopes\TenantScope;
 
 use App\Models\AdAccount;
 use App\Models\AdCampaign;
@@ -167,7 +168,7 @@ class TwitterAdsService
 
         foreach ($twitterAccounts as $account) {
             // Check if account already exists to preserve manually set industry
-            $existingAccount = AdAccount::withoutGlobalScopes()->where([
+            $existingAccount = AdAccount::withoutGlobalScope(TenantScope::class)->where([
                 'integration_id' => $integration->id,
                 'external_account_id' => (string) $account['id']
             ])->first();
@@ -192,7 +193,7 @@ class TwitterAdsService
                 $accountData['industry'] = $this->industryDetector->detectIndustry($account['name'] ?? '');
             }
 
-            $adAccount = AdAccount::withoutGlobalScopes()->updateOrCreate(
+            $adAccount = AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                 [
                     'integration_id' => $integration->id,
                     'external_account_id' => (string) $account['id']

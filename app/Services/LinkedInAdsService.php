@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+use App\Models\Scopes\TenantScope;
 
 use App\Models\AdAccount;
 use App\Models\AdCampaign;
@@ -276,7 +277,7 @@ class LinkedInAdsService
 
         foreach ($linkedinAccounts as $account) {
             // Check if account already exists to preserve manually set industry
-            $existingAccount = AdAccount::withoutGlobalScopes()->where([
+            $existingAccount = AdAccount::withoutGlobalScope(TenantScope::class)->where([
                 'integration_id' => $integration->id,
                 'external_account_id' => (string) $account['id']
             ])->first();
@@ -300,7 +301,7 @@ class LinkedInAdsService
 
             // Match on integration_id + external_account_id to align with the
             // database unique constraint (ad_accounts_integration_id_external_account_id_unique).
-            $adAccount = AdAccount::withoutGlobalScopes()->updateOrCreate(
+            $adAccount = AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                 [
                     'integration_id' => $integration->id,
                     'external_account_id' => (string) $account['id']

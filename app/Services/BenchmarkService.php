@@ -785,6 +785,13 @@ class BenchmarkService
                     ->whereBetween('date', [$dateFrom, $dateTo]);
             }])->findOrFail($accountId);
 
+        // Enforce tenant isolation: non-super-admins can only benchmark their own accounts
+        $isSuperAdmin = app()->bound('is_super_admin') && app('is_super_admin');
+        $currentTenantId = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
+        if (!$isSuperAdmin && $account->tenant_id !== $currentTenantId) {
+            abort(403, 'Unauthorized');
+        }
+
         if (!$account->industry) {
             throw new \Exception('Account industry not set');
         }
