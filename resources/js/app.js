@@ -61,11 +61,11 @@ document.addEventListener('alpine:init', () => {
             const $el = jQuery(this.$refs.select);
             const component = this;
 
-            // Guard: skip re-initialization if Select2 is already active on this element.
-            // Livewire morphing can trigger Alpine's init() again even with wire:ignore,
-            // which would destroy the clear (×) button's event handlers.
+            // Guard: destroy existing Select2 before re-initialization.
+            // wire:key changes trigger Alpine init() on a fresh DOM element,
+            // but Select2 may have already transformed it.
             if ($el.data('select2')) {
-                return;
+                $el.select2('destroy');
             }
 
             const select2Config = {
@@ -182,6 +182,11 @@ document.addEventListener('alpine:init', () => {
         init() {
             const $el = jQuery(this.$refs.select);
             const component = this;
+
+            // Guard: destroy existing Select2 before re-initialization.
+            if ($el.data('select2')) {
+                $el.select2('destroy');
+            }
 
             $el.select2({
                 placeholder: this.placeholder,

@@ -18,7 +18,7 @@
     @endif
 
     <div
-        @if($wireIgnore) wire:ignore @endif
+        wire:key="select2-multi-{{ md5(serialize($options)) }}"
         x-data="select2MultiComponent({
             wireModel: '{{ $wireModel }}',
             placeholder: '{{ $placeholder }}',

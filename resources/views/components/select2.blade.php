@@ -17,7 +17,7 @@
     @endif
 
     <div
-        wire:ignore
+        wire:key="select2-{{ md5(serialize($options)) }}"
         x-data="select2Component({
             wireModel: '{{ $wireModel }}',
             wireChange: '{{ $wireChange }}',
