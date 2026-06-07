@@ -101,7 +101,6 @@
                     :label="__('labels.country')"
                     icon="heroicon-o-globe-alt"
                     :placeholder="__('All Countries')"
-                    :wireIgnore="false"
                 />
 
                 {{-- Category --}}
@@ -111,7 +110,6 @@
                     :label="__('Category')"
                     icon="heroicon-o-tag"
                     :placeholder="__('All Categories')"
-                    :wireIgnore="false"
                 />
 
                 {{-- Sub-Category --}}
@@ -121,7 +119,6 @@
                     :label="__('Sub-Category')"
                     icon="heroicon-o-tag"
                     :placeholder="__('All Sub-Categories')"
-                    :wireIgnore="false"
                 />
 
                 {{-- Funnel Stage --}}
@@ -131,7 +128,6 @@
                     :label="__('funnel_stages.label')"
                     icon="heroicon-o-funnel"
                     :placeholder="__('All Stages')"
-                    :wireIgnore="false"
                 />
 
                 {{-- Date Range --}}

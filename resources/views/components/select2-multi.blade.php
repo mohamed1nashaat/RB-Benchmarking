@@ -4,7 +4,6 @@
     'placeholder' => '',
     'label' => '',
     'icon' => null,
-    'wireIgnore' => true,
 ])
 
 <div>
@@ -18,7 +17,6 @@
     @endif
 
     <div
-        wire:key="select2-multi-{{ md5(serialize($options)) }}"
         x-data="select2MultiComponent({
             wireModel: '{{ $wireModel }}',
             placeholder: '{{ $placeholder }}',

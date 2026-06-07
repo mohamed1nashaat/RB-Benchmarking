@@ -61,28 +61,47 @@ document.addEventListener('alpine:init', () => {
             const $el = jQuery(this.$refs.select);
             const component = this;
 
-            // Guard: destroy existing Select2 before re-initialization.
-            // wire:key changes trigger Alpine init() on a fresh DOM element,
-            // but Select2 may have already transformed it.
-            if ($el.data('select2')) {
-                $el.select2('destroy');
-            }
+            const initSelect2 = () => {
+                if ($el.data('select2')) {
+                    $el.select2('destroy');
+                }
+                const select2Config = {
+                    allowClear: this.allowClear,
+                    minimumResultsForSearch: this.searchable ? 0 : Infinity,
+                    width: '100%',
+                    dropdownAutoWidth: false,
+                    dir: document.documentElement.dir || 'ltr',
+                };
+                if (this.placeholder) {
+                    select2Config.placeholder = this.placeholder;
+                }
+                $el.select2(select2Config);
 
-            const select2Config = {
-                allowClear: this.allowClear,
-                minimumResultsForSearch: this.searchable ? 0 : Infinity,
-                width: '100%',
-                dropdownAutoWidth: false,
-                dir: document.documentElement.dir || 'ltr',
+                // Restore value from Livewire / Alpine parent / initialValue
+                let val = null;
+                if (this.alpineKey && this.$parent) {
+                    val = this.$parent.columnFilters?.[this.alpineKey] ?? '';
+                } else if (this.wireModel) {
+                    val = this.$wire.get(this.wireModel);
+                } else if (this.initialValue !== null && this.initialValue !== '') {
+                    val = this.initialValue;
+                }
+                if (val !== undefined && val !== null) {
+                    $el.val(val).trigger('change.select2');
+                }
             };
 
-            if (this.placeholder) {
-                select2Config.placeholder = this.placeholder;
-            }
+            initSelect2();
 
-            $el.select2(select2Config);
+            // Watch for Livewire updating <option> elements and rebuild Select2
+            const observer = new MutationObserver(() => {
+                const currentVal = $el.val();
+                initSelect2();
+                $el.val(currentVal).trigger('change.select2');
+            });
+            observer.observe(this.$refs.select, { childList: true, subtree: true });
 
-            // Listen for global clear event (works even when $parent reference is stale)
+            // Listen for global clear event
             this._clearHandler = () => {
                 const $first = $el.find('option').first();
                 if ($first.length && $first.val() === '') {
@@ -94,24 +113,10 @@ document.addEventListener('alpine:init', () => {
             };
             window.addEventListener('benchmark-clear-filters', this._clearHandler);
 
-            // Set initial value from Livewire property, Alpine parent, or explicit initialValue
-            let initialVal = null;
-            if (this.alpineKey && this.$parent) {
-                initialVal = this.$parent.columnFilters?.[this.alpineKey] ?? '';
-            } else if (this.wireModel) {
-                initialVal = this.$wire.get(this.wireModel);
-            } else if (this.initialValue !== null && this.initialValue !== '') {
-                initialVal = this.initialValue;
-            }
-            if (initialVal !== undefined && initialVal !== null) {
-                $el.val(initialVal).trigger('change.select2');
-            }
-
             // Sync Select2 → Livewire / Alpine parent
             $el.on('change', function () {
                 const val = $el.val();
                 if (component.alpineKey) {
-                    // Dispatch event for Alpine parent to catch
                     component.$dispatch('filter-changed', {
                         key: component.alpineKey,
                         value: val === null ? '' : val
@@ -131,7 +136,7 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
-            // Watch Livewire → Select2 (only for wireModel mode)
+            // Watch Livewire → Select2 (value changes only)
             if (this.wireModel) {
                 this.$watch(() => this.$wire.get(this.wireModel), (newVal) => {
                     const target = newVal ?? '';
@@ -141,7 +146,7 @@ document.addEventListener('alpine:init', () => {
                 });
             }
 
-            // Watch Alpine parent → Select2 (only for alpineKey mode)
+            // Watch Alpine parent → Select2
             if (this.alpineKey && this.$parent) {
                 this.$watch(() => this.$parent.columnFilters?.[this.alpineKey], (newVal) => {
                     const target = newVal ?? '';
@@ -161,12 +166,17 @@ document.addEventListener('alpine:init', () => {
                     }
                 });
             }
+
+            this._observer = observer;
         },
 
         destroy() {
             const $el = jQuery(this.$refs.select);
             if ($el.data('select2')) {
                 $el.select2('destroy');
+            }
+            if (this._observer) {
+                this._observer.disconnect();
             }
             if (this._clearHandler) {
                 window.removeEventListener('benchmark-clear-filters', this._clearHandler);
@@ -183,28 +193,38 @@ document.addEventListener('alpine:init', () => {
             const $el = jQuery(this.$refs.select);
             const component = this;
 
-            // Guard: destroy existing Select2 before re-initialization.
-            if ($el.data('select2')) {
-                $el.select2('destroy');
-            }
+            const initSelect2 = () => {
+                if ($el.data('select2')) {
+                    $el.select2('destroy');
+                }
+                $el.select2({
+                    placeholder: this.placeholder,
+                    allowClear: true,
+                    multiple: true,
+                    width: '100%',
+                    dropdownAutoWidth: false,
+                    closeOnSelect: false,
+                    dir: document.documentElement.dir || 'ltr',
+                });
 
-            $el.select2({
-                placeholder: this.placeholder,
-                allowClear: true,
-                multiple: true,
-                width: '100%',
-                dropdownAutoWidth: false,
-                closeOnSelect: false,
-                dir: document.documentElement.dir || 'ltr',
+                // Restore selected values
+                const currentVal = this.$wire.get(this.wireModel) || [];
+                if (currentVal.length > 0) {
+                    $el.val(currentVal).trigger('change.select2');
+                }
+            };
+
+            initSelect2();
+
+            // Watch for Livewire updating <option> elements and rebuild Select2
+            const observer = new MutationObserver(() => {
+                const currentVal = $el.val() || [];
+                initSelect2();
+                $el.val(currentVal).trigger('change.select2');
             });
+            observer.observe(this.$refs.select, { childList: true, subtree: true });
 
-            // Set initial value from Livewire
-            const initialVal = this.$wire.get(this.wireModel);
-            if (Array.isArray(initialVal) && initialVal.length > 0) {
-                $el.val(initialVal).trigger('change.select2');
-            }
-
-            // Handle "All" option selection — clear everything to show all
+            // Handle "All" option selection
             $el.on('select2:select', function (e) {
                 if (e.params.data.id === '') {
                     $el.val(null).trigger('change');
@@ -226,12 +246,17 @@ document.addEventListener('alpine:init', () => {
                     $el.val(next).trigger('change.select2');
                 }
             });
+
+            this._observer = observer;
         },
 
         destroy() {
             const $el = jQuery(this.$refs.select);
             if ($el.data('select2')) {
                 $el.select2('destroy');
+            }
+            if (this._observer) {
+                this._observer.disconnect();
             }
         }
     }));
