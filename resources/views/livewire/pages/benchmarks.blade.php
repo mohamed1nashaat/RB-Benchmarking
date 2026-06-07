@@ -545,7 +545,7 @@
                                                     <x-select2
                                                         alpineKey="{{ $key }}"
                                                         :options="array_merge(['' => __('All')], array_combine($columnFilterOptions[$key] ?? [], $columnFilterOptions[$key] ?? []))"
-                                                        :allowClear="true"
+                                                        :allowClear="false"
                                                         :searchable="true"
                                                     />
                                                 </div>
