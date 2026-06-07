@@ -50,6 +50,8 @@ class SyncLinkedInCampaignsTest extends TestCase
     public function test_syncs_multiple_days_by_default(): void
     {
         $linkedinService = Mockery::mock(LinkedInAdsService::class);
+        $linkedinService->shouldReceive('ensureValidToken')
+            ->andReturn('fake-linkedin-token');
         $linkedinService->shouldReceive('syncAdAccounts')
             ->once()
             ->andReturn([$this->adAccount]);
@@ -63,6 +65,7 @@ class SyncLinkedInCampaignsTest extends TestCase
 
         $monitoring = Mockery::mock(SyncMonitoringService::class);
         $monitoring->shouldReceive('recordSuccess');
+        $monitoring->shouldReceive('recordFailure');
         $this->app->instance(SyncMonitoringService::class, $monitoring);
 
         $this->artisan('sync:linkedin-campaigns')->assertExitCode(0);
@@ -71,6 +74,8 @@ class SyncLinkedInCampaignsTest extends TestCase
     public function test_specific_date_overrides_days(): void
     {
         $linkedinService = Mockery::mock(LinkedInAdsService::class);
+        $linkedinService->shouldReceive('ensureValidToken')
+            ->andReturn('fake-linkedin-token');
         $linkedinService->shouldReceive('syncAdAccounts')
             ->once()
             ->andReturn([$this->adAccount]);
@@ -89,6 +94,7 @@ class SyncLinkedInCampaignsTest extends TestCase
 
         $monitoring = Mockery::mock(SyncMonitoringService::class);
         $monitoring->shouldReceive('recordSuccess');
+        $monitoring->shouldReceive('recordFailure');
         $this->app->instance(SyncMonitoringService::class, $monitoring);
 
         $this->artisan('sync:linkedin-campaigns', [

@@ -97,7 +97,7 @@ class SyncFacebookMetricsTest extends TestCase
 
         $monitoring = Mockery::mock(SyncMonitoringService::class);
         $monitoring->shouldReceive('recordFailure')
-            ->once()
+            ->twice()
             ->with('facebook', $this->integration->id, Mockery::type('string'));
         $this->app->instance(SyncMonitoringService::class, $monitoring);
 
