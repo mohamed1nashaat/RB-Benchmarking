@@ -122,14 +122,7 @@ class Benchmarks extends Component
     {
         $this->dateFrom = '2010-01-01';
         $this->dateTo = Carbon::now()->format('Y-m-d');
-        $this->loadAvailableIndustries();
         $this->refreshData();
-    }
-
-    public function loadAvailableIndustries()
-    {
-        $service = app(BenchmarkService::class);
-        $this->availableIndustries = $service->getAvailableIndustries();
     }
 
     public function updatedSelectedPlatforms() { $this->refreshData(); }
@@ -259,6 +252,7 @@ class Benchmarks extends Component
 
     private function loadFilterOptions(): void
     {
+        $this->availableIndustries = $this->queryDistinctValues('a.industry', ['industry']);
         $this->availableCountries = $this->queryDistinctValues('a.country', ['country']);
         $this->availableCategories = $this->queryDistinctValues(
             "COALESCE(CASE WHEN c.inherit_category_from_account = 0 AND c.category IS NOT NULL AND c.category != '' THEN c.category ELSE a.category END, a.category, '-')",
