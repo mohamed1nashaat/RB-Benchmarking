@@ -127,10 +127,11 @@
                 {{-- Funnel Stage --}}
                 <x-select2-multi
                     wire-model="selectedFunnelStages"
-                    :options="['TOF' => 'TOF (Awareness)', 'MOF' => 'MOF (Consideration)', 'BOF' => 'BOF (Conversion)']"
+                    :options="array_merge(['' => __('All')], collect($availableFunnelStages)->mapWithKeys(fn($s) => [$s => $s])->all())"
                     :label="__('funnel_stages.label')"
                     icon="heroicon-o-funnel"
                     :placeholder="__('All Stages')"
+                    :wireIgnore="false"
                 />
 
                 {{-- Date Range --}}

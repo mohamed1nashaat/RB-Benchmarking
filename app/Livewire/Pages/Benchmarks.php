@@ -116,6 +116,7 @@ class Benchmarks extends Component
     public array $availableCountries = [];
     public array $availableCategories = [];
     public array $availableSubCategories = [];
+    public array $availableFunnelStages = [];
 
     public function mount()
     {
@@ -134,20 +135,17 @@ class Benchmarks extends Component
     public function updatedSelectedPlatforms() { $this->refreshData(); }
     public function updatedSelectedIndustries()
     {
-        $this->selectedCountries = [];
-        $this->selectedCategories = [];
-        $this->selectedSubCategories = [];
+        $this->validateDownstream(['country', 'category', 'sub_category', 'funnel_stage']);
         $this->refreshData();
     }
     public function updatedSelectedCountries()
     {
-        $this->selectedCategories = [];
-        $this->selectedSubCategories = [];
+        $this->validateDownstream(['category', 'sub_category', 'funnel_stage']);
         $this->refreshData();
     }
     public function updatedSelectedCategories()
     {
-        $this->selectedSubCategories = [];
+        $this->validateDownstream(['sub_category', 'funnel_stage']);
         $this->refreshData();
     }
     public function updatedSelectedSubCategories() { $this->refreshData(); }
@@ -267,6 +265,37 @@ class Benchmarks extends Component
             ['category']
         );
         $this->availableSubCategories = $this->queryDistinctValues("COALESCE(c.sub_industry, '-')", ['sub_category']);
+        $this->availableFunnelStages = $this->queryDistinctValues("COALESCE(m.funnel_stage, '-')", ['funnel_stage']);
+    }
+
+    /**
+     * Validate downstream filter selections against narrowed available options.
+     * Preserves valid selections; removes only those no longer present in data.
+     */
+    private function validateDownstream(array $filterKeys): void
+    {
+        foreach ($filterKeys as $key) {
+            $available = match ($key) {
+                'country' => $this->queryDistinctValues('a.country', ['country']),
+                'category' => $this->queryDistinctValues(
+                    "COALESCE(CASE WHEN c.inherit_category_from_account = 0 AND c.category IS NOT NULL AND c.category != '' THEN c.category ELSE a.category END, a.category, '-')",
+                    ['category']
+                ),
+                'sub_category' => $this->queryDistinctValues("COALESCE(c.sub_industry, '-')", ['sub_category']),
+                'funnel_stage' => $this->queryDistinctValues("COALESCE(m.funnel_stage, '-')", ['funnel_stage']),
+            };
+
+            $property = match ($key) {
+                'country' => 'selectedCountries',
+                'category' => 'selectedCategories',
+                'sub_category' => 'selectedSubCategories',
+                'funnel_stage' => 'selectedFunnelStages',
+            };
+
+            $this->{$property} = array_values(
+                array_intersect($this->{$property}, $available)
+            );
+        }
     }
 
     private function queryDistinctValues(string $columnExpr, array $excludeFilters = []): array
