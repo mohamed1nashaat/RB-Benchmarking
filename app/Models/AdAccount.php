@@ -82,6 +82,16 @@ class AdAccount extends Model
         return $this->belongsTo(Industry::class);
     }
 
+    public function accountCategory(): BelongsTo
+    {
+        return $this->belongsTo(AccountCategory::class, 'category', 'display_name');
+    }
+
+    public function accountSubCategory(): BelongsTo
+    {
+        return $this->belongsTo(AccountSubCategory::class, 'sub_industry', 'name');
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';

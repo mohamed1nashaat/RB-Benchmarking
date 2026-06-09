@@ -5,8 +5,11 @@ namespace App\Livewire\Pages;
 use App\Models\Industry;
 use App\Models\SubIndustry;
 use App\Models\CampaignCategory;
+use App\Models\AccountCategory;
+use App\Models\AccountSubCategory;
 use Livewire\Component;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class IndustryManagement extends Component
 {
@@ -21,7 +24,7 @@ class IndustryManagement extends Component
     public string $industryDisplayName = '';
     public string $industryDescription = '';
 
-    // Category modal
+    // Category modal (sub_industry / campaign_category)
     public bool $showCategoryModal = false;
     public ?int $editingCategoryId = null;
     public ?int $categoryIndustryId = null;
@@ -29,9 +32,22 @@ class IndustryManagement extends Component
     public string $categoryDisplayName = '';
     public string $categoryDescription = '';
 
+    // Account Category modal
+    public bool $showAccountCategoryModal = false;
+    public ?int $editingAccountCategoryId = null;
+    public string $accountCategoryDisplayName = '';
+    public string $accountCategoryDescription = '';
+
+    // Account Sub-Category modal
+    public bool $showAccountSubCategoryModal = false;
+    public ?int $editingAccountSubCategoryId = null;
+    public ?int $accountSubCategoryCategoryId = null;
+    public string $accountSubCategoryDisplayName = '';
+    public string $accountSubCategoryDescription = '';
+
     // Delete modal
     public bool $showDeleteModal = false;
-    public string $deleteType = ''; // industry, sub_industry, campaign_category
+    public string $deleteType = ''; // industry, sub_industry, campaign_category, account_category, account_sub_category
     public ?int $deleteId = null;
     public string $deleteName = '';
 
@@ -80,6 +96,13 @@ class IndustryManagement extends Component
         });
     }
 
+    public function getAccountCategoriesProperty()
+    {
+        return AccountCategory::with(['subCategories' => fn($q) => $q->ordered()])
+            ->ordered()
+            ->get();
+    }
+
     public function getTotalSubIndustriesProperty(): int
     {
         return $this->industries->sum(fn($ind) => $ind->subIndustries->count());
@@ -88,6 +111,95 @@ class IndustryManagement extends Component
     public function getTotalCampaignCategoriesProperty(): int
     {
         return $this->industries->sum(fn($ind) => $ind->campaignCategories->count());
+    }
+
+    public function getTotalAccountCategoriesProperty(): int
+    {
+        return AccountCategory::count();
+    }
+
+    public function getTotalAccountSubCategoriesProperty(): int
+    {
+        return AccountSubCategory::count();
+    }
+
+    /**
+     * Build a 3-level hierarchy: Industry → Account Category → Sub-Category.
+     * The Industry→AccountCategory relationship is derived from ad_accounts data.
+     */
+    public function getHierarchyTreeProperty()
+    {
+        // Load all industries
+        $industries = $this->industries;
+
+        // Load all account categories with sub-categories
+        $accountCategories = AccountCategory::with(['subCategories' => fn($q) => $q->ordered()])
+            ->ordered()
+            ->get()
+            ->keyBy('display_name');
+
+        // Derive Industry → AccountCategory mapping from ad_accounts
+        $industryCategoryPairs = DB::table('ad_accounts')
+            ->selectRaw('industry, category, COUNT(*) as account_count')
+            ->whereNotNull('industry')
+            ->whereNotNull('category')
+            ->groupBy('industry', 'category')
+            ->get();
+
+        // Group account categories by industry
+        $categoriesByIndustry = [];
+        foreach ($industryCategoryPairs as $pair) {
+            if (! isset($categoriesByIndustry[$pair->industry])) {
+                $categoriesByIndustry[$pair->industry] = [];
+            }
+            $cat = $accountCategories->get($pair->category);
+            if ($cat && ! isset($categoriesByIndustry[$pair->industry][$cat->id])) {
+                $categoriesByIndustry[$pair->industry][$cat->id] = $cat;
+            }
+        }
+
+        // Build tree with search filtering
+        $q = strtolower($this->searchQuery);
+        $tree = [];
+
+        foreach ($industries as $industry) {
+            $cats = $categoriesByIndustry[$industry->name] ?? [];
+
+            // Filter categories and sub-categories by search
+            if ($q !== '') {
+                $industryMatch = str_contains(strtolower($industry->display_name), $q)
+                    || str_contains(strtolower($industry->name), $q);
+
+                $filteredCats = [];
+                foreach ($cats as $cat) {
+                    $catMatch = str_contains(strtolower($cat->display_name), $q)
+                        || str_contains(strtolower($cat->name), $q);
+
+                    $filteredSubs = $cat->subCategories->filter(fn($sub) =>
+                        str_contains(strtolower($sub->display_name), $q)
+                        || str_contains(strtolower($sub->name), $q)
+                    );
+
+                    if ($industryMatch || $catMatch || $filteredSubs->isNotEmpty()) {
+                        $cat = clone $cat;
+                        $cat->setRelation('subCategories', $catMatch || $industryMatch ? $cat->subCategories : $filteredSubs);
+                        $filteredCats[$cat->id] = $cat;
+                    }
+                }
+                $cats = $filteredCats;
+
+                if (! $industryMatch && empty($cats)) {
+                    continue;
+                }
+            }
+
+            $tree[] = [
+                'industry' => $industry,
+                'accountCategories' => collect($cats)->values(),
+            ];
+        }
+
+        return collect($tree);
     }
 
     // Industry CRUD
@@ -155,7 +267,7 @@ class IndustryManagement extends Component
         $this->industryDescription = '';
     }
 
-    // Category CRUD
+    // Category CRUD (sub_industry / campaign_category)
     public function openAddCategoryModal(int $industryId, string $type): void
     {
         $this->resetCategoryForm();
@@ -243,6 +355,141 @@ class IndustryManagement extends Component
         $this->categoryDescription = '';
     }
 
+    // Account Category CRUD
+    public function openAddAccountCategoryModal(): void
+    {
+        $this->resetAccountCategoryForm();
+        $this->showAccountCategoryModal = true;
+    }
+
+    public function editAccountCategory(int $id): void
+    {
+        $cat = AccountCategory::findOrFail($id);
+        $this->editingAccountCategoryId = $cat->id;
+        $this->accountCategoryDisplayName = $cat->display_name;
+        $this->accountCategoryDescription = $cat->description ?? '';
+        $this->showAccountCategoryModal = true;
+    }
+
+    public function saveAccountCategory(): void
+    {
+        if (empty($this->accountCategoryDisplayName)) return;
+
+        $this->saving = true;
+
+        try {
+            $slug = Str::slug($this->accountCategoryDisplayName, '_');
+
+            if ($this->editingAccountCategoryId) {
+                $cat = AccountCategory::findOrFail($this->editingAccountCategoryId);
+                $cat->update([
+                    'name' => $slug,
+                    'display_name' => $this->accountCategoryDisplayName,
+                    'description' => $this->accountCategoryDescription ?: null,
+                ]);
+                session()->flash('success', __('pages.industry_management.account_category_updated'));
+            } else {
+                AccountCategory::create([
+                    'name' => $slug,
+                    'display_name' => $this->accountCategoryDisplayName,
+                    'description' => $this->accountCategoryDescription ?: null,
+                    'sort_order' => AccountCategory::max('sort_order') + 1,
+                    'is_active' => true,
+                ]);
+                session()->flash('success', __('pages.industry_management.account_category_created'));
+            }
+
+            $this->closeAccountCategoryModal();
+        } catch (\Exception $e) {
+            session()->flash('error', __('pages.industry_management.save_failed') . ': ' . $e->getMessage());
+        } finally {
+            $this->saving = false;
+        }
+    }
+
+    public function closeAccountCategoryModal(): void
+    {
+        $this->showAccountCategoryModal = false;
+        $this->resetAccountCategoryForm();
+    }
+
+    private function resetAccountCategoryForm(): void
+    {
+        $this->editingAccountCategoryId = null;
+        $this->accountCategoryDisplayName = '';
+        $this->accountCategoryDescription = '';
+    }
+
+    // Account Sub-Category CRUD
+    public function openAddAccountSubCategoryModal(int $categoryId): void
+    {
+        $this->resetAccountSubCategoryForm();
+        $this->accountSubCategoryCategoryId = $categoryId;
+        $this->showAccountSubCategoryModal = true;
+    }
+
+    public function editAccountSubCategory(int $id): void
+    {
+        $sub = AccountSubCategory::findOrFail($id);
+        $this->editingAccountSubCategoryId = $sub->id;
+        $this->accountSubCategoryCategoryId = $sub->account_category_id;
+        $this->accountSubCategoryDisplayName = $sub->display_name;
+        $this->accountSubCategoryDescription = $sub->description ?? '';
+        $this->showAccountSubCategoryModal = true;
+    }
+
+    public function saveAccountSubCategory(): void
+    {
+        if (empty($this->accountSubCategoryDisplayName) || empty($this->accountSubCategoryCategoryId)) return;
+
+        $this->saving = true;
+
+        try {
+            $slug = Str::slug($this->accountSubCategoryDisplayName, '_');
+
+            if ($this->editingAccountSubCategoryId) {
+                $sub = AccountSubCategory::findOrFail($this->editingAccountSubCategoryId);
+                $sub->update([
+                    'account_category_id' => $this->accountSubCategoryCategoryId,
+                    'name' => $slug,
+                    'display_name' => $this->accountSubCategoryDisplayName,
+                    'description' => $this->accountSubCategoryDescription ?: null,
+                ]);
+                session()->flash('success', __('pages.industry_management.account_sub_category_updated'));
+            } else {
+                AccountSubCategory::create([
+                    'account_category_id' => $this->accountSubCategoryCategoryId,
+                    'name' => $slug,
+                    'display_name' => $this->accountSubCategoryDisplayName,
+                    'description' => $this->accountSubCategoryDescription ?: null,
+                    'sort_order' => AccountSubCategory::where('account_category_id', $this->accountSubCategoryCategoryId)->max('sort_order') + 1,
+                    'is_active' => true,
+                ]);
+                session()->flash('success', __('pages.industry_management.account_sub_category_created'));
+            }
+
+            $this->closeAccountSubCategoryModal();
+        } catch (\Exception $e) {
+            session()->flash('error', __('pages.industry_management.save_failed') . ': ' . $e->getMessage());
+        } finally {
+            $this->saving = false;
+        }
+    }
+
+    public function closeAccountSubCategoryModal(): void
+    {
+        $this->showAccountSubCategoryModal = false;
+        $this->resetAccountSubCategoryForm();
+    }
+
+    private function resetAccountSubCategoryForm(): void
+    {
+        $this->editingAccountSubCategoryId = null;
+        $this->accountSubCategoryCategoryId = null;
+        $this->accountSubCategoryDisplayName = '';
+        $this->accountSubCategoryDescription = '';
+    }
+
     // Delete
     public function confirmDeleteIndustry(int $id): void
     {
@@ -267,6 +514,24 @@ class IndustryManagement extends Component
         $this->showDeleteModal = true;
     }
 
+    public function confirmDeleteAccountCategory(int $id): void
+    {
+        $cat = AccountCategory::findOrFail($id);
+        $this->deleteType = 'account_category';
+        $this->deleteId = $id;
+        $this->deleteName = $cat->display_name;
+        $this->showDeleteModal = true;
+    }
+
+    public function confirmDeleteAccountSubCategory(int $id): void
+    {
+        $sub = AccountSubCategory::findOrFail($id);
+        $this->deleteType = 'account_sub_category';
+        $this->deleteId = $id;
+        $this->deleteName = $sub->display_name;
+        $this->showDeleteModal = true;
+    }
+
     public function executeDelete(): void
     {
         $this->saving = true;
@@ -279,8 +544,12 @@ class IndustryManagement extends Component
                 $industry->delete();
             } elseif ($this->deleteType === 'sub_industry') {
                 SubIndustry::findOrFail($this->deleteId)->delete();
-            } else {
+            } elseif ($this->deleteType === 'campaign_category') {
                 CampaignCategory::findOrFail($this->deleteId)->delete();
+            } elseif ($this->deleteType === 'account_category') {
+                AccountCategory::findOrFail($this->deleteId)->delete();
+            } elseif ($this->deleteType === 'account_sub_category') {
+                AccountSubCategory::findOrFail($this->deleteId)->delete();
             }
 
             $this->showDeleteModal = false;

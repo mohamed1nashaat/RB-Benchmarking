@@ -360,6 +360,7 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('labels.industry') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('labels.country') }}</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('labels.category') }}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('labels.sub_category') }}</th>
                         <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('labels.campaigns') }}</th>
                         <th scope="col" wire:click="sortBy('total_revenue')" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                             <div class="flex items-center justify-end space-x-1">
@@ -513,17 +514,28 @@
                             </td>
 
                             <td class="px-4 py-3 whitespace-nowrap">
-                                @if($account->industry && !empty($account->available_categories))
+                                <x-select2
+                                    uid="category-{{ $account->id }}"
+                                    wire-change="updateAccountCategory({{ $account->id }})"
+                                    :initial-value="$account->category ?? ''"
+                                    :placeholder="__('Select')"
+                                    :options="$accountCategoryOptions"
+                                    :searchable="true"
+                                />
+                            </td>
+
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @if(!empty($account->available_sub_categories))
                                     <x-select2
-                                        uid="category-{{ $account->id }}"
-                                        wire-change="updateAccountCategory({{ $account->id }})"
-                                        :initial-value="$account->category ?? ''"
+                                        uid="sub-category-{{ $account->id }}"
+                                        wire-change="updateAccountSubCategory({{ $account->id }})"
+                                        :initial-value="$account->sub_industry ?? ''"
                                         :placeholder="__('Select')"
-                                        :options="collect($account->available_categories)->mapWithKeys(fn($cat) => [$cat => $cat])->all()"
+                                        :options="$account->available_sub_categories"
                                         :searchable="true"
                                     />
                                 @else
-                                    <span class="text-xs text-gray-400">{{ $account->industry ? '-' : 'Set industry' }}</span>
+                                    <span class="text-xs text-gray-400">{{ $account->category ? '-' : 'Set category' }}</span>
                                 @endif
                             </td>
 
@@ -549,7 +561,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="15" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="16" class="px-6 py-12 text-center text-gray-500">
                                 {{ __('pages.ad_accounts.no_accounts') }}
                             </td>
                         </tr>
@@ -595,7 +607,16 @@
                                 wire-model="bulkCategory"
                                 :label="__('labels.category')"
                                 :placeholder="__('pages.ad_accounts.keep_current')"
-                                :options="collect($bulkAvailableCategories)->mapWithKeys(fn($cat) => [$cat => $cat])->all()"
+                                :options="$accountCategoryOptions"
+                            />
+                        </div>
+
+                        <div>
+                            <x-select2
+                                wire-model="bulkSubCategory"
+                                :label="__('labels.sub_category')"
+                                :placeholder="__('pages.ad_accounts.keep_current')"
+                                :options="$bulkAvailableSubCategories"
                             />
                         </div>
 

@@ -3,6 +3,8 @@
 namespace App\Livewire\Pages;
 
 use App\Models\AdAccount;
+use App\Models\AccountCategory;
+use App\Models\AccountSubCategory;
 use App\Models\Industry;
 use App\Models\Tenant;
 use App\Services\CategoryMapper;
@@ -43,6 +45,7 @@ class AdAccounts extends Component
     public string $bulkIndustry = '';
     public string $bulkCountry = '';
     public string $bulkCategory = '';
+    public string $bulkSubCategory = '';
     public string $bulkStatus = '';
     public ?int $bulkClientId = null;
     public bool $bulkChangeClient = false;
@@ -68,6 +71,7 @@ class AdAccounts extends Component
         'filterStatus' => ['except' => '', 'as' => 'status'],
         'filterIndustry' => ['except' => '', 'as' => 'industry'],
         'filterCountry' => ['except' => '', 'as' => 'country'],
+        'filterVerification' => ['except' => '', 'as' => 'verification'],
         'filterDateFrom' => ['except' => '', 'as' => 'date_from'],
         'filterDateTo' => ['except' => '', 'as' => 'date_to'],
         'filterClientId' => ['except' => '', 'as' => 'client'],
@@ -178,6 +182,7 @@ class AdAccounts extends Component
             $account->update([
                 'industry' => $industry ?: null,
                 'category' => null,
+                'sub_industry' => null,
             ]);
         }
     }
@@ -194,7 +199,18 @@ class AdAccounts extends Component
     {
         $account = AdAccount::find($accountId);
         if ($account) {
-            $account->update(['category' => $category ?: null]);
+            $account->update([
+                'category' => $category ?: null,
+                'sub_industry' => null,
+            ]);
+        }
+    }
+
+    public function updateAccountSubCategory(int $accountId, string $subCategory): void
+    {
+        $account = AdAccount::find($accountId);
+        if ($account) {
+            $account->update(['sub_industry' => $subCategory ?: null]);
         }
     }
 
@@ -206,7 +222,7 @@ class AdAccounts extends Component
             $account->update(['tenant_id' => $newTenantId]);
             $this->dispatch('account-client-updated', accountId: $accountId, tenantId: $newTenantId);
         } else {
-            \Illuminate\Support\Facades\Log::warning('updateAccountClient: account not found', ['account_id' => $accountId, 'client_id' => $clientId]);
+            Log::warning('updateAccountClient: account not found', ['account_id' => $accountId, 'client_id' => $clientId]);
         }
     }
 
@@ -246,6 +262,7 @@ class AdAccounts extends Component
         $this->bulkIndustry = '';
         $this->bulkCountry = '';
         $this->bulkCategory = '';
+        $this->bulkSubCategory = '';
         $this->bulkStatus = '';
         $this->bulkClientId = null;
         $this->bulkChangeClient = false;
@@ -273,6 +290,9 @@ class AdAccounts extends Component
         }
         if ($this->bulkCategory !== '') {
             $updateData['category'] = $this->bulkCategory;
+        }
+        if ($this->bulkSubCategory !== '') {
+            $updateData['sub_industry'] = $this->bulkSubCategory;
         }
         if ($this->bulkStatus !== '') {
             $updateData['status'] = $this->bulkStatus;
@@ -440,8 +460,15 @@ class AdAccounts extends Component
             ->withCount('adCampaigns')
             ->paginate($this->perPage);
 
+        // Pre-load account categories for sub-category lookups
+        $accountCategories = AccountCategory::with(['subCategories' => fn($q) => $q->ordered()])
+            ->ordered()
+            ->get();
+
+        $accountCategoryOptions = $accountCategories->mapWithKeys(fn($cat) => [$cat->display_name => $cat->display_name])->all();
+
         // Compute per-account spend in SAR and attach extra data
-        $accounts->getCollection()->transform(function ($account) {
+        $accounts->getCollection()->transform(function ($account) use ($accountCategories) {
             $metricsQuery = $account->adMetrics();
 
             if ($this->filterDateFrom && $this->filterDateTo) {
@@ -471,6 +498,12 @@ class AdAccounts extends Component
             $account->roas = ($totalSpend > 0) ? round($totalRevenue / $totalSpend, 2) : 0;
             $account->platform_name = $account->integration->platform ?? 'unknown';
             $account->available_categories = CategoryMapper::getCategoriesForIndustry($account->industry);
+
+            // Account category → sub-category mapping
+            $categoryModel = $accountCategories->firstWhere('display_name', $account->category);
+            $account->available_sub_categories = $categoryModel
+                ? $categoryModel->subCategories->mapWithKeys(fn($sub) => [$sub->name => $sub->display_name])->all()
+                : [];
 
             return $account;
         });
@@ -527,6 +560,13 @@ class AdAccounts extends Component
             ? CategoryMapper::getCategoriesForIndustry($this->bulkIndustry)
             : [];
 
+        $bulkCategoryModel = $this->bulkCategory
+            ? $accountCategories->firstWhere('name', $this->bulkCategory)
+            : null;
+        $bulkAvailableSubCategories = $bulkCategoryModel
+            ? $bulkCategoryModel->subCategories->mapWithKeys(fn($sub) => [$sub->name => $sub->display_name])->all()
+            : [];
+
         $isAdmin = $this->isAdmin();
 
         return view('livewire.pages.ad-accounts', [
@@ -541,7 +581,9 @@ class AdAccounts extends Component
             'countryOptions' => $countries,
             'clients' => $clients,
             'clientOptions' => $clients->pluck('name', 'id')->all(),
+            'accountCategoryOptions' => $accountCategoryOptions,
             'bulkAvailableCategories' => $bulkAvailableCategories,
+            'bulkAvailableSubCategories' => $bulkAvailableSubCategories,
             'isAdmin' => $isAdmin,
         ])->layout('layouts.app');
     }
