@@ -3,6 +3,9 @@
 namespace App\Livewire\Pages;
 
 use App\Models\AdAccount;
+use App\Models\AccountCategory;
+use App\Models\AccountSubCategory;
+use App\Models\Industry;
 use App\Services\BenchmarkService;
 use App\Services\CurrencyConversionService;
 use Illuminate\Support\Facades\DB;
@@ -254,28 +257,54 @@ class Benchmarks extends Component
     {
         $this->availableIndustries = $this->queryDistinctValues('a.industry', ['industry']);
         $this->availableCountries = $this->queryDistinctValues('a.country', ['country']);
-        $this->availableCategories = $this->queryDistinctValues(
-            "COALESCE(CASE WHEN c.inherit_category_from_account = 0 AND c.category IS NOT NULL AND c.category != '' THEN c.category ELSE a.category END, a.category, '-')",
-            ['category']
-        );
-        $this->availableSubCategories = $this->queryDistinctValues("COALESCE(c.sub_industry, '-')", ['sub_category']);
+        $this->availableCategories = $this->getAvailableCategories();
+        $this->availableSubCategories = $this->getAvailableSubCategories();
         $this->availableFunnelStages = $this->queryDistinctValues("COALESCE(m.funnel_stage, '-')", ['funnel_stage']);
     }
 
     /**
+     * Get available categories based on selected industries (model-driven cascade).
+     */
+    private function getAvailableCategories(): array
+    {
+        $industryIds = $this->getIndustryIdsFromSlugs($this->selectedIndustries);
+
+        return AccountCategory::when($industryIds, fn($q) => $q->whereIn('industry_id', $industryIds))
+            ->active()
+            ->ordered()
+            ->pluck('display_name', 'display_name')
+            ->all();
+    }
+
+    /**
+     * Get available sub-categories based on selected categories/industries (model-driven cascade).
+     */
+    private function getAvailableSubCategories(): array
+    {
+        $categoryIds = $this->getCategoryIdsFromDisplayNames($this->selectedCategories);
+
+        if (empty($categoryIds) && !empty($this->selectedIndustries)) {
+            $industryIds = $this->getIndustryIdsFromSlugs($this->selectedIndustries);
+            $categoryIds = AccountCategory::whereIn('industry_id', $industryIds)->pluck('id')->all();
+        }
+
+        return AccountSubCategory::with('accountCategory')
+            ->when($categoryIds, fn($q) => $q->whereIn('account_category_id', $categoryIds))
+            ->ordered()
+            ->pluck('display_name', 'name')
+            ->all();
+    }
+
+    /**
      * Validate downstream filter selections against narrowed available options.
-     * Preserves valid selections; removes only those no longer present in data.
      */
     private function validateDownstream(array $filterKeys): void
     {
         foreach ($filterKeys as $key) {
             $available = match ($key) {
                 'country' => $this->queryDistinctValues('a.country', ['country']),
-                'category' => $this->queryDistinctValues(
-                    "COALESCE(CASE WHEN c.inherit_category_from_account = 0 AND c.category IS NOT NULL AND c.category != '' THEN c.category ELSE a.category END, a.category, '-')",
-                    ['category']
-                ),
-                'sub_category' => $this->queryDistinctValues("COALESCE(c.sub_industry, '-')", ['sub_category']),
+                'category' => array_keys($this->getAvailableCategories()),
+                'sub_category' => array_keys($this->getAvailableSubCategories()),
                 'funnel_stage' => $this->queryDistinctValues("COALESCE(m.funnel_stage, '-')", ['funnel_stage']),
             };
 
@@ -290,6 +319,18 @@ class Benchmarks extends Component
                 array_intersect($this->{$property}, $available)
             );
         }
+    }
+
+    private function getIndustryIdsFromSlugs(array $slugs): array
+    {
+        if (empty($slugs)) return [];
+        return Industry::whereIn('name', $slugs)->pluck('id')->all();
+    }
+
+    private function getCategoryIdsFromDisplayNames(array $names): array
+    {
+        if (empty($names)) return [];
+        return AccountCategory::whereIn('display_name', $names)->pluck('id')->all();
     }
 
     private function queryDistinctValues(string $columnExpr, array $excludeFilters = []): array

@@ -106,7 +106,7 @@
                 {{-- Category --}}
                 <x-select2-multi
                     wire-model="selectedCategories"
-                    :options="array_merge(['' => __('All')], array_combine($availableCategories, $availableCategories))"
+                    :options="array_merge(['' => __('All')], $availableCategories)"
                     :label="__('Category')"
                     icon="heroicon-o-tag"
                     :placeholder="__('All Categories')"
@@ -115,7 +115,7 @@
                 {{-- Sub-Category --}}
                 <x-select2-multi
                     wire-model="selectedSubCategories"
-                    :options="array_merge(['' => __('All')], array_combine($availableSubCategories, $availableSubCategories))"
+                    :options="array_merge(['' => __('All')], $availableSubCategories)"
                     :label="__('Sub-Category')"
                     icon="heroicon-o-tag"
                     :placeholder="__('All Sub-Categories')"
