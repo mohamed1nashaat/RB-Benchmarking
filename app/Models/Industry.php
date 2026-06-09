@@ -36,6 +36,11 @@ class Industry extends Model
         return $this->hasMany(AdAccount::class);
     }
 
+    public function accountCategories(): HasMany
+    {
+        return $this->hasMany(AccountCategory::class)->ordered();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

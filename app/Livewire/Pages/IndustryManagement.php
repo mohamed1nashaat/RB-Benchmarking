@@ -9,7 +9,6 @@ use App\Models\AccountCategory;
 use App\Models\AccountSubCategory;
 use Livewire\Component;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class IndustryManagement extends Component
 {
@@ -125,53 +124,31 @@ class IndustryManagement extends Component
 
     /**
      * Build a 3-level hierarchy: Industry → Account Category → Sub-Category.
-     * The Industry→AccountCategory relationship is derived from ad_accounts data.
+     * The Industry→AccountCategory relationship is explicit via account_categories.industry_id.
      */
     public function getHierarchyTreeProperty()
     {
-        // Load all industries
-        $industries = $this->industries;
+        $q = strtolower($this->searchQuery);
 
-        // Load all account categories with sub-categories
-        $accountCategories = AccountCategory::with(['subCategories' => fn($q) => $q->ordered()])
+        $industries = Industry::with([
+            'accountCategories' => fn($q) => $q->ordered(),
+            'accountCategories.subCategories' => fn($q) => $q->ordered(),
+        ])
+            ->when($this->statusFilter === 'active', fn($q) => $q->where('is_active', true))
+            ->when($this->statusFilter === 'inactive', fn($q) => $q->where('is_active', false))
             ->ordered()
-            ->get()
-            ->keyBy('display_name');
-
-        // Derive Industry → AccountCategory mapping from ad_accounts
-        $industryCategoryPairs = DB::table('ad_accounts')
-            ->selectRaw('industry, category, COUNT(*) as account_count')
-            ->whereNotNull('industry')
-            ->whereNotNull('category')
-            ->groupBy('industry', 'category')
             ->get();
 
-        // Group account categories by industry
-        $categoriesByIndustry = [];
-        foreach ($industryCategoryPairs as $pair) {
-            if (! isset($categoriesByIndustry[$pair->industry])) {
-                $categoriesByIndustry[$pair->industry] = [];
-            }
-            $cat = $accountCategories->get($pair->category);
-            if ($cat && ! isset($categoriesByIndustry[$pair->industry][$cat->id])) {
-                $categoriesByIndustry[$pair->industry][$cat->id] = $cat;
-            }
-        }
-
-        // Build tree with search filtering
-        $q = strtolower($this->searchQuery);
         $tree = [];
 
         foreach ($industries as $industry) {
-            $cats = $categoriesByIndustry[$industry->name] ?? [];
+            $cats = $industry->accountCategories;
 
-            // Filter categories and sub-categories by search
             if ($q !== '') {
                 $industryMatch = str_contains(strtolower($industry->display_name), $q)
                     || str_contains(strtolower($industry->name), $q);
 
-                $filteredCats = [];
-                foreach ($cats as $cat) {
+                $filteredCats = $cats->filter(function ($cat) use ($q, $industryMatch) {
                     $catMatch = str_contains(strtolower($cat->display_name), $q)
                         || str_contains(strtolower($cat->name), $q);
 
@@ -181,21 +158,23 @@ class IndustryManagement extends Component
                     );
 
                     if ($industryMatch || $catMatch || $filteredSubs->isNotEmpty()) {
-                        $cat = clone $cat;
                         $cat->setRelation('subCategories', $catMatch || $industryMatch ? $cat->subCategories : $filteredSubs);
-                        $filteredCats[$cat->id] = $cat;
+                        return true;
                     }
-                }
-                $cats = $filteredCats;
 
-                if (! $industryMatch && empty($cats)) {
+                    return false;
+                });
+
+                if (! $industryMatch && $filteredCats->isEmpty()) {
                     continue;
                 }
+
+                $cats = $filteredCats;
             }
 
             $tree[] = [
                 'industry' => $industry,
-                'accountCategories' => collect($cats)->values(),
+                'accountCategories' => $cats->values(),
             ];
         }
 

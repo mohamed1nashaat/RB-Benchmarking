@@ -7,7 +7,6 @@ use App\Models\AccountCategory;
 use App\Models\AccountSubCategory;
 use App\Models\Industry;
 use App\Models\Tenant;
-use App\Services\CategoryMapper;
 use App\Services\CurrencyConversionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -460,15 +459,18 @@ class AdAccounts extends Component
             ->withCount('adCampaigns')
             ->paginate($this->perPage);
 
-        // Pre-load account categories for sub-category lookups
-        $accountCategories = AccountCategory::with(['subCategories' => fn($q) => $q->ordered()])
-            ->ordered()
-            ->get();
+        // Pre-load industries with account categories for cascading lookups
+        $industriesBySlug = Industry::with(['accountCategories' => fn($q) => $q->ordered(), 'accountCategories.subCategories' => fn($q) => $q->ordered()])
+            ->get()
+            ->keyBy('name');
 
-        $accountCategoryOptions = $accountCategories->mapWithKeys(fn($cat) => [$cat->display_name => $cat->display_name])->all();
+        $accountCategoryOptions = $industriesBySlug
+            ->flatMap(fn($industry) => $industry->accountCategories)
+            ->mapWithKeys(fn($cat) => [$cat->display_name => $cat->display_name])
+            ->all();
 
         // Compute per-account spend in SAR and attach extra data
-        $accounts->getCollection()->transform(function ($account) use ($accountCategories) {
+        $accounts->getCollection()->transform(function ($account) use ($industriesBySlug) {
             $metricsQuery = $account->adMetrics();
 
             if ($this->filterDateFrom && $this->filterDateTo) {
@@ -497,10 +499,14 @@ class AdAccounts extends Component
             $account->total_atc = (int) $aggregates->total_atc;
             $account->roas = ($totalSpend > 0) ? round($totalRevenue / $totalSpend, 2) : 0;
             $account->platform_name = $account->integration->platform ?? 'unknown';
-            $account->available_categories = CategoryMapper::getCategoriesForIndustry($account->industry);
+
+            $industry = $industriesBySlug->get($account->industry);
+            $account->available_categories = $industry
+                ? $industry->accountCategories->mapWithKeys(fn($cat) => [$cat->display_name => $cat->display_name])->all()
+                : [];
 
             // Account category → sub-category mapping
-            $categoryModel = $accountCategories->firstWhere('display_name', $account->category);
+            $categoryModel = $industry?->accountCategories->firstWhere('display_name', $account->category);
             $account->available_sub_categories = $categoryModel
                 ? $categoryModel->subCategories->mapWithKeys(fn($sub) => [$sub->name => $sub->display_name])->all()
                 : [];
@@ -556,12 +562,13 @@ class AdAccounts extends Component
         $countries = ['Saudi Arabia' => 'Saudi Arabia', 'United States' => 'United States', 'Egypt' => 'Egypt'];
         $clients = Tenant::orderBy('name')->get(['id', 'name']);
 
-        $bulkAvailableCategories = $this->bulkIndustry
-            ? CategoryMapper::getCategoriesForIndustry($this->bulkIndustry)
+        $bulkIndustryModel = $this->bulkIndustry ? $industriesBySlug->get($this->bulkIndustry) : null;
+        $bulkAvailableCategories = $bulkIndustryModel
+            ? $bulkIndustryModel->accountCategories->mapWithKeys(fn($cat) => [$cat->display_name => $cat->display_name])->all()
             : [];
 
         $bulkCategoryModel = $this->bulkCategory
-            ? $accountCategories->firstWhere('name', $this->bulkCategory)
+            ? $industriesBySlug->flatMap(fn($industry) => $industry->accountCategories)->firstWhere('display_name', $this->bulkCategory)
             : null;
         $bulkAvailableSubCategories = $bulkCategoryModel
             ? $bulkCategoryModel->subCategories->mapWithKeys(fn($sub) => [$sub->name => $sub->display_name])->all()
