@@ -113,14 +113,15 @@ document.addEventListener('alpine:init', () => {
             };
             window.addEventListener('benchmark-clear-filters', this._clearHandler);
 
+            // Prevent programmatic updates from re-firing the change handler
+            let suppressChange = false;
+
             // Sync Select2 → Livewire / Alpine parent
             $el.on('change', function () {
+                if (suppressChange) return;
                 const val = $el.val();
-                if (component.alpineKey) {
-                    component.$dispatch('filter-changed', {
-                        key: component.alpineKey,
-                        value: val === null ? '' : val
-                    });
+                if (component.alpineKey && component.$parent) {
+                    component.$parent.columnFilters[component.alpineKey] = val === null ? '' : val;
                 }
                 if (component.wireChange) {
                     const match = component.wireChange.match(/^(\w+)\((.+)\)$/);
@@ -141,7 +142,9 @@ document.addEventListener('alpine:init', () => {
                 this.$watch(() => this.$wire.get(this.wireModel), (newVal) => {
                     const target = newVal ?? '';
                     if ($el.val() !== target) {
+                        suppressChange = true;
                         $el.val(target).trigger('change');
+                        suppressChange = false;
                     }
                 });
             }
@@ -152,6 +155,7 @@ document.addEventListener('alpine:init', () => {
                     const target = newVal ?? '';
                     const current = $el.val() ?? '';
                     if (current !== target) {
+                        suppressChange = true;
                         if (target === '') {
                             const $first = $el.find('option').first();
                             if ($first.length && $first.val() === '') {
@@ -163,6 +167,7 @@ document.addEventListener('alpine:init', () => {
                             $el.val(target);
                         }
                         $el.trigger('change.select2');
+                        suppressChange = false;
                     }
                 });
             }

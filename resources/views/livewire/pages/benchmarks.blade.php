@@ -379,7 +379,7 @@
                         initialSort: { field: '{{ $tableSortField }}', dir: '{{ $tableSortDirection }}' },
                         initialVisibleColumns: @js($visibleColumns),
                         showAllSpend: {{ $showAllSpend ? 'true' : 'false' }},
-                    })" @filter-changed="columnFilters[$event.detail.key] = $event.detail.value">
+                    })">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex-1">
