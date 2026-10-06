@@ -20,7 +20,8 @@
             <div class="flex items-center gap-x-8">
                 <!-- Logo -->
                 <a href="/benchmarks" class="flex-shrink-0">
-                    <img src="/logo.svg" alt="{{ __('app.name') }}" class="h-7 w-auto">
+                    <img src="/logo-dark.svg" alt="{{ __('app.name') }}" class="h-7 w-auto dark-logo">
+                    <img src="/logo.svg" alt="{{ __('app.name') }}" class="h-7 w-auto light-logo hidden">
                 </a>
 
                 <!-- Desktop Navigation -->

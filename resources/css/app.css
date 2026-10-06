@@ -600,11 +600,16 @@ html[dir="rtl"] .select2-dropdown {
    LIGHT THEME OVERRIDES — html[data-theme="light"]
    ══════════════════════════════════════════════════════════ */
 
-/* Theme icon visibility */
+/* Theme icon / logo visibility */
 .dark-icon { display: block; }
 .light-icon { display: none; }
 html[data-theme="light"] .dark-icon { display: none; }
 html[data-theme="light"] .light-icon { display: block; }
+
+.dark-logo { display: block; }
+.light-logo { display: none !important; }
+html[data-theme="light"] .dark-logo { display: none !important; }
+html[data-theme="light"] .light-logo { display: block !important; }
 
 /* Page root & body */
 html[data-theme="light"] body { background-color: #F7F6F3 !important; color: #111111 !important; }
