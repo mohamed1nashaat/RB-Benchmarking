@@ -15,6 +15,7 @@ class OllamaService
     private string $model;
     private string $embedModel;
     private ?string $apiKey;
+    private bool $isCloud;
 
     public function __construct()
     {
@@ -22,6 +23,8 @@ class OllamaService
         $this->model      = config('services.ollama.model', 'llama3.1:70b');
         $this->embedModel = config('services.ollama.embed_model', 'nomic-embed-text');
         $this->apiKey     = config('services.ollama.api_key') ?: null;
+        // Cloud API (ollama.com) uses OpenAI-compatible /v1/* endpoints
+        $this->isCloud    = str_contains($this->host, 'ollama.com');
     }
 
     /**
@@ -30,6 +33,10 @@ class OllamaService
      */
     public function embed(string $text): array
     {
+        if ($this->isCloud) {
+            throw new OllamaException('Ollama cloud does not support embeddings.');
+        }
+
         $response = $this->request('/api/embeddings', [
             'model'  => $this->embedModel,
             'prompt' => $text,
@@ -49,15 +56,25 @@ class OllamaService
     public function chat(string $systemPrompt, array $messages): string
     {
         try {
+            $allMessages = array_merge(
+                [['role' => 'system', 'content' => $systemPrompt]],
+                $messages
+            );
+
+            if ($this->isCloud) {
+                $response = $this->request('/v1/chat/completions', [
+                    'model'    => $this->model,
+                    'stream'   => false,
+                    'messages' => $allMessages,
+                ]);
+                return $response['choices'][0]['message']['content'] ?? '';
+            }
+
             $response = $this->request('/api/chat', [
                 'model'    => $this->model,
                 'stream'   => false,
-                'messages' => array_merge(
-                    [['role' => 'system', 'content' => $systemPrompt]],
-                    $messages
-                ),
+                'messages' => $allMessages,
             ]);
-
             return $response['message']['content'] ?? '';
         } catch (\Throwable $e) {
             Log::warning('OllamaService::chat failed', ['error' => $e->getMessage()]);
@@ -71,16 +88,15 @@ class OllamaService
      */
     public function streamChat(string $systemPrompt, array $messages): Generator
     {
-        $payload = json_encode([
-            'model'    => $this->model,
-            'stream'   => true,
-            'messages' => array_merge(
-                [['role' => 'system', 'content' => $systemPrompt]],
-                $messages
-            ),
-        ]);
+        $allMessages = array_merge(
+            [['role' => 'system', 'content' => $systemPrompt]],
+            $messages
+        );
 
-        $ch = curl_init($this->host . '/api/chat');
+        $endpoint = $this->isCloud ? '/v1/chat/completions' : '/api/chat';
+        $payload  = json_encode(['model' => $this->model, 'stream' => true, 'messages' => $allMessages]);
+
+        $ch = curl_init($this->host . $endpoint);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
@@ -96,9 +112,6 @@ class OllamaService
             return strlen($data);
         });
 
-        // We can't yield inside a CURLOPT_WRITEFUNCTION callback, so we collect
-        // the full streamed body and re-parse it line by line after execution.
-        // For true real-time streaming from a controller, use the raw SSE approach below.
         $error = false;
         try {
             curl_exec($ch);
@@ -119,15 +132,22 @@ class OllamaService
 
         foreach (explode("\n", $buffer) as $line) {
             $line = trim($line);
-            if ($line === '') {
+            if ($line === '' || $line === 'data: [DONE]') {
                 continue;
             }
-            $decoded = json_decode($line, true);
-            if (isset($decoded['message']['content'])) {
-                yield $decoded['message']['content'];
+            // OpenAI SSE format: "data: {...}"
+            $jsonStr = $this->isCloud ? (str_starts_with($line, 'data: ') ? substr($line, 6) : $line) : $line;
+            $decoded = json_decode($jsonStr, true);
+            if ($this->isCloud) {
+                $chunk = $decoded['choices'][0]['delta']['content'] ?? null;
+            } else {
+                $chunk = $decoded['message']['content'] ?? null;
+                if (!empty($decoded['done'])) {
+                    break;
+                }
             }
-            if (!empty($decoded['done'])) {
-                break;
+            if ($chunk !== null && $chunk !== '') {
+                yield $chunk;
             }
         }
     }
@@ -138,16 +158,15 @@ class OllamaService
      */
     public function streamToOutput(string $systemPrompt, array $messages): bool
     {
-        $payload = json_encode([
-            'model'    => $this->model,
-            'stream'   => true,
-            'messages' => array_merge(
-                [['role' => 'system', 'content' => $systemPrompt]],
-                $messages
-            ),
-        ]);
+        $allMessages = array_merge(
+            [['role' => 'system', 'content' => $systemPrompt]],
+            $messages
+        );
 
-        $ch = curl_init($this->host . '/api/chat');
+        $endpoint = $this->isCloud ? '/v1/chat/completions' : '/api/chat';
+        $payload  = json_encode(['model' => $this->model, 'stream' => true, 'messages' => $allMessages]);
+
+        $ch = curl_init($this->host . $endpoint);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
@@ -157,15 +176,27 @@ class OllamaService
             CURLOPT_CONNECTTIMEOUT => 5,
         ]);
 
+        $isCloud    = $this->isCloud;
         $lineBuffer = '';
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$lineBuffer) {
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$lineBuffer, $isCloud) {
             $lineBuffer .= $data;
             while (($pos = strpos($lineBuffer, "\n")) !== false) {
-                $line = substr($lineBuffer, 0, $pos);
+                $line       = substr($lineBuffer, 0, $pos);
                 $lineBuffer = substr($lineBuffer, $pos + 1);
-                $decoded = json_decode($line, true);
-                if (isset($decoded['message']['content']) && $decoded['message']['content'] !== '') {
-                    echo 'data: ' . json_encode(['chunk' => $decoded['message']['content']]) . "\n\n";
+                $line       = trim($line);
+                if ($line === '' || $line === 'data: [DONE]') {
+                    continue;
+                }
+                if ($isCloud) {
+                    $jsonStr = str_starts_with($line, 'data: ') ? substr($line, 6) : $line;
+                    $decoded = json_decode($jsonStr, true);
+                    $chunk   = $decoded['choices'][0]['delta']['content'] ?? null;
+                } else {
+                    $decoded = json_decode($line, true);
+                    $chunk   = $decoded['message']['content'] ?? null;
+                }
+                if ($chunk !== null && $chunk !== '') {
+                    echo 'data: ' . json_encode(['chunk' => $chunk]) . "\n\n";
                     if (ob_get_level() > 0) {
                         ob_flush();
                     }
