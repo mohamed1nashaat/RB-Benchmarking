@@ -84,7 +84,7 @@ class IndustryBenchmarkSeeder extends Seeder
         $benchmarks[] = $this->b('technology', 'snapchat',  'cpm',  4.00, 6.20, 9.80, 14.50, 21.50, 2800, $date);
 
         // ─── E-commerce / Retail ──────────────────────────────────────────────
-        foreach (['e_commerce_retail', 'retail', 'ecommerce'] as $ind) {
+        foreach (['e_commerce_retail'] as $ind) {
             $benchmarks[] = $this->b($ind, 'facebook', 'ctr',  0.92, 1.38, 2.05, 2.82, 4.05, 28500, $date);
             $benchmarks[] = $this->b($ind, 'facebook', 'cpc',  0.68, 0.98, 1.48, 2.05, 2.95, 28500, $date);
             $benchmarks[] = $this->b($ind, 'facebook', 'cpm',  5.20, 7.50, 11.20, 15.30, 22.10, 28500, $date);
@@ -141,7 +141,7 @@ class IndustryBenchmarkSeeder extends Seeder
         $benchmarks[] = $this->b('healthcare', 'tiktok',   'cpc',  0.75, 1.18, 1.85, 2.72, 4.08, 3200, $date);
 
         // ─── Finance & Insurance ──────────────────────────────────────────────
-        foreach (['finance_insurance', 'finance'] as $ind) {
+        foreach (['finance_insurance'] as $ind) {
             $benchmarks[] = $this->b($ind, 'facebook', 'ctr',  0.65, 0.95, 1.41, 1.92, 2.78, 16000, $date);
             $benchmarks[] = $this->b($ind, 'facebook', 'cpc',  2.35, 3.40, 5.15, 7.12, 10.30, 16000, $date);
             $benchmarks[] = $this->b($ind, 'facebook', 'cpm',  11.5, 16.5, 24.8, 34.2, 49.5, 16000, $date);
@@ -194,7 +194,7 @@ class IndustryBenchmarkSeeder extends Seeder
         $benchmarks[] = $this->b('food_beverage', 'snapchat',  'cpc',  0.55, 0.85, 1.32, 1.95, 2.92, 3800, $date);
 
         // ─── Travel & Destinations ────────────────────────────────────────────
-        foreach (['travel_destinations', 'travel', 'travel_tourism'] as $ind) {
+        foreach (['travel_destinations'] as $ind) {
             $benchmarks[] = $this->b($ind, 'facebook', 'ctr',  0.88, 1.32, 1.98, 2.72, 3.95, 14500, $date);
             $benchmarks[] = $this->b($ind, 'facebook', 'cpc',  0.78, 1.12, 1.72, 2.38, 3.48, 14500, $date);
             $benchmarks[] = $this->b($ind, 'facebook', 'cpm',  6.00, 8.60, 13.00, 17.90, 26.00, 14500, $date);
@@ -253,15 +253,6 @@ class IndustryBenchmarkSeeder extends Seeder
         $benchmarks[] = $this->b('government_public_sector', 'google',   'cpc',  0.78, 1.15, 1.78, 2.48, 3.62, 4200, $date);
         $benchmarks[] = $this->b('government_public_sector', 'tiktok',   'ctr',  0.82, 1.28, 1.98, 2.85, 4.28, 2200, $date);
         $benchmarks[] = $this->b('government_public_sector', 'snapchat',  'ctr',  0.55, 0.88, 1.35, 1.98, 2.98, 1800, $date);
-
-        // ─── Home & Garden ────────────────────────────────────────────────────
-        $benchmarks[] = $this->b('home_garden', 'facebook', 'ctr',  0.95, 1.42, 2.12, 2.92, 4.25, 9800, $date);
-        $benchmarks[] = $this->b('home_garden', 'facebook', 'cpc',  0.72, 1.05, 1.60, 2.22, 3.25, 9800, $date);
-        $benchmarks[] = $this->b('home_garden', 'facebook', 'roas', 2.30, 3.45,  5.38,  7.90, 12.02, 9800, $date);
-        $benchmarks[] = $this->b('home_garden', 'google',   'ctr',  2.18, 3.22, 4.78, 6.58, 9.52, 8500, $date);
-        $benchmarks[] = $this->b('home_garden', 'google',   'cpc',  0.88, 1.28, 1.98, 2.75, 4.02, 8500, $date);
-        $benchmarks[] = $this->b('home_garden', 'google',   'roas', 2.60, 3.90,  6.12,  9.02, 13.78, 8500, $date);
-        $benchmarks[] = $this->b('home_garden', 'tiktok',   'ctr',  1.15, 1.78, 2.72, 3.92, 5.85, 3500, $date);
 
         // Insert in batches
         foreach (array_chunk($benchmarks, 100) as $chunk) {
