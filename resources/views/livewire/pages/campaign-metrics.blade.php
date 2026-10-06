@@ -20,7 +20,7 @@
     {{-- Loading State --}}
     @if($loading)
         <div class="flex justify-center items-center py-12">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
             <span class="ms-3 text-gray-300">{{ __('pages.campaign_metrics.loading_metrics') }}</span>
         </div>
     @elseif($error)

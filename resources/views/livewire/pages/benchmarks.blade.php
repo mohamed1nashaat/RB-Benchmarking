@@ -595,7 +595,7 @@
                                             $isVisible = $key === 'industry' || ($visibleColumns[$key] ?? false);
                                             $bgClass = match($col['group']) {
                                                 'account' => 'bg-blue-50',
-                                                'campaign' => 'bg-green-50',
+                                                'campaign' => 'bg-green-500/5',
                                                 'volume' => 'bg-purple-50',
                                                 'efficiency' => 'bg-amber-50',
                                                 'global' => 'bg-teal-50',
@@ -636,7 +636,7 @@
                                             $isVisible = $key === 'industry' || ($visibleColumns[$key] ?? false);
                                             $bgClass = match($col['group']) {
                                                 'account' => 'bg-blue-50',
-                                                'campaign' => 'bg-green-50',
+                                                'campaign' => 'bg-green-500/5',
                                                 'volume' => 'bg-purple-50',
                                                 'efficiency' => 'bg-amber-50',
                                                 'global' => 'bg-teal-50',

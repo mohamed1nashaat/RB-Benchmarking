@@ -141,7 +141,7 @@
                             </svg>
                         </div>
                     @elseif($error)
-                        <div class="rounded-lg bg-red-50 border border-red-200 p-4">
+                        <div class="rounded-lg bg-red-500/10 border border-red-500/20 p-4">
                             <div class="flex">
                                 <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-red-400 flex-shrink-0" />
                                 <div class="ms-3">
@@ -224,7 +224,7 @@
                         {{-- Hint to switch to advanced --}}
                         <p class="text-xs text-gray-400 text-center">
                             {{ __('pages.calculator.advanced_hint') }}
-                            <button type="button" wire:click="$set('viewMode', 'advanced')" class="text-primary-600 hover:underline font-medium">{{ __('pages.calculator.mode_advanced') }}</button>
+                            <button type="button" wire:click="$set('viewMode', 'advanced')" class="text-brand-400 hover:underline font-medium">{{ __('pages.calculator.mode_advanced') }}</button>
                         </p>
                     @else
                         <div class="card">
@@ -428,7 +428,7 @@
                     @endif
 
                     @if($error)
-                        <div class="rounded-lg bg-red-50 border border-red-200 p-4">
+                        <div class="rounded-lg bg-red-500/10 border border-red-500/20 p-4">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-red-400" />
