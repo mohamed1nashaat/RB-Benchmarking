@@ -43,9 +43,14 @@ Route::get('/invitation/{token}', AcceptInvitation::class)->name('accept-invitat
 Route::get('/facebook-callback', [FacebookIntegrationController::class, 'handleCallback'])->name('facebook-callback');
 Route::get('/linkedin-callback', [LinkedInIntegrationController::class, 'handleCallback'])->name('linkedin-callback');
 
+// Landing page — guests see marketing, authenticated users go to dashboard
+Route::get('/', function () {
+    if (auth()->check()) return redirect('/benchmarks');
+    return view('pages.landing');
+})->name('home');
+
 // Authenticated routes
 Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function () {
-    Route::get('/', fn () => redirect('/benchmarks'));
 
     Route::get('/ad-accounts', Pages\AdAccounts::class)->name('ad-accounts');
     Route::get('/ad-accounts/export/excel', [AdAccountExportController::class, 'excel'])->name('ad-accounts-export-excel');
