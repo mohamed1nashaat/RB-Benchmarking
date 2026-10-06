@@ -49,8 +49,20 @@
             </div>
         </div>
 
-        {{-- RB Benchmarks watermark --}}
-        <div class="flex items-center gap-2 flex-shrink-0">
+        {{-- Right side actions --}}
+        <div class="flex items-center gap-3 flex-shrink-0">
+            {{-- Print / Save as PDF --}}
+            <button onclick="window.print()"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/8 text-gray-300 hover:bg-white/12 hover:text-white transition-colors">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                Export PDF
+            </button>
+
+            <div class="h-4 w-px bg-white/10"></div>
+
+            {{-- Watermark --}}
             <span class="text-[11px] text-gray-600">Powered by</span>
             <span class="text-sm font-bold text-brand-400 tracking-tight">RB Benchmarks</span>
         </div>

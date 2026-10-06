@@ -95,6 +95,7 @@
                             <option value="finance_insurance">Finance & Insurance</option>
                             <option value="fmcg_cpg">FMCG / CPG</option>
                             <option value="food_beverage">Food & Beverage</option>
+                            <option value="government_public_sector">Government & Public Sector</option>
                             <option value="healthcare">Healthcare</option>
                             <option value="hospitality_food_services">Hospitality & Food Services</option>
                             <option value="professional_services">Professional Services</option>
