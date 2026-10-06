@@ -72,6 +72,7 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
     Route::get('/reports', Pages\Reports::class)->name('reports');
     Route::get('/reports/create', Pages\ReportBuilder::class)->name('report-builder');
     Route::get('/reports/{id}/pdf', [ReportExportController::class, 'pdf'])->name('report-pdf');
+    Route::get('/reports/{id}/design', Pages\ReportDesigner::class)->name('report-designer');
     Route::get('/reports/{id}', Pages\ReportBuilder::class)->name('report-view');
     Route::get('/media-planner', Pages\MediaPlans::class)->name('media-plans');
     Route::get('/media-planner/create', Pages\MediaPlanner::class)->name('media-planner-create');

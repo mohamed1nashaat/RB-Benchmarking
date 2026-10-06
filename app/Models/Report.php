@@ -31,6 +31,9 @@ class Report extends Model
         'delivery_emails',
         'next_run_at',
         'last_auto_run_at',
+        'layout',
+        'client_name',
+        'share_token',
     ];
 
     protected $casts = [
@@ -39,6 +42,7 @@ class Report extends Model
         'sections'          => 'array',
         'metadata'          => 'array',
         'delivery_emails'   => 'array',
+        'layout'            => 'array',
         'period_start'      => 'date',
         'period_end'        => 'date',
         'sent_at'           => 'datetime',
