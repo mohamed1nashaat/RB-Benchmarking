@@ -13,7 +13,7 @@
                         $needsReauth = collect($integrations)->where('status', 'needs_reauth')->count() > 0;
                     @endphp
                     <div class="h-3 w-3 rounded-full {{ $allHealthy ? 'bg-green-500' : ($needsReauth ? 'bg-amber-500' : ($hasActive ? 'bg-yellow-500' : 'bg-gray-400')) }}"></div>
-                    <span class="ms-1 text-sm font-medium {{ $allHealthy ? 'text-green-700' : ($needsReauth ? 'text-amber-700' : ($hasActive ? 'text-yellow-700' : 'text-gray-500')) }}">
+                    <span class="ms-1 text-sm font-medium {{ $allHealthy ? 'text-green-400' : ($needsReauth ? 'text-amber-400' : ($hasActive ? 'text-yellow-400' : 'text-gray-500')) }}">
                         {{ $allHealthy ? __('All Healthy') : ($needsReauth ? __('Re-auth Required') : ($hasActive ? __('Some Issues') : __('No Integrations'))) }}
                     </span>
                 </div>
@@ -22,7 +22,7 @@
         </div>
         <div class="mt-4 flex gap-x-3 md:mt-0 md:ms-4">
             <button wire:click="refreshAllIntegrations" wire:loading.attr="disabled" wire:target="refreshAllIntegrations" class="btn-secondary">
-                <span wire:loading wire:target="refreshAllIntegrations" class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 me-2"></span>
+                <span wire:loading wire:target="refreshAllIntegrations" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white me-2"></span>
                 <x-heroicon-o-arrow-path wire:loading.remove wire:target="refreshAllIntegrations" class="h-4 w-4 me-2" />
                 {{ __('common.refresh_all') }}
             </button>
@@ -31,26 +31,26 @@
 
     {{-- Flash Messages --}}
     @if(session('success'))
-        <div class="rounded-xl border border-white/10 bg-[#EDF3EC] p-4">
+        <div class="rounded-xl border border-green-500/20 bg-green-500/10 p-4">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
+                    <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
                 </div>
                 <div class="ms-3">
-                    <p class="text-sm font-medium text-[#346538]">{{ session('success') }}</p>
+                    <p class="text-sm font-medium text-green-300">{{ session('success') }}</p>
                 </div>
             </div>
         </div>
     @endif
 
     @if(session('error'))
-        <div class="rounded-xl border border-white/10 bg-[#FDEBEC] p-4">
+        <div class="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <x-heroicon-s-x-circle class="h-5 w-5 text-[#9F2F2D]" />
+                    <x-heroicon-s-x-circle class="h-5 w-5 text-red-400" />
                 </div>
                 <div class="ms-3">
-                    <p class="text-sm font-medium text-[#9F2F2D]">{{ session('error') }}</p>
+                    <p class="text-sm font-medium text-red-300">{{ session('error') }}</p>
                 </div>
             </div>
         </div>
@@ -58,14 +58,14 @@
 
     {{-- Needs Re-auth Warning Banner --}}
     @if(collect($integrations)->where('status', 'needs_reauth')->isNotEmpty())
-        <div class="rounded-xl border border-white/10 bg-[#FBF3DB] p-4">
+        <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-[#956400]" />
+                    <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-amber-400" />
                 </div>
                 <div class="ms-3">
-                    <h3 class="text-sm font-medium text-[#956400]">{{ __('pages.integrations.auth_expired') }}</h3>
-                    <p class="mt-1 text-sm text-[#956400]">
+                    <h3 class="text-sm font-medium text-amber-300">{{ __('pages.integrations.auth_expired') }}</h3>
+                    <p class="mt-1 text-sm text-amber-400/80">
                         {{ __('pages.integrations.reauth_help') }}
                     </p>
                 </div>
@@ -83,13 +83,13 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 p-5">
             @php
                 $platforms = [
-                    ['id' => 'facebook', 'name' => __('integrations.platforms.facebook.name'), 'subtitle' => __('integrations.platforms.facebook.subtitle'), 'desc' => __('integrations.platforms.facebook.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
-                    ['id' => 'google_sheets', 'name' => __('integrations.platforms.google_sheets.name'), 'subtitle' => __('integrations.platforms.google_sheets.subtitle'), 'desc' => __('integrations.platforms.google_sheets.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
-                    ['id' => 'google_ads', 'name' => __('integrations.platforms.google_ads.name'), 'subtitle' => __('integrations.platforms.google_ads.subtitle'), 'desc' => __('integrations.platforms.google_ads.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
-                    ['id' => 'tiktok', 'name' => __('integrations.platforms.tiktok.name'), 'subtitle' => __('integrations.platforms.tiktok.subtitle'), 'desc' => __('integrations.platforms.tiktok.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
-                    ['id' => 'snapchat', 'name' => __('integrations.platforms.snapchat.name'), 'subtitle' => __('integrations.platforms.snapchat.subtitle'), 'desc' => __('integrations.platforms.snapchat.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
-                    ['id' => 'linkedin', 'name' => __('integrations.platforms.linkedin.name'), 'subtitle' => __('integrations.platforms.linkedin.subtitle'), 'desc' => __('integrations.platforms.linkedin.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
-                    ['id' => 'twitter', 'name' => __('integrations.platforms.twitter.name'), 'subtitle' => __('integrations.platforms.twitter.subtitle'), 'desc' => __('integrations.platforms.twitter.description'), 'iconBgClass' => 'bg-[#F1F1EF]', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'facebook', 'name' => __('integrations.platforms.facebook.name'), 'subtitle' => __('integrations.platforms.facebook.subtitle'), 'desc' => __('integrations.platforms.facebook.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'google_sheets', 'name' => __('integrations.platforms.google_sheets.name'), 'subtitle' => __('integrations.platforms.google_sheets.subtitle'), 'desc' => __('integrations.platforms.google_sheets.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'google_ads', 'name' => __('integrations.platforms.google_ads.name'), 'subtitle' => __('integrations.platforms.google_ads.subtitle'), 'desc' => __('integrations.platforms.google_ads.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'tiktok', 'name' => __('integrations.platforms.tiktok.name'), 'subtitle' => __('integrations.platforms.tiktok.subtitle'), 'desc' => __('integrations.platforms.tiktok.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'snapchat', 'name' => __('integrations.platforms.snapchat.name'), 'subtitle' => __('integrations.platforms.snapchat.subtitle'), 'desc' => __('integrations.platforms.snapchat.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'linkedin', 'name' => __('integrations.platforms.linkedin.name'), 'subtitle' => __('integrations.platforms.linkedin.subtitle'), 'desc' => __('integrations.platforms.linkedin.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
+                    ['id' => 'twitter', 'name' => __('integrations.platforms.twitter.name'), 'subtitle' => __('integrations.platforms.twitter.subtitle'), 'desc' => __('integrations.platforms.twitter.description'), 'iconBgClass' => 'bg-white/8', 'iconTextClass' => 'text-gray-300', 'btnClass' => 'btn-primary'],
                 ];
 
                 $connectedPlatforms = collect($integrations)->where('status', 'active')->pluck('platform')->toArray();
@@ -103,7 +103,7 @@
                         || ($p['id'] === 'google_ads' && $googleAdsStatus['authenticated']);
                     $needsReauth = in_array($p['id'], $needsReauthPlatforms);
                 @endphp
-                <div class="group relative bg-gray-900 rounded-xl border {{ $needsReauth ? 'border-amber-200 bg-[#FBF3DB]/40' : ($isConnected ? 'border-green-200 bg-[#EDF3EC]/40' : 'border-white/10') }} hover:border-white/15 transition-colors p-5">
+                <div class="group relative bg-gray-900 rounded-xl border {{ $needsReauth ? 'border-amber-500/30 bg-amber-500/5' : ($isConnected ? 'border-green-500/30 bg-green-500/5' : 'border-white/10') }} hover:border-white/15 transition-colors p-5">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-x-3">
                             <div class="flex-shrink-0">
@@ -153,7 +153,7 @@
 
                     @if($p['id'] === 'google_ads' && $googleAdsStatus['authenticated'])
                         <div class="mb-3">
-                            <p class="text-xs font-medium text-[#346538] bg-[#EDF3EC] rounded-md px-2 py-1">
+                            <p class="text-xs font-medium text-green-300 bg-green-500/10 rounded-md px-2 py-1">
                                 {{ trans_choice('pages.integrations.accounts_connected', $googleAdsStatus['total_accounts']) }}
                             </p>
                         </div>
@@ -161,7 +161,7 @@
 
                     <div class="flex items-center justify-between">
                         @if($needsReauth)
-                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#FBF3DB] text-[#956400]">
+                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-amber-500/15 text-amber-300">
                                 <div class="w-1.5 h-1.5 bg-amber-500 rounded-full me-1.5"></div>
                                 {{ __('status.needs_reauth') }}
                             </span>
@@ -170,7 +170,7 @@
                                 {{ __('common.reauthorize') }}
                             </button>
                         @elseif($isConnected)
-                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#EDF3EC] text-[#346538]">
+                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-green-500/15 text-green-300">
                                 <div class="w-1.5 h-1.5 bg-green-500 rounded-full me-1.5"></div>
                                 {{ __('common.connected') }}
                             </span>
@@ -188,7 +188,7 @@
                     @if(($isConnected || $needsReauth) && !in_array($p['id'], ['google_sheets']))
                         <div class="mt-3 pt-3 border-t border-white/10 space-y-2">
                             @if(isset($activeSyncs[$p['id']]))
-                                <button wire:click="openPlatformSyncModal('{{ $p['id'] }}')" class="btn-secondary w-full justify-center text-[#956400]">
+                                <button wire:click="openPlatformSyncModal('{{ $p['id'] }}')" class="btn-secondary w-full justify-center text-amber-400">
                                     <svg class="animate-spin h-4 w-4 me-2 flex-shrink-0 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                     <span class="flex flex-col items-start text-start">
                                         <span>{{ __('common.syncing') }}</span>
@@ -250,7 +250,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-x-2" wire:click.stop>
-                        <button wire:click="toggleAutoRefresh" class="btn-secondary {{ $autoRefresh ? 'border-green-200 text-[#346538]' : '' }}">
+                        <button wire:click="toggleAutoRefresh" class="btn-secondary {{ $autoRefresh ? 'border-green-500/30 text-green-300' : '' }}">
                             <div class="h-2 w-2 rounded-full me-2 {{ $autoRefresh ? 'bg-green-500' : 'bg-gray-400' }}"></div>
                             {{ __('common.auto_refresh') }} {{ $autoRefresh ? __('ON') : __('OFF') }}
                         </button>
@@ -296,15 +296,15 @@
                                         <div class="flex items-center">
                                             <p class="text-sm font-medium text-white">{{ $platformNames[$integration['platform']] ?? __('integrations.platforms.'.$integration['platform'].'.name') }}</p>
                                             @if($integration['status'] === 'needs_reauth')
-                                                <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#FBF3DB] text-[#956400]">
+                                                <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-amber-500/15 text-amber-300">
                                                     {{ __('status.needs_reauth') }}
                                                 </span>
                                             @elseif($integration['status'] === 'active')
-                                                <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#EDF3EC] text-[#346538]">
+                                                <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-green-500/15 text-green-300">
                                                     {{ __('status.'.$integration['status']) }}
                                                 </span>
                                             @else
-                                                <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#FDEBEC] text-[#9F2F2D]">
+                                                <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-red-500/15 text-red-300">
                                                     {{ __('status.'.$integration['status']) }}
                                                 </span>
                                             @endif
@@ -334,7 +334,7 @@
                                         </button>
                                     @endif
                                     @if(isset($activeSyncs[$integration['platform']]))
-                                        <button wire:click="openPlatformSyncModal('{{ $integration['platform'] }}')" class="btn-secondary text-[#956400]">
+                                        <button wire:click="openPlatformSyncModal('{{ $integration['platform'] }}')" class="btn-secondary text-amber-400">
                                             <svg class="animate-spin h-4 w-4 me-1 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                             {{ __('common.syncing') }}
                                         </button>
@@ -372,7 +372,7 @@
 
                     {{-- INITIAL STATE: Confirmation --}}
                     @if(!$syncProgress)
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#F1F1EF]">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-white/8">
                             <x-heroicon-o-arrow-path class="h-6 w-6 text-gray-300" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
@@ -396,14 +396,14 @@
                     {{-- QUEUED STATE --}}
                     @elseif($progressStatus === 'queued')
                         <div wire:poll.2s="pollSyncProgress">
-                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FBF3DB]">
-                                <div class="h-5 w-5 rounded-full bg-[#956400] animate-pulse"></div>
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-amber-500/15">
+                                <div class="h-5 w-5 rounded-full bg-amber-500 animate-pulse"></div>
                             </div>
                             <div class="mt-3 text-center sm:mt-5">
                                 <h3 class="text-base font-semibold tracking-tight text-white">
                                     {{ __('pages.integrations.sync_for_platform', ['platform' => $syncPlatformNames[$syncPlatform] ?? ucfirst($syncPlatform)]) }}
                                 </h3>
-                                <p class="mt-2 text-sm text-[#956400] font-medium">
+                                <p class="mt-2 text-sm text-amber-300 font-medium">
                                     {{ __('common.sync_queued') }}
                                 </p>
                                 <p class="mt-1 text-xs text-gray-400">
@@ -415,7 +415,7 @@
                     {{-- RUNNING STATE --}}
                     @elseif($progressStatus === 'running')
                         <div wire:poll.2s="pollSyncProgress">
-                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#F1F1EF]">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-white/8">
                                 <x-heroicon-o-arrow-path class="h-6 w-6 text-gray-300 animate-spin" />
                             </div>
                             <div class="mt-3 text-center sm:mt-5">
@@ -452,14 +452,14 @@
 
                     {{-- COMPLETED STATE --}}
                     @elseif($progressStatus === 'completed')
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#EDF3EC]">
-                            <x-heroicon-s-check-circle class="h-6 w-6 text-[#346538]" />
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-500/15">
+                            <x-heroicon-s-check-circle class="h-6 w-6 text-green-400" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
                             <h3 class="text-base font-semibold tracking-tight text-white">
                                 {{ __('common.sync_complete') }}
                             </h3>
-                            <p class="mt-1 text-sm text-[#346538] font-medium">
+                            <p class="mt-1 text-sm text-green-300 font-medium">
                                 {{ __('pages.integrations.metrics_synced_successfully', ['platform' => $syncPlatformNames[$syncPlatform] ?? ucfirst($syncPlatform)]) }}
                             </p>
                         </div>
@@ -468,26 +468,26 @@
                         @if(!empty($syncProgress['stats']))
                             <div class="mt-4 grid grid-cols-2 gap-3">
                                 @if(isset($syncProgress['stats']['accounts_processed']))
-                                    <div class="bg-[#F1F1EF] rounded-lg p-3 text-center">
+                                    <div class="bg-white/5 rounded-lg p-3 text-center">
                                         <p class="stat-num">{{ $syncProgress['stats']['accounts_processed'] }}</p>
                                         <p class="micro-label">{{ __('labels.accounts') }}</p>
                                     </div>
                                 @endif
                                 @if(isset($syncProgress['stats']['metrics_synced']))
-                                    <div class="bg-[#F1F1EF] rounded-lg p-3 text-center">
+                                    <div class="bg-white/5 rounded-lg p-3 text-center">
                                         <p class="stat-num">{{ number_format($syncProgress['stats']['metrics_synced']) }}</p>
                                         <p class="micro-label">{{ __('pages.integrations.metrics_synced') }}</p>
                                     </div>
                                 @endif
                                 @if(isset($syncProgress['stats']['campaigns_synced']))
-                                    <div class="bg-[#F1F1EF] rounded-lg p-3 text-center">
+                                    <div class="bg-white/5 rounded-lg p-3 text-center">
                                         <p class="stat-num">{{ $syncProgress['stats']['campaigns_synced'] }}</p>
                                         <p class="micro-label">{{ __('labels.campaigns') }}</p>
                                     </div>
                                 @endif
                                 @if(isset($syncProgress['stats']['errors']) && $syncProgress['stats']['errors'] > 0)
-                                    <div class="bg-[#FDEBEC] rounded-lg p-3 text-center">
-                                        <p class="stat-num text-[#9F2F2D]">{{ $syncProgress['stats']['errors'] }}</p>
+                                    <div class="bg-red-500/10 rounded-lg p-3 text-center">
+                                        <p class="stat-num text-red-400">{{ $syncProgress['stats']['errors'] }}</p>
                                         <p class="micro-label">{{ __('common.errors') }}</p>
                                     </div>
                                 @endif
@@ -527,14 +527,14 @@
 
                     {{-- FAILED STATE --}}
                     @elseif($progressStatus === 'failed')
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FDEBEC]">
-                            <x-heroicon-s-x-circle class="h-6 w-6 text-[#9F2F2D]" />
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-500/15">
+                            <x-heroicon-s-x-circle class="h-6 w-6 text-red-400" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
                             <h3 class="text-base font-semibold tracking-tight text-white">
                                 {{ __('common.sync_failed') }}
                             </h3>
-                            <p class="mt-2 text-sm text-[#9F2F2D]">
+                            <p class="mt-2 text-sm text-red-300">
                                 {{ $syncProgress['error'] ?? __('common.unknown_error') }}
                             </p>
                         </div>

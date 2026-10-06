@@ -8,18 +8,18 @@
 >
     {{-- Flash Messages --}}
     @if (session()->has('success'))
-        <div class="mb-4 rounded-xl bg-[#EDF3EC] border border-[#346538]/20 p-4">
+        <div class="mb-4 rounded-xl bg-green-500/10 border border-green-500/20 p-4">
             <div class="flex items-center gap-3">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
-                <p class="text-sm text-[#346538]">{{ session('success') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
+                <p class="text-sm text-green-300">{{ session('success') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="mb-4 rounded-xl bg-[#FDEBEC] border border-[#9F2F2D]/20 p-4">
+        <div class="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-4">
             <div class="flex items-center gap-3">
-                <x-heroicon-s-x-circle class="h-5 w-5 text-[#9F2F2D]" />
-                <p class="text-sm text-[#9F2F2D]">{{ session('error') }}</p>
+                <x-heroicon-s-x-circle class="h-5 w-5 text-red-400" />
+                <p class="text-sm text-red-300">{{ session('error') }}</p>
             </div>
         </div>
     @endif
@@ -153,10 +153,10 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-4" @click.stop>
-                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#E1F3FE] text-[#1F6C9F]">
+                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-brand-500/15 text-brand-400">
                                     {{ $accountCategories->count() }} {{ __('pages.industry_management.account_categories') }}
                                 </span>
-                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#F1F1EF] text-[#6B6B66]">
+                                <span class="badge-neutral">
                                     {{ $accountCategories->sum(fn($c) => $c->subCategories->count()) }} {{ __('pages.industry_management.sub_categories') }}
                                 </span>
                                 <div class="flex items-center gap-2">
@@ -177,7 +177,7 @@
                                     </button>
                                     <button
                                         wire:click="confirmDeleteIndustry({{ $industry->id }})"
-                                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md"
+                                        class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md"
                                         title="{{ __('pages.industry_management.delete') }}"
                                     >
                                         <x-heroicon-o-trash class="w-4 h-4" />
@@ -222,7 +222,7 @@
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-4" @click.stop>
-                                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#F1F1EF] text-[#6B6B66]">
+                                            <span class="badge-neutral">
                                                 {{ $accountCategory->subCategories->count() }} {{ __('pages.industry_management.sub_categories') }}
                                             </span>
                                             <div class="flex items-center gap-1">
@@ -235,7 +235,7 @@
                                                 </button>
                                                 <button
                                                     wire:click="confirmDeleteAccountCategory({{ $accountCategory->id }})"
-                                                    class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                    class="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded"
                                                     title="{{ __('pages.industry_management.delete') }}"
                                                 >
                                                     <x-heroicon-o-trash class="w-3.5 h-3.5" />
@@ -267,7 +267,7 @@
                                             <div class="flex flex-wrap gap-2">
                                                 @forelse($accountCategory->subCategories as $sub)
                                                     <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-white/10 rounded-full hover:border-white/15 hover:bg-gray-950 group" wire:key="hier-sub-{{ $accountCategory->id }}-{{ $sub->id }}">
-                                                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-[#F1F1EF] text-[#6B6B66] text-[11px] font-semibold">
+                                                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-white/8 text-gray-400 text-[11px] font-semibold">
                                                             {{ substr($sub->display_name, 0, 1) }}
                                                         </span>
                                                         <span class="text-sm text-gray-200">{{ $sub->display_name }}</span>
@@ -539,8 +539,8 @@
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeDeleteModal"></div>
                 <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="flex-shrink-0 bg-red-50 rounded-full p-3">
-                            <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
+                        <div class="flex-shrink-0 bg-red-500/15 rounded-full p-3">
+                            <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-400" />
                         </div>
                         <div class="text-start">
                             <h3 class="text-lg font-semibold tracking-tight text-white">

@@ -454,11 +454,11 @@
                         {{-- Input Summary --}}
                         <div class="card p-5">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                                     <x-heroicon-o-building-office class="h-4 w-4" />
                                     {{ $this->getIndustryLabel($result['input']['industry'] ?? $industry) }}
                                 </span>
-                                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                                     <x-heroicon-o-flag class="h-4 w-4" />
                                     {{ $availableObjectives[$result['input']['objective'] ?? $objective] ?? ucfirst($result['input']['objective'] ?? $objective) }}
                                 </span>
@@ -469,36 +469,36 @@
                                     $resultJourney   = $result['input']['filters']['user_journey'][0] ?? $userJourney ?? null;
                                 @endphp
                                 @foreach((array) $resultPlatforms as $resultPlatform)
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                                         <x-heroicon-o-computer-desktop class="h-4 w-4" />
                                         {{ $availablePlatforms[$resultPlatform] ?? ucfirst($resultPlatform) }}
                                     </span>
                                 @endforeach
                                 @if($resultCountry)
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                                         <x-heroicon-o-globe-alt class="h-4 w-4" />
                                         {{ $resultCountry }}
                                     </span>
                                 @endif
                                 @if($resultFunnel)
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                                         <x-heroicon-o-funnel class="h-4 w-4" />
                                         {{ $availableFunnelStages[$resultFunnel] ?? $resultFunnel }}
                                     </span>
                                 @endif
                                 @if($resultJourney)
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                                         <x-heroicon-o-user-group class="h-4 w-4" />
                                         {{ $availableUserJourneys[$resultJourney] ?? ucfirst(str_replace('_', ' ', $resultJourney)) }}
                                     </span>
                                 @endif
                                 @if($resultMode === 'target_to_budget')
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E1F3FE] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1F6C9F]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-400">
                                         <x-heroicon-o-flag class="h-4 w-4" />
                                         {{ $this->formatNumber($result['input']['target'] ?? ($targetResults ?? 0)) }} {{ $primaryLabel }}
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#E1F3FE] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1F6C9F]">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-400">
                                         <x-heroicon-o-currency-dollar class="h-4 w-4" />
                                         {{ $this->formatCurrency($result['input']['spend'] ?? ($monthlyBudget ?? 0)) }}
                                     </span>
@@ -649,7 +649,7 @@
                                                 <span class="font-semibold text-sm text-white">{{ $config['label'] }}</span>
                                             </div>
                                             @if($selectedScenario === $scenario)
-                                                <span class="inline-flex items-center rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">{{ __('pages.calculator.selected') }}</span>
+                                                <span class="inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">{{ __('pages.calculator.selected') }}</span>
                                             @endif
                                         </div>
                                         <div class="p-5 space-y-4">

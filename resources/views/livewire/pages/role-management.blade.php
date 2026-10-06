@@ -1,18 +1,18 @@
 <div class="py-6">
     {{-- Flash Messages --}}
     @if (session()->has('success'))
-        <div class="mb-4 rounded-xl bg-green-50 border border-green-200 p-4">
+        <div class="mb-4 rounded-xl bg-green-500/10 border border-green-500/20 p-4">
             <div class="flex">
                 <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
-                <p class="ms-3 text-sm text-green-800">{{ session('success') }}</p>
+                <p class="ms-3 text-sm text-green-300">{{ session('success') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="mb-4 rounded-xl bg-red-50 border border-red-200 p-4">
+        <div class="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 p-4">
             <div class="flex">
                 <x-heroicon-s-x-circle class="h-5 w-5 text-red-400" />
-                <p class="ms-3 text-sm text-red-800">{{ session('error') }}</p>
+                <p class="ms-3 text-sm text-red-300">{{ session('error') }}</p>
             </div>
         </div>
     @endif
@@ -44,7 +44,7 @@
                             <div class="flex items-center gap-2">
                                 <h3 class="text-base font-semibold tracking-tight text-white">{{ $role->display_name }}</h3>
                                 @if($role->is_system)
-                                    <span class="inline-flex items-center rounded-full bg-[#E1F3FE] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1F6C9F]">
+                                    <span class="inline-flex items-center rounded-full bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-400">
                                         {{ __('pages.roles.system_role') }}
                                     </span>
                                 @endif
@@ -63,12 +63,12 @@
                             {{-- Permission badges --}}
                             <div class="mt-3 flex flex-wrap gap-1">
                                 @foreach($role->permissions->take(5) as $permission)
-                                    <span class="inline-flex items-center rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                    <span class="badge-neutral">
                                         {{ $permission->display_name }}
                                     </span>
                                 @endforeach
                                 @if($role->permissions->count() > 5)
-                                    <span class="inline-flex items-center rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">
+                                    <span class="badge-neutral">
                                         +{{ $role->permissions->count() - 5 }} {{ __('pages.roles.more') }}
                                     </span>
                                 @endif
@@ -143,8 +143,8 @@
 
                         {{-- System Role Notice --}}
                         @if($isSystemRole)
-                            <div class="rounded-lg border border-yellow-200 bg-[#FBF3DB] p-3">
-                                <p class="text-sm text-[#956400]">{{ __('pages.roles.system_role_notice') }}</p>
+                            <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+                                <p class="text-sm text-amber-300">{{ __('pages.roles.system_role_notice') }}</p>
                             </div>
                         @endif
 
@@ -266,8 +266,8 @@
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeDeleteDialog"></div>
                 <div class="relative card max-w-md w-full mx-auto p-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="flex-shrink-0 bg-red-100 rounded-full p-3">
-                            <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
+                        <div class="flex-shrink-0 bg-red-500/15 rounded-full p-3">
+                            <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-400" />
                         </div>
                         <div class="text-start">
                             <h3 class="text-lg font-semibold tracking-tight text-white">{{ __('pages.roles.delete_role') }}</h3>
