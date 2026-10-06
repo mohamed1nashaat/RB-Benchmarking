@@ -115,7 +115,7 @@
                                                 <div class="inline-flex items-center gap-1.5">
                                                     <div class="text-center">
                                                         <div class="text-[11px] text-gray-500 mb-0.5">{{ __('pages.global_benchmarks.percentile_good') }}</div>
-                                                        <div class="text-sm font-semibold text-gray-200">{{ number_format($b->percentile_25, 2) }}</div>
+                                                        <div class="text-sm font-semibold text-gray-200 font-mono">{{ $this->formatValue($metric, $b->percentile_25) }}</div>
                                                     </div>
                                                     <div class="flex flex-col gap-0.5 px-1">
                                                         <div class="h-px w-3 bg-white/10"></div>
@@ -123,7 +123,7 @@
                                                     </div>
                                                     <div class="text-center">
                                                         <div class="text-[11px] text-yellow-500/70 mb-0.5">{{ __('pages.global_benchmarks.percentile_avg') }}</div>
-                                                        <div class="text-sm font-bold text-yellow-400">{{ number_format($b->percentile_50, 2) }}</div>
+                                                        <div class="text-sm font-bold text-yellow-400 font-mono">{{ $this->formatValue($metric, $b->percentile_50) }}</div>
                                                     </div>
                                                     <div class="flex flex-col gap-0.5 px-1">
                                                         <div class="h-px w-3 bg-white/10"></div>
@@ -131,7 +131,7 @@
                                                     </div>
                                                     <div class="text-center">
                                                         <div class="text-[11px] text-green-500/70 mb-0.5">{{ __('pages.global_benchmarks.percentile_excellent') }}</div>
-                                                        <div class="text-sm font-semibold text-green-400">{{ number_format($b->percentile_75, 2) }}</div>
+                                                        <div class="text-sm font-semibold text-green-400 font-mono">{{ $this->formatValue($metric, $b->percentile_75) }}</div>
                                                     </div>
                                                 </div>
                                             @else

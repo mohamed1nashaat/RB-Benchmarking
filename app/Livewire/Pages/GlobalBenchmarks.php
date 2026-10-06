@@ -93,6 +93,16 @@ class GlobalBenchmarks extends Component
             ->toArray();
     }
 
+    public function formatValue(string $metric, float $value): string
+    {
+        return match($metric) {
+            'ctr', 'cvr' => number_format($value, 2) . '%',
+            'cpc', 'cpm', 'cpl', 'cpa' => '$' . number_format($value, 2),
+            'roas' => number_format($value, 2) . 'x',
+            default => number_format($value, 2),
+        };
+    }
+
     public function render()
     {
         return view('livewire.pages.global-benchmarks', [
