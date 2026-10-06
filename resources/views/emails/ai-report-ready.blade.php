@@ -77,10 +77,15 @@
             @endif
 
             {{-- CTA --}}
+            @php
+                $reportUrl = $report->share_token
+                    ? url(route('report-share', $report->share_token))
+                    : url(route('report-view', $report->id));
+            @endphp
             <table cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
                 <tr>
                     <td style="background:#EF4444;border-radius:8px;">
-                        <a href="{{ url(route('report-view', $report->id)) }}"
+                        <a href="{{ $reportUrl }}"
                            style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
                             @if(($report->language ?? 'en') === 'ar') عرض التقرير @else View Report @endif
                             &nbsp;→

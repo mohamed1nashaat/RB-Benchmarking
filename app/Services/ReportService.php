@@ -42,6 +42,7 @@ Format each section clearly with the heading on its own line followed by the con
 
             $report->update([
                 'status'            => 'ready',
+                'share_token'       => $report->share_token ?? \Illuminate\Support\Str::random(48),
                 'executive_summary' => $sections['executive_summary'] ?? $narrative,
                 'recommendations'   => $sections['recommendations'] ?? [],
                 'sections'          => $sections,
