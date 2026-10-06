@@ -56,7 +56,7 @@
                     <h3 class="micro-label">{{ __('filters.benchmark_filters') }}</h3>
                     @php $activeFilterCount = count($selectedPlatforms) + count($selectedIndustries) + count($selectedCountries) + count($selectedCategories) + count($selectedSubCategories) + count($selectedFunnelStages); @endphp
                     @if($activeFilterCount > 0)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">
+                        <span class="badge-neutral">
                             {{ $activeFilterCount }} {{ __('common.active') }}
                         </span>
                     @endif
@@ -72,19 +72,23 @@
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full">
                 {{-- Platform --}}
                 <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <label class="micro-label block mb-1">
-                        <x-heroicon-o-server class="h-4 w-4 inline me-1 text-gray-400" />
-                        {{ __('labels.platform') }}
-                    </label>
-                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
+                    <label class="micro-label block mb-1.5">{{ __('labels.platform') }}</label>
+                    <button @click="open = !open" :aria-expanded="open" type="button" class="filter-trigger {{ count($selectedPlatforms) > 0 ? 'is-active' : '' }}">
                         <span class="truncate">{{ empty($selectedPlatforms) ? __('filters.all_platforms') : trans_choice('common.selected_count', count($selectedPlatforms)) }}</span>
-                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                    <div x-show="open" @click.outside="open = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                         class="dropdown-menu">
                         @foreach($availablePlatforms as $value => $label)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" value="{{ $value }}" wire:model.live="selectedPlatforms" class="h-4 w-4 text-white border-white/15 rounded">
-                                <span class="text-gray-200">{{ $label }}</span>
+                            <label class="dropdown-item">
+                                <input type="checkbox" value="{{ $value }}" wire:model.live="selectedPlatforms">
+                                {{ $label }}
                             </label>
                         @endforeach
                     </div>
@@ -92,19 +96,23 @@
 
                 {{-- Industry --}}
                 <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <label class="micro-label block mb-1">
-                        <x-heroicon-o-building-office class="h-4 w-4 inline me-1 text-gray-400" />
-                        {{ __('labels.industry') }}
-                    </label>
-                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
+                    <label class="micro-label block mb-1.5">{{ __('labels.industry') }}</label>
+                    <button @click="open = !open" :aria-expanded="open" type="button" class="filter-trigger {{ count($selectedIndustries) > 0 ? 'is-active' : '' }}">
                         <span class="truncate">{{ empty($selectedIndustries) ? __('filters.all_industries') : trans_choice('common.selected_count', count($selectedIndustries)) }}</span>
-                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                    <div x-show="open" @click.outside="open = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                         class="dropdown-menu">
                         @foreach($availableIndustries as $ind)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" value="{{ $ind }}" wire:model.live="selectedIndustries" class="h-4 w-4 text-white border-white/15 rounded">
-                                <span class="text-gray-200">{{ $this->getIndustryLabel($ind) }}</span>
+                            <label class="dropdown-item">
+                                <input type="checkbox" value="{{ $ind }}" wire:model.live="selectedIndustries">
+                                {{ $this->getIndustryLabel($ind) }}
                             </label>
                         @endforeach
                     </div>
@@ -112,19 +120,23 @@
 
                 {{-- Country --}}
                 <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <label class="micro-label block mb-1">
-                        <x-heroicon-o-globe-alt class="h-4 w-4 inline me-1 text-gray-400" />
-                        {{ __('labels.country') }}
-                    </label>
-                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
+                    <label class="micro-label block mb-1.5">{{ __('labels.country') }}</label>
+                    <button @click="open = !open" :aria-expanded="open" type="button" class="filter-trigger {{ count($selectedCountries) > 0 ? 'is-active' : '' }}">
                         <span class="truncate">{{ empty($selectedCountries) ? __('filters.all_countries') : trans_choice('common.selected_count', count($selectedCountries)) }}</span>
-                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                    <div x-show="open" @click.outside="open = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                         class="dropdown-menu">
                         @foreach($availableCountries as $country)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" value="{{ $country }}" wire:model.live="selectedCountries" class="h-4 w-4 text-white border-white/15 rounded">
-                                <span class="text-gray-200">{{ $country }}</span>
+                            <label class="dropdown-item">
+                                <input type="checkbox" value="{{ $country }}" wire:model.live="selectedCountries">
+                                {{ $country }}
                             </label>
                         @endforeach
                     </div>
@@ -132,19 +144,23 @@
 
                 {{-- Category --}}
                 <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <label class="micro-label block mb-1">
-                        <x-heroicon-o-tag class="h-4 w-4 inline me-1 text-gray-400" />
-                        {{ __('labels.category') }}
-                    </label>
-                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
+                    <label class="micro-label block mb-1.5">{{ __('labels.category') }}</label>
+                    <button @click="open = !open" :aria-expanded="open" type="button" class="filter-trigger {{ count($selectedCategories) > 0 ? 'is-active' : '' }}">
                         <span class="truncate">{{ empty($selectedCategories) ? __('filters.all_categories') : trans_choice('common.selected_count', count($selectedCategories)) }}</span>
-                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                    <div x-show="open" @click.outside="open = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                         class="dropdown-menu">
                         @foreach($availableCategories as $cat => $catLabel)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" value="{{ $cat }}" wire:model.live="selectedCategories" class="h-4 w-4 text-white border-white/15 rounded">
-                                <span class="text-gray-200">{{ $catLabel }}</span>
+                            <label class="dropdown-item">
+                                <input type="checkbox" value="{{ $cat }}" wire:model.live="selectedCategories">
+                                {{ $catLabel }}
                             </label>
                         @endforeach
                     </div>
@@ -152,19 +168,23 @@
 
                 {{-- Account Sub-Category --}}
                 <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <label class="micro-label block mb-1">
-                        <x-heroicon-o-tag class="h-4 w-4 inline me-1 text-gray-400" />
-                        {{ __('labels.sub_category') }}
-                    </label>
-                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
+                    <label class="micro-label block mb-1.5">{{ __('labels.sub_category') }}</label>
+                    <button @click="open = !open" :aria-expanded="open" type="button" class="filter-trigger {{ count($selectedSubCategories) > 0 ? 'is-active' : '' }}">
                         <span class="truncate">{{ empty($selectedSubCategories) ? __('filters.all_sub_industries') : trans_choice('common.selected_count', count($selectedSubCategories)) }}</span>
-                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                    <div x-show="open" @click.outside="open = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                         class="dropdown-menu">
                         @foreach($availableSubCategories as $sub => $subLabel)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" value="{{ $sub }}" wire:model.live="selectedSubCategories" class="h-4 w-4 text-white border-white/15 rounded">
-                                <span class="text-gray-200">{{ $subLabel }}</span>
+                            <label class="dropdown-item">
+                                <input type="checkbox" value="{{ $sub }}" wire:model.live="selectedSubCategories">
+                                {{ $subLabel }}
                             </label>
                         @endforeach
                     </div>
@@ -172,19 +192,23 @@
 
                 {{-- Funnel Stage --}}
                 <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
-                    <label class="micro-label block mb-1">
-                        <x-heroicon-o-funnel class="h-4 w-4 inline me-1 text-gray-400" />
-                        {{ __('funnel_stages.label') }}
-                    </label>
-                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
+                    <label class="micro-label block mb-1.5">{{ __('funnel_stages.label') }}</label>
+                    <button @click="open = !open" :aria-expanded="open" type="button" class="filter-trigger {{ count($selectedFunnelStages) > 0 ? 'is-active' : '' }}">
                         <span class="truncate">{{ empty($selectedFunnelStages) ? __('filters.all_stages') : trans_choice('common.selected_count', count($selectedFunnelStages)) }}</span>
-                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                    <div x-show="open" @click.outside="open = false"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
+                         class="dropdown-menu">
                         @foreach($availableFunnelStages as $stage)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer">
-                                <input type="checkbox" value="{{ $stage }}" wire:model.live="selectedFunnelStages" class="h-4 w-4 text-white border-white/15 rounded">
-                                <span class="text-gray-200">{{ $stage }}</span>
+                            <label class="dropdown-item">
+                                <input type="checkbox" value="{{ $stage }}" wire:model.live="selectedFunnelStages">
+                                {{ $stage }}
                             </label>
                         @endforeach
                     </div>
@@ -208,13 +232,13 @@
                     {{ __('pages.benchmarks.filtered_view.of') }} {{ $unfilteredSummary['total_accounts'] }}
                     {{ __('pages.benchmarks.filtered_view.accounts') }}
                     @foreach($selectedIndustries as $ind)
-                        <span class="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">{{ $this->getIndustryLabel($ind) }}</span>
+                        <span class="ms-2 badge-neutral">{{ $this->getIndustryLabel($ind) }}</span>
                     @endforeach
                     @foreach($selectedPlatforms as $pl)
-                        <span class="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">{{ ucfirst($pl) }}</span>
+                        <span class="ms-2 badge-neutral">{{ ucfirst($pl) }}</span>
                     @endforeach
                     @foreach($selectedCountries as $ctry)
-                        <span class="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">{{ $ctry }}</span>
+                        <span class="ms-2 badge-neutral">{{ $ctry }}</span>
                     @endforeach
                 </p>
             </div>
@@ -250,7 +274,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.industries_tracked') }}</p>
                                     <p class="kpi-value">{{ $yourOverallMetrics['industries_count'] }}</p>
                                 </div>
-                                <div class="p-2 bg-white/5 rounded-lg text-gray-500"><x-heroicon-o-chart-bar class="h-5 w-5" /></div>
+                                <div class="p-2.5 bg-brand-500/10 rounded-lg text-brand-400"><x-heroicon-o-chart-bar class="h-5 w-5" /></div>
                             </div>
                         </div>
 
@@ -261,7 +285,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_accounts') }}</p>
                                     <p class="kpi-value">{{ $yourOverallMetrics['accounts_count'] }}</p>
                                 </div>
-                                <div class="p-2 bg-white/5 rounded-lg text-gray-500"><x-heroicon-o-building-office class="h-5 w-5" /></div>
+                                <div class="p-2.5 bg-brand-500/10 rounded-lg text-brand-400"><x-heroicon-o-building-office class="h-5 w-5" /></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">{{ $yourOverallMetrics['campaigns_count'] }} {{ __('pages.benchmarks.campaigns') }}</p>
                         </div>
@@ -273,7 +297,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_spend') }}</p>
                                     <p class="kpi-value">{{ $this->formatCurrency($yourOverallMetrics['total_spend']) }}</p>
                                 </div>
-                                <div class="p-2 bg-white/5 rounded-lg text-gray-500"><x-heroicon-o-currency-dollar class="h-5 w-5" /></div>
+                                <div class="p-2.5 bg-brand-500/10 rounded-lg text-brand-400"><x-heroicon-o-currency-dollar class="h-5 w-5" /></div>
                             </div>
                         </div>
 
@@ -284,7 +308,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_impressions') }}</p>
                                     <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_impressions']) }}</p>
                                 </div>
-                                <div class="p-2 bg-white/5 rounded-lg text-gray-500"><x-heroicon-o-eye class="h-5 w-5" /></div>
+                                <div class="p-2.5 bg-brand-500/10 rounded-lg text-brand-400"><x-heroicon-o-eye class="h-5 w-5" /></div>
                             </div>
                         </div>
 
@@ -295,7 +319,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_clicks') }}</p>
                                     <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_clicks']) }}</p>
                                 </div>
-                                <div class="p-2 bg-white/5 rounded-lg text-gray-500"><x-heroicon-o-cursor-arrow-rays class="h-5 w-5" /></div>
+                                <div class="p-2.5 bg-brand-500/10 rounded-lg text-brand-400"><x-heroicon-o-cursor-arrow-rays class="h-5 w-5" /></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">{{ __('kpis.ctr') }}: {{ number_format($yourPerformanceIndicators['ctr'], 2) }}%</p>
                         </div>
@@ -307,7 +331,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_conversions') }}</p>
                                     <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_conversions']) }}</p>
                                 </div>
-                                <div class="p-2 bg-white/5 rounded-lg text-gray-500"><x-heroicon-o-check-circle class="h-5 w-5" /></div>
+                                <div class="p-2.5 bg-brand-500/10 rounded-lg text-brand-400"><x-heroicon-o-check-circle class="h-5 w-5" /></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">{{ __('kpis.cvr') }}: {{ number_format($yourPerformanceIndicators['cvr'], 2) }}%</p>
                         </div>
@@ -376,7 +400,11 @@
                     <div class="p-4">
                         @if(count($filteredIndustries) === 0)
                             <div class="empty-state">
+                                <div class="empty-icon">
+                                    <x-heroicon-o-funnel class="h-5 w-5" />
+                                </div>
                                 <p class="empty-title">{{ __('pages.benchmarks.performance.no_industries') }}</p>
+                                <p class="empty-message">{{ __('filters.try_adjusting') }}</p>
                             </div>
                         @else
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -397,25 +425,36 @@
                                         </div>
 
                                         {{-- Metrics --}}
-                                        <div class="space-y-3">
+                                        <div class="space-y-2.5">
                                             @foreach(['ctr', 'cpc', 'cpm', 'cvr', 'cpl', 'cpa', 'roas'] as $metricKey)
                                                 @if(isset($industry['metrics'][$metricKey]))
-                                                    @php $metric = $industry['metrics'][$metricKey]; @endphp
+                                                    @php
+                                                        $metric = $industry['metrics'][$metricKey];
+                                                        $actual = $metric['actual'] ?? 0;
+                                                        $benchmark = $metric['benchmark']['avg'] ?? 0;
+                                                        $barPct = ($benchmark > 0 && $actual > 0) ? min(100, round(($actual / max($actual, $benchmark)) * 100)) : 0;
+                                                        $barColor = isset($metric['status']) && $metric['status'] === 'above' ? '#EF4444' : 'rgba(255,255,255,0.2)';
+                                                    @endphp
                                                     <div>
-                                                        <div class="flex items-center justify-between text-sm">
-                                                            <span class="text-gray-300">{{ $this->getMetricLabel($metricKey) }}:</span>
-                                                            <div class="flex items-center gap-x-2">
-                                                                <span class="font-medium text-white">{{ $this->formatMetricValue($metricKey, $metric['actual'] ?? null) }}</span>
+                                                        <div class="flex items-center justify-between text-sm mb-1">
+                                                            <span class="text-gray-400 text-xs">{{ $this->getMetricLabel($metricKey) }}</span>
+                                                            <div class="flex items-center gap-x-1.5">
+                                                                <span class="font-semibold text-white text-xs">{{ $this->formatMetricValue($metricKey, $actual) }}</span>
                                                                 @if(isset($metric['status']))
-                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $this->getStatusBadgeClass($metric['status']) }}">
+                                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $this->getStatusBadgeClass($metric['status']) }}">
                                                                         {{ $this->getStatusLabel($metric['status']) }}
                                                                     </span>
                                                                 @endif
                                                             </div>
                                                         </div>
+                                                        @if($barPct > 0)
+                                                            <div class="h-0.5 rounded-full bg-white/8 overflow-hidden">
+                                                                <div class="h-full rounded-full transition-all duration-500" style="width: {{ $barPct }}%; background-color: {{ $barColor }};"></div>
+                                                            </div>
+                                                        @endif
                                                         @if(isset($metric['benchmark']))
-                                                            <div class="flex items-center justify-end text-xs text-gray-500 mt-0.5">
-                                                                <span>{{ __('common.benchmark') }}: <span class="font-medium">{{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}</span></span>
+                                                            <div class="text-[10px] mt-0.5" style="color: rgba(255,255,255,0.3);">
+                                                                {{ __('common.benchmark') }}: {{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}
                                                             </div>
                                                         @endif
                                                     </div>
