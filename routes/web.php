@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TikTokIntegrationController;
 use App\Http\Controllers\Api\TwitterIntegrationController;
 use App\Http\Controllers\AdAccountExportController;
 use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\SeoReportExportController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -64,6 +65,7 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
     Route::get('/integrations', Pages\Integrations::class)->name('integrations');
     Route::get('/reports', Pages\Reports::class)->name('reports');
     Route::get('/reports/create', Pages\ReportBuilder::class)->name('report-builder');
+    Route::get('/reports/{id}/pdf', [ReportExportController::class, 'pdf'])->name('report-pdf');
     Route::get('/reports/{id}', Pages\ReportBuilder::class)->name('report-view');
     Route::get('/media-planner', Pages\MediaPlans::class)->name('media-plans');
     Route::get('/media-planner/create', Pages\MediaPlanner::class)->name('media-planner-create');

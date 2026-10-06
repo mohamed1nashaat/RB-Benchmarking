@@ -289,12 +289,13 @@
             {{-- Actions --}}
             <div class="flex items-center gap-3 flex-wrap">
                 <a href="{{ route('reports') }}" class="text-sm text-neutral-500 hover:text-neutral-800 transition-colors">← All reports</a>
-                <button disabled class="inline-flex items-center gap-2 px-4 py-2 border border-neutral-200 text-neutral-400 text-sm rounded-md cursor-not-allowed" title="PDF export — coming in Phase 2.5">
+                <a href="{{ route('report-pdf', $report->id) }}" target="_blank"
+                   class="inline-flex items-center gap-2 px-4 py-2 border border-neutral-200 text-neutral-700 text-sm rounded-md hover:bg-neutral-50 transition-colors">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
                     </svg>
                     Export PDF
-                </button>
+                </a>
             </div>
         </div>
         @endif
