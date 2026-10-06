@@ -532,6 +532,7 @@
     "common.back_to_clients": "Back to Clients",
     "common.below_average": "Below Avg",
     "common.benchmark": "Blended Benchmark",
+    "common.global_avg": "Global Avg",
     "common.cached_db_data": "Cached DB data",
     "common.cancel": "Cancel",
     "common.cancelling": "Cancelling...",

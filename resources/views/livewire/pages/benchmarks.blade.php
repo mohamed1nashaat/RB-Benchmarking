@@ -452,9 +452,14 @@
                                                                 <div class="h-full rounded-full transition-all duration-500" style="width: {{ $barPct }}%; background-color: {{ $barColor }};"></div>
                                                             </div>
                                                         @endif
-                                                        @if(isset($metric['benchmark']))
-                                                            <div class="text-[10px] mt-0.5" style="color: rgba(255,255,255,0.3);">
-                                                                {{ __('common.benchmark') }}: {{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}
+                                                        @if(isset($metric['benchmark']) || isset($globalBenchmarkData[$metricKey]))
+                                                            <div class="flex items-center justify-between text-[10px] mt-0.5">
+                                                                @if(isset($metric['benchmark']))
+                                                                    <span style="color: rgba(255,255,255,0.3);">{{ __('common.benchmark') }}: {{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}</span>
+                                                                @endif
+                                                                @if(isset($globalBenchmarkData[$metricKey]['avg']))
+                                                                    <span style="color: rgba(255,255,255,0.25);">{{ __('common.global_avg') }}: {{ $this->formatMetricValue($metricKey, $globalBenchmarkData[$metricKey]['avg']) }}</span>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </div>
