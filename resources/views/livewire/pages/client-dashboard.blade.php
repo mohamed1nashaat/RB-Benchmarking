@@ -34,7 +34,7 @@
     {{-- Loading State --}}
     @if($loading)
         <div class="flex justify-center items-center py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
         </div>
     @elseif($dashboardData)
         {{-- Client Header --}}
@@ -72,11 +72,11 @@
         {{-- Tab Navigation --}}
         <div class="border-b border-white/10 mb-6">
             <nav class="-mb-px flex gap-x-8" aria-label="{{ __('client_dashboard.tabs.label') }}">
-                <button wire:click="setActiveTab(0)" @click="history.replaceState(null, '', window.location.pathname)" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors {{ $activeTabIndex === 0 ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15' }}">
+                <button wire:click="setActiveTab(0)" @click="history.replaceState(null, '', window.location.pathname)" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors {{ $activeTabIndex === 0 ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15' }}">
                     <x-heroicon-o-chart-bar class="w-5 h-5 inline-block me-1.5 -mt-0.5" />
                     {{ __('client_dashboard.tabs.performance') }}
                 </button>
-                <button wire:click="setActiveTab(1)" @click="history.replaceState(null, '', window.location.pathname + '?seo')" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors {{ $activeTabIndex === 1 ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15' }}">
+                <button wire:click="setActiveTab(1)" @click="history.replaceState(null, '', window.location.pathname + '?seo')" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors {{ $activeTabIndex === 1 ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15' }}">
                     <x-heroicon-o-magnifying-glass class="w-5 h-5 inline-block me-1.5 -mt-0.5" />
                     {{ __('client_dashboard.tabs.seo_report') }}
                 </button>

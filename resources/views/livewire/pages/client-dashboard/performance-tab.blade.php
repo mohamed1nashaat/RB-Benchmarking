@@ -301,7 +301,7 @@
                                                         <option value="{{ $slug }}">{{ $display }}</option>
                                                     @endforeach
                                                 </select>
-                                                <button wire:click="saveAccountEdit" class="text-[#346538] hover:text-[#2C5330] p-1" title="{{ __('common.save') }}">
+                                                <button wire:click="saveAccountEdit" class="text-green-400 hover:text-green-300 p-1" title="{{ __('common.save') }}">
                                                     <x-heroicon-o-check class="h-4 w-4" />
                                                 </button>
                                                 <button wire:click="cancelAccountEdit" class="text-gray-400 hover:text-gray-300 p-1" title="{{ __('common.cancel') }}">
@@ -575,7 +575,7 @@
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="bg-[#F1F1EF] text-white">
+                                <tr class="bg-white/8 text-gray-200">
                                     <td class="font-semibold">{{ __('Summary') }}</td>
                                     <td class="text-end font-semibold">{{ number_format($teads['summary']['impressions'] ?? 0) }}</td>
                                     <td class="text-end font-semibold">{{ number_format($teads['summary']['clicks'] ?? 0) }}</td>
@@ -602,10 +602,10 @@
                         @foreach($exec['insights'] as $insight)
                             @php
                                 $insightBorder = match($insight['type']) {
-                                    'success' => 'border-s-4 border-[#346538] bg-[#EDF3EC]',
-                                    'warning' => 'border-s-4 border-[#956400] bg-[#FBF3DB]',
-                                    'danger' => 'border-s-4 border-[#9F2F2D] bg-[#FDEBEC]',
-                                    default => 'border-s-4 border-[#1F6C9F] bg-[#E1F3FE]',
+                                    'success' => 'border-s-4 border-green-500 bg-green-500/10',
+                                    'warning' => 'border-s-4 border-amber-500 bg-amber-500/10',
+                                    'danger' => 'border-s-4 border-red-500 bg-red-500/10',
+                                    default => 'border-s-4 border-brand-500 bg-brand-500/10',
                                 };
                             @endphp
                             <div class="flex items-center gap-3 p-3 rounded-md {{ $insightBorder }}">

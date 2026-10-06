@@ -42,7 +42,7 @@
         <div class="flex items-center justify-between">
             <span x-show="selected.length === 0" class="text-gray-500">{{ $placeholder }}</span>
             <span x-show="selected.length > 0" x-cloak class="flex items-center gap-1.5 truncate">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800" x-text="selected.length + ' {{ __('selected') }}'"></span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-300" x-text="selected.length + ' {{ __('selected') }}'"></span>
             </span>
             <svg class="h-4 w-4 text-gray-400 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />

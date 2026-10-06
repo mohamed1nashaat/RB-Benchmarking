@@ -6,8 +6,8 @@
         @if($user->avatar_url ?? false)
             <img src="{{ $user->avatar_url }}" alt="{{ __('common.profile') }}" class="w-8 h-8 rounded-full object-cover">
         @else
-            <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                <span class="text-sm font-medium text-primary-700">
+            <div class="w-8 h-8 bg-brand-500/10 rounded-full flex items-center justify-center">
+                <span class="text-sm font-medium text-brand-400">
                     {{ collect(explode(' ', $user->name))->map(fn($n) => mb_substr($n, 0, 1))->take(2)->join('') }}
                 </span>
             </div>

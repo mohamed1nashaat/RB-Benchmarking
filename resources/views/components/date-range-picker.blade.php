@@ -272,7 +272,7 @@
             if (this.isStart(d) || this.isEnd(d)) {
                 classes += 'bg-primary-600 text-white font-semibold rounded-md';
             } else if (this.isInRange(d)) {
-                classes += 'bg-primary-100 text-primary-800';
+                classes += 'bg-brand-500/20 text-brand-300';
             } else if (this.isToday(d)) {
                 classes += 'ring-1 ring-primary-400 text-primary-600 rounded-md';
             } else {
@@ -310,7 +310,7 @@
         <div class="flex items-center justify-between">
             <span class="flex items-center gap-1.5 truncate">
                 <template x-if="activePreset">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800" x-text="presets[activePreset]?.label"></span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-300" x-text="presets[activePreset]?.label"></span>
                 </template>
                 <template x-if="!activePreset && dateFrom && dateTo">
                     <span class="text-gray-200" x-text="displayText"></span>
@@ -345,7 +345,7 @@
                         @click="applyPreset(key)"
                         type="button"
                         class="w-full text-start px-3 py-2 text-sm transition-colors"
-                        :class="activePreset === key ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-200 hover:bg-gray-950'"
+                        :class="activePreset === key ? 'bg-brand-500/10 text-brand-400 font-medium' : 'text-gray-200 hover:bg-gray-950'"
                         x-text="preset.label"
                     ></button>
                 </template>

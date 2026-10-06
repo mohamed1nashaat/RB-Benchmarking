@@ -4,13 +4,13 @@
             <div class="card mb-6" x-data>
                 <div class="flex items-center justify-between p-4 border-b border-white/8">
                     <div class="flex items-center gap-3">
-                        <button wire:click="toggleSeoSettings" class="btn-ghost gap-2 {{ $seoSettingsOpen ? 'bg-primary-100 text-primary-700' : 'text-gray-300 hover:bg-white/5' }}">
+                        <button wire:click="toggleSeoSettings" class="btn-ghost gap-2 {{ $seoSettingsOpen ? 'bg-brand-500/15 text-brand-400' : 'text-gray-300 hover:bg-white/5' }}">
                             <x-heroicon-o-cog-6-tooth class="w-4 h-4" />
                             {{ __('SEO Properties') }}
                             <x-heroicon-o-chevron-down class="w-3 h-3 transition-transform {{ $seoSettingsOpen ? 'rotate-180' : '' }}" />
                         </button>
                         @if($seoSaved)
-                            <span class="inline-flex items-center text-xs text-green-600 font-medium">
+                            <span class="inline-flex items-center text-xs text-green-400 font-medium">
                                 <x-heroicon-o-check-circle class="w-4 h-4 me-1" />
                                 {{ __('Saved') }}
                             </span>
@@ -29,11 +29,11 @@
                 @if($seoSettingsOpen)
                     <div class="p-4 bg-gray-950 border-b border-white/8">
                         @if(!$seoHasIntegration)
-                            <div class="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+                            <div class="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
                                 <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                                <div class="text-sm text-yellow-700">
+                                <div class="text-sm text-amber-400">
                                     {{ __('No active Google integration found.') }}
-                                    <a href="{{ route('integrations') }}" class="font-medium underline hover:text-yellow-800" wire:navigate>{{ __('Connect Google') }}</a>
+                                    <a href="{{ route('integrations') }}" class="font-medium underline hover:text-amber-300" wire:navigate>{{ __('Connect Google') }}</a>
                                 </div>
                             </div>
                         @endif
@@ -140,9 +140,9 @@
                         <label class="inline-flex items-center gap-2 cursor-pointer">
                             <span class="text-sm font-medium text-gray-300">{{ __('Compare') }}</span>
                             <button wire:click="$toggle('seoCompareEnabled')" type="button"
-                                class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $seoCompareEnabled ? 'bg-primary-600' : 'bg-white/8' }}"
+                                class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $seoCompareEnabled ? 'bg-brand-500' : 'bg-white/8' }}"
                                 role="switch" aria-checked="{{ $seoCompareEnabled ? 'true' : 'false' }}">
-                                <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-gray-900 shadow ring-0 transition duration-200 ease-in-out {{ $seoCompareEnabled ? 'translate-x-4 rtl:-translate-x-4' : 'translate-x-0' }}"></span>
+                                <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $seoCompareEnabled ? 'translate-x-4 rtl:-translate-x-4' : 'translate-x-0' }}"></span>
                             </button>
                         </label>
 
@@ -223,21 +223,21 @@
                 </div>
             @elseif($seoReportData)
                 @if(isset($seoReportData['error']))
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                    <div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-6 text-center">
                         <x-heroicon-o-exclamation-triangle class="mx-auto h-12 w-12 text-yellow-400" />
-                        <p class="mt-2 text-sm text-yellow-700">{{ $seoReportData['error'] }}</p>
+                        <p class="mt-2 text-sm text-amber-400">{{ $seoReportData['error'] }}</p>
                     </div>
                 @else
                     @php
                         $channelIcons = [
-                            'Organic Search' => ['icon' => 'heroicon-o-magnifying-glass', 'color' => 'text-[#346538]', 'bg' => 'bg-[#EDF3EC]'],
-                            'Direct'         => ['icon' => 'heroicon-o-globe-alt', 'color' => 'text-[#6B6B66]', 'bg' => 'bg-[#F1F1EF]'],
-                            'Social'         => ['icon' => 'heroicon-o-share', 'color' => 'text-[#956400]', 'bg' => 'bg-[#FBF3DB]'],
-                            'Referral'       => ['icon' => 'heroicon-o-link', 'color' => 'text-[#1F6C9F]', 'bg' => 'bg-[#E1F3FE]'],
-                            'Paid Search'    => ['icon' => 'heroicon-o-currency-dollar', 'color' => 'text-[#9F2F2D]', 'bg' => 'bg-[#FDEBEC]'],
-                            'Email'          => ['icon' => 'heroicon-o-envelope', 'color' => 'text-[#1F6C9F]', 'bg' => 'bg-[#E1F3FE]'],
-                            'Paid Social'    => ['icon' => 'heroicon-o-megaphone', 'color' => 'text-[#9F2F2D]', 'bg' => 'bg-[#FDEBEC]'],
-                            'Display'        => ['icon' => 'heroicon-o-tv', 'color' => 'text-[#346538]', 'bg' => 'bg-[#EDF3EC]'],
+                            'Organic Search' => ['icon' => 'heroicon-o-magnifying-glass', 'color' => 'text-green-400', 'bg' => 'bg-green-500/10'],
+                            'Direct'         => ['icon' => 'heroicon-o-globe-alt', 'color' => 'text-gray-400', 'bg' => 'bg-white/8'],
+                            'Social'         => ['icon' => 'heroicon-o-share', 'color' => 'text-amber-400', 'bg' => 'bg-amber-500/10'],
+                            'Referral'       => ['icon' => 'heroicon-o-link', 'color' => 'text-brand-400', 'bg' => 'bg-brand-500/10'],
+                            'Paid Search'    => ['icon' => 'heroicon-o-currency-dollar', 'color' => 'text-red-400', 'bg' => 'bg-red-500/10'],
+                            'Email'          => ['icon' => 'heroicon-o-envelope', 'color' => 'text-brand-400', 'bg' => 'bg-brand-500/10'],
+                            'Paid Social'    => ['icon' => 'heroicon-o-megaphone', 'color' => 'text-red-400', 'bg' => 'bg-red-500/10'],
+                            'Display'        => ['icon' => 'heroicon-o-tv', 'color' => 'text-green-400', 'bg' => 'bg-green-500/10'],
                         ];
                         $hasEcommerce = (($seoReportData['ga4']['summary']['ecommerce_purchases'] ?? 0) > 0) || (($seoReportData['ga4']['summary']['total_revenue'] ?? 0) > 0);
                     @endphp
@@ -251,30 +251,30 @@
                     {{-- Sub-Tab Navigation (Feature 13) --}}
                     <div x-data="{ subTab: 'overview' }">
                         <nav class="border-b border-white/10 mb-6 -mb-px flex gap-x-6 overflow-x-auto">
-                            <button @click="subTab = 'overview'" :class="subTab === 'overview' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                            <button @click="subTab = 'overview'" :class="subTab === 'overview' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                 {{ __('client_dashboard.seo.tab_overview') }}
                             </button>
                             @if($hasSc)
-                                <button @click="subTab = 'search_console'" :class="subTab === 'search_console' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'search_console'" :class="subTab === 'search_console' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_search_console') }}
                                 </button>
                             @endif
                             @if($hasGa4)
-                                <button @click="subTab = 'analytics'" :class="subTab === 'analytics' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'analytics'" :class="subTab === 'analytics' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_analytics') }}
                                 </button>
                             @endif
                             @if($hasPs)
-                                <button @click="subTab = 'pagespeed'" :class="subTab === 'pagespeed' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'pagespeed'" :class="subTab === 'pagespeed' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_pagespeed') }}
                                 </button>
                             @endif
                             @if($hasEcommerce)
-                                <button @click="subTab = 'ecommerce'" :class="subTab === 'ecommerce' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'ecommerce'" :class="subTab === 'ecommerce' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_ecommerce') }}
                                 </button>
                             @endif
-                            <button @click="subTab = 'audit'" :class="subTab === 'audit' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                            <button @click="subTab = 'audit'" :class="subTab === 'audit' ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                 {{ __('client_dashboard.seo.tab_audit') }}
                             </button>
                         </nav>
@@ -373,7 +373,7 @@
                             @if(isset($seoReportData['pagespeed_mobile']['scores']['performance']) && $seoReportData['pagespeed_mobile']['scores']['performance'] > 0)
                                 @php
                                     $score = $seoReportData['pagespeed_mobile']['scores']['performance'];
-                                    $scoreColor = $score >= 90 ? 'text-green-600' : ($score >= 50 ? 'text-orange-600' : 'text-red-600');
+                                    $scoreColor = $score >= 90 ? 'text-green-400' : ($score >= 50 ? 'text-orange-400' : 'text-red-400');
                                 @endphp
                                 <div class="kpi-card">
                                     <div class="flex items-center justify-between">
@@ -566,7 +566,7 @@
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <p class="kpi-label">{{ __('client_dashboard.seo.organic_share') }}</p>
-                                            <p class="kpi-value text-green-600">{{ number_format($organicShare, 1) }}%</p>
+                                            <p class="kpi-value text-green-400">{{ number_format($organicShare, 1) }}%</p>
                                         </div>
                                         <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-magnifying-glass class="w-5 h-5 text-gray-500" />
@@ -705,8 +705,8 @@
                                                             @foreach(['lcp' => 'LCP', 'fid' => 'FID', 'cls' => 'CLS', 'fcp' => 'FCP', 'tbt' => 'TBT', 'ttfb' => 'TTFB'] as $cwvKey => $cwvLabel)
                                                                 @if(isset($ps['core_web_vitals'][$cwvKey]))
                                                                     @php $cwv = $ps['core_web_vitals'][$cwvKey]; @endphp
-                                                                    <div class="text-center p-2 rounded {{ ($cwv['score'] ?? '') === 'good' ? 'bg-green-50' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'bg-yellow-50' : 'bg-red-50') }}">
-                                                                        <div class="text-sm font-semibold {{ ($cwv['score'] ?? '') === 'good' ? 'text-green-700' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'text-yellow-700' : 'text-red-700') }}">
+                                                                    <div class="text-center p-2 rounded {{ ($cwv['score'] ?? '') === 'good' ? 'bg-green-500/10' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'bg-amber-500/10' : 'bg-red-500/10') }}">
+                                                                        <div class="text-sm font-semibold {{ ($cwv['score'] ?? '') === 'good' ? 'text-green-400' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'text-amber-400' : 'text-red-400') }}">
                                                                             {{ $cwv['display'] ?? $cwv['value'] ?? '-' }}
                                                                         </div>
                                                                         <div class="text-xs text-gray-500">{{ $cwvLabel }}</div>
@@ -791,7 +791,7 @@
                                                 @endif
                                                 <td>
                                                     <div class="w-full bg-white/8 rounded-full h-2">
-                                                        <div class="bg-primary-600 h-2 rounded-full" style="width: {{ min($source['share'] ?? 0, 100) }}%"></div>
+                                                        <div class="bg-brand-500 h-2 rounded-full" style="width: {{ min($source['share'] ?? 0, 100) }}%"></div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -831,14 +831,14 @@
                                                 @foreach($seoReportData['search_console']['pages'] as $idx => $page)<tr x-show="expanded || {{ $idx }} < 10">
                                                         <td class="truncate max-w-[200px]" title="{{ $page['key'] ?? '' }}">
                                                             @if(!empty($page['key']))
-                                                                <a href="{{ $page['key'] }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $page['key'] }}</a>
+                                                                <a href="{{ $page['key'] }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $page['key'] }}</a>
                                                             @else - @endif
                                                         </td>
                                                         <td class="text-end">{{ fmtNum($page['clicks'] ?? 0) }}</td>
                                                         <td class="text-end">{{ fmtNum($page['impressions'] ?? 0) }}</td>
                                                         <td class="text-end">{{ number_format($page['ctr'] ?? 0, 1) }}%</td>
                                                         <td class="text-end">
-                                                            @php $pos = $page['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-[#EDF3EC] text-[#346538]' : ($pos <= 10 ? 'bg-[#FBF3DB] text-[#956400]' : 'bg-[#F1F1EF] text-[#6B6B66]'); @endphp
+                                                            @php $pos = $page['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-green-500/15 text-green-400' : ($pos <= 10 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/8 text-gray-400'); @endphp
                                                             <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $posBadge }}">{{ number_format($pos, 1) }}</span>
                                                         </td>
                                                         @if($seoCompareEnabled)
@@ -886,7 +886,7 @@
                                                 @foreach($seoReportData['ga4']['top_pages'] as $idx => $page)<tr x-show="expanded || {{ $idx }} < 10">
                                                         <td class="truncate max-w-[200px]" title="{{ $page['page_path'] ?? '' }}">
                                                             @if(!empty($page['page_path']) && !empty($dashboardData['client']['website']))
-                                                                <a href="{{ rtrim($dashboardData['client']['website'], '/') }}{{ $page['page_path'] }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $page['page_path'] }}</a>
+                                                                <a href="{{ rtrim($dashboardData['client']['website'], '/') }}{{ $page['page_path'] }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $page['page_path'] }}</a>
                                                             @else
                                                                 {{ $page['page_path'] ?? '-' }}
                                                             @endif
@@ -943,14 +943,14 @@
                                         @foreach($seoReportData['search_console']['queries'] as $idx => $query)<tr x-show="expanded || {{ $idx }} < 20">
                                                 <td class="font-medium">
                                                     @if(!empty($query['key']))
-                                                        <a href="https://www.google.com/search?q={{ urlencode($query['key']) }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $query['key'] }}</a>
+                                                        <a href="https://www.google.com/search?q={{ urlencode($query['key']) }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $query['key'] }}</a>
                                                     @else - @endif
                                                 </td>
                                                 <td class="text-end">{{ fmtNum($query['clicks'] ?? 0) }}</td>
                                                 <td class="text-end">{{ fmtNum($query['impressions'] ?? 0) }}</td>
                                                 <td class="text-end">{{ number_format($query['ctr'] ?? 0, 1) }}%</td>
                                                 <td class="text-end">
-                                                    @php $pos = $query['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-[#EDF3EC] text-[#346538]' : ($pos <= 10 ? 'bg-[#FBF3DB] text-[#956400]' : 'bg-[#F1F1EF] text-[#6B6B66]'); @endphp
+                                                    @php $pos = $query['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-green-500/15 text-green-400' : ($pos <= 10 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/8 text-gray-400'); @endphp
                                                     <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $posBadge }}">{{ number_format($pos, 1) }}</span>
                                                 </td>
                                                 @if($seoCompareEnabled)
@@ -1170,14 +1170,14 @@
                                         @foreach($seoReportData['search_console']['pages'] as $idx => $page)<tr x-show="expanded || {{ $idx }} < 10">
                                                 <td class="truncate max-w-[200px]" title="{{ $page['key'] ?? '' }}">
                                                     @if(!empty($page['key']))
-                                                        <a href="{{ $page['key'] }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $page['key'] }}</a>
+                                                        <a href="{{ $page['key'] }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $page['key'] }}</a>
                                                     @else - @endif
                                                 </td>
                                                 <td class="text-end">{{ fmtNum($page['clicks'] ?? 0) }}</td>
                                                 <td class="text-end">{{ fmtNum($page['impressions'] ?? 0) }}</td>
                                                 <td class="text-end">{{ number_format($page['ctr'] ?? 0, 1) }}%</td>
                                                 <td class="text-end">
-                                                    @php $pos = $page['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-[#EDF3EC] text-[#346538]' : ($pos <= 10 ? 'bg-[#FBF3DB] text-[#956400]' : 'bg-[#F1F1EF] text-[#6B6B66]'); @endphp
+                                                    @php $pos = $page['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-green-500/15 text-green-400' : ($pos <= 10 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/8 text-gray-400'); @endphp
                                                     <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $posBadge }}">{{ number_format($pos, 1) }}</span>
                                                 </td>
                                                 @if($seoCompareEnabled)
@@ -1226,14 +1226,14 @@
                                         @foreach($seoReportData['search_console']['queries'] as $idx => $query)<tr x-show="expanded || {{ $idx }} < 20">
                                                 <td class="font-medium">
                                                     @if(!empty($query['key']))
-                                                        <a href="https://www.google.com/search?q={{ urlencode($query['key']) }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $query['key'] }}</a>
+                                                        <a href="https://www.google.com/search?q={{ urlencode($query['key']) }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $query['key'] }}</a>
                                                     @else - @endif
                                                 </td>
                                                 <td class="text-end">{{ fmtNum($query['clicks'] ?? 0) }}</td>
                                                 <td class="text-end">{{ fmtNum($query['impressions'] ?? 0) }}</td>
                                                 <td class="text-end">{{ number_format($query['ctr'] ?? 0, 1) }}%</td>
                                                 <td class="text-end">
-                                                    @php $pos = $query['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-[#EDF3EC] text-[#346538]' : ($pos <= 10 ? 'bg-[#FBF3DB] text-[#956400]' : 'bg-[#F1F1EF] text-[#6B6B66]'); @endphp
+                                                    @php $pos = $query['position'] ?? 0; $posBadge = $pos <= 3 ? 'bg-green-500/15 text-green-400' : ($pos <= 10 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/8 text-gray-400'); @endphp
                                                     <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $posBadge }}">{{ number_format($pos, 1) }}</span>
                                                 </td>
                                                 @if($seoCompareEnabled)
@@ -1320,7 +1320,7 @@
                                                 <tr>
                                                     <td class="truncate max-w-[200px]" title="{{ $ePage['name'] ?? '' }}">
                                                         @if(!empty($ePage['name']))
-                                                            <a href="https://www.google.com/search?q={{ urlencode($ePage['name']) }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $ePage['name'] }}</a>
+                                                            <a href="https://www.google.com/search?q={{ urlencode($ePage['name']) }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $ePage['name'] }}</a>
                                                         @else - @endif
                                                     </td>
                                                     <td class="text-end">{{ fmtNum($ePage['views'] ?? 0) }}</td>
@@ -1367,7 +1367,7 @@
                                                             <td class="text-gray-400">{{ $loop->iteration }}</td>
                                                             <td class="font-medium truncate max-w-[200px]">
                                                             @if(!empty($prod['name']))
-                                                                <a href="https://www.google.com/search?q={{ urlencode($prod['name']) }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $prod['name'] }}</a>
+                                                                <a href="https://www.google.com/search?q={{ urlencode($prod['name']) }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $prod['name'] }}</a>
                                                             @else - @endif
                                                         </td>
                                                             <td class="text-end">{{ fmtNum($prod['views'] ?? 0) }}</td>
@@ -1411,7 +1411,7 @@
                                                             <td class="text-gray-400">{{ $loop->iteration }}</td>
                                                             <td class="font-medium truncate max-w-[200px]">
                                                             @if(!empty($prod['name']))
-                                                                <a href="https://www.google.com/search?q={{ urlencode($prod['name']) }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $prod['name'] }}</a>
+                                                                <a href="https://www.google.com/search?q={{ urlencode($prod['name']) }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $prod['name'] }}</a>
                                                             @else - @endif
                                                         </td>
                                                             <td class="text-end">{{ fmtNum($prod['views'] ?? 0) }}</td>
@@ -1540,7 +1540,7 @@
                                             @foreach($cov['sitemaps'] as $sm)
                                                 <tr>
                                                     <td class="truncate max-w-[300px]" title="{{ $sm['path'] }}">
-                                                        <a href="{{ $sm['path'] }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline">{{ $sm['path'] }}</a>
+                                                        <a href="{{ $sm['path'] }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline">{{ $sm['path'] }}</a>
                                                     </td>
                                                     <td class="text-end">{{ fmtNum($sm['submitted']) }}</td>
                                                     <td class="text-end">{{ fmtNum($sm['indexed']) }}</td>
@@ -1636,7 +1636,7 @@
                             <div class="flex flex-wrap gap-3">
                                 @foreach($auditComponents as $compKey => $comp)
                                     @php
-                                        $badgeColor = $comp['value'] >= 80 ? 'bg-[#EDF3EC] text-[#346538]' : ($comp['value'] >= 50 ? 'bg-[#FBF3DB] text-[#956400]' : 'bg-[#FDEBEC] text-[#9F2F2D]');
+                                        $badgeColor = $comp['value'] >= 80 ? 'bg-green-500/15 text-green-400' : ($comp['value'] >= 50 ? 'bg-amber-500/15 text-amber-400' : 'bg-red-500/15 text-red-400');
                                     @endphp
                                     <div class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $badgeColor }}">
                                         <span class="text-lg font-semibold">{{ $comp['value'] }}</span>
@@ -1687,8 +1687,8 @@
                                                         @foreach(['lcp' => 'LCP', 'fid' => 'FID', 'cls' => 'CLS', 'fcp' => 'FCP', 'tbt' => 'TBT', 'ttfb' => 'TTFB'] as $cwvKey => $cwvLabel)
                                                             @if(isset($ps['core_web_vitals'][$cwvKey]))
                                                                 @php $cwv = $ps['core_web_vitals'][$cwvKey]; @endphp
-                                                                <div class="text-center p-2 rounded {{ ($cwv['score'] ?? '') === 'good' ? 'bg-green-50' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'bg-yellow-50' : 'bg-red-50') }}">
-                                                                    <div class="text-sm font-semibold {{ ($cwv['score'] ?? '') === 'good' ? 'text-green-700' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'text-yellow-700' : 'text-red-700') }}">
+                                                                <div class="text-center p-2 rounded {{ ($cwv['score'] ?? '') === 'good' ? 'bg-green-500/10' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'bg-amber-500/10' : 'bg-red-500/10') }}">
+                                                                    <div class="text-sm font-semibold {{ ($cwv['score'] ?? '') === 'good' ? 'text-green-400' : (($cwv['score'] ?? '') === 'needs_improvement' ? 'text-amber-400' : 'text-red-400') }}">
                                                                         {{ $cwv['display'] ?? $cwv['value'] ?? '-' }}
                                                                     </div>
                                                                     <div class="text-xs text-gray-500">{{ $cwvLabel }}</div>
@@ -1780,7 +1780,7 @@
                                             <tr>
                                                 <td>
                                                     @php
-                                                        $sevColors = ['critical' => 'bg-[#FDEBEC] text-[#9F2F2D]', 'high' => 'bg-[#FBF3DB] text-[#956400]', 'medium' => 'bg-[#E1F3FE] text-[#1F6C9F]', 'low' => 'bg-[#F1F1EF] text-[#6B6B66]'];
+                                                        $sevColors = ['critical' => 'bg-red-500/15 text-red-400', 'high' => 'bg-amber-500/15 text-amber-400', 'medium' => 'bg-brand-500/15 text-brand-400', 'low' => 'bg-white/8 text-gray-400'];
                                                         $sevClass = $sevColors[$issue['severity']] ?? 'bg-white/5 text-gray-200';
                                                     @endphp
                                                     <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $sevClass }}">
@@ -1793,7 +1793,7 @@
                                                 </td>
                                                 <td class="text-sm max-w-[200px] truncate">
                                                     @if($issue['page_url'])
-                                                        <a href="{{ $issue['page_url'] }}" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:text-primary-800 hover:underline" title="{{ $issue['page_url'] }}">{{ $issue['page_url'] }}</a>
+                                                        <a href="{{ $issue['page_url'] }}" target="_blank" rel="noopener noreferrer" class="text-brand-400 hover:text-brand-300 hover:underline" title="{{ $issue['page_url'] }}">{{ $issue['page_url'] }}</a>
                                                     @else
                                                         <span class="text-gray-400">-</span>
                                                     @endif
@@ -1808,7 +1808,7 @@
                                                         </select>
                                                     @else
                                                         @php
-                                                            $statusColors = ['open' => 'bg-[#FDEBEC] text-[#9F2F2D]', 'in_progress' => 'bg-[#FBF3DB] text-[#956400]', 'resolved' => 'bg-[#EDF3EC] text-[#346538]', 'wont_fix' => 'bg-[#F1F1EF] text-[#6B6B66]'];
+                                                            $statusColors = ['open' => 'bg-red-500/15 text-red-400', 'in_progress' => 'bg-amber-500/15 text-amber-400', 'resolved' => 'bg-green-500/15 text-green-400', 'wont_fix' => 'bg-white/8 text-gray-400'];
                                                             $statusClass = $statusColors[$issue['current_status']] ?? 'bg-white/5 text-gray-200';
                                                         @endphp
                                                         <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $statusClass }}">
@@ -1828,7 +1828,7 @@
                                                             </button>
                                                         </div>
                                                     @else
-                                                        <button wire:click="startEditIssue({{ $issue['id'] }})" class="text-gray-400 hover:text-primary-600" title="{{ __('common.edit') }}">
+                                                        <button wire:click="startEditIssue({{ $issue['id'] }})" class="text-gray-400 hover:text-brand-400" title="{{ __('common.edit') }}">
                                                             <x-heroicon-o-pencil class="w-4 h-4" />
                                                         </button>
                                                     @endif

@@ -1046,7 +1046,7 @@
                                                 <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500" title="{{ __('common.live_api_data') }}"></span>
                                             </template>
                                             <template x-if="liveSpend[{{ $account['id'] }}]?.source === 'db'">
-                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-gray-300" title="{{ __('common.cached_db_data') }}"></span>
+                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-white/30" title="{{ __('common.cached_db_data') }}"></span>
                                             </template>
                                         </div>
                                     </td>
