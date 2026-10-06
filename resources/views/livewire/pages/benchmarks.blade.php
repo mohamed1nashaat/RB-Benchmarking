@@ -2,36 +2,30 @@
     <div class="px-4 py-8 space-y-6">
 
         {{-- Header --}}
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div class="flex-1 min-w-0">
-                <h2 class="section-title">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h1 class="text-xl font-semibold tracking-tight text-gray-900">
                     {{ __('pages.benchmarks.title') }}
-                </h2>
-                <p class="mt-1 text-sm text-gray-500">
+                </h1>
+                <p class="mt-0.5 text-sm text-gray-500">
                     {{ __('pages.benchmarks.description') }}
                     @if($autoRefreshEnabled)
-                        <span class="inline-flex items-center ms-2 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#EDF3EC] text-[#346538]">
-                            <div class="w-2 h-2 bg-[#346538] rounded-full me-1.5 animate-pulse"></div>
+                        <span class="inline-flex items-center gap-1 ms-2 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-[#EDF3EC] text-[#346538]">
+                            <span class="w-1.5 h-1.5 bg-[#346538] rounded-full animate-pulse"></span>
                             {{ __('pages.benchmarks.live_data') }}
                         </span>
                     @endif
                 </p>
             </div>
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center md:ms-4">
-                {{-- Auto-refresh toggle --}}
-                <div class="flex items-center gap-x-2">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" wire:model.live="autoRefreshEnabled" wire:change="toggleAutoRefresh" class="h-4 w-4 text-gray-900 border-gray-300 rounded" />
-                        <span class="ms-2 text-sm text-gray-700">{{ __('pages.benchmarks.auto_refresh') }}</span>
-                    </label>
-                </div>
-
-                <button wire:click="refreshData" wire:loading.attr="disabled" class="btn-primary w-full sm:w-auto">
-                    <x-heroicon-o-arrow-path class="h-4 w-4 me-2" wire:loading.class="animate-spin" wire:target="refreshData" />
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <label class="flex items-center gap-1.5 cursor-pointer text-sm text-gray-600 select-none">
+                    <input type="checkbox" wire:model.live="autoRefreshEnabled" wire:change="toggleAutoRefresh" class="h-4 w-4 text-brand-600 border-gray-300 rounded" />
+                    {{ __('pages.benchmarks.auto_refresh') }}
+                </label>
+                <button wire:click="refreshData" wire:loading.attr="disabled" class="btn-secondary">
+                    <x-heroicon-o-arrow-path class="h-4 w-4" wire:loading.class="animate-spin" wire:target="refreshData" />
                     <span class="hidden sm:inline">{{ __('pages.benchmarks.refresh') }}</span>
-                    <span class="sm:hidden">{{ __('pages.benchmarks.refresh_data') }}</span>
                 </button>
-
                 <livewire:components.export-menu />
             </div>
         </div>
@@ -43,10 +37,10 @@
                     <div class="card overflow-hidden">
                         <div class="p-5 animate-pulse">
                             <div class="flex items-center">
-                                <div class="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                                <div class="h-12 w-12 bg-gray-100 rounded-lg"></div>
                                 <div class="ms-5 flex-1">
-                                    <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                                    <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+                                    <div class="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
+                                    <div class="h-8 bg-gray-100 rounded w-1/2"></div>
                                 </div>
                             </div>
                         </div>
@@ -57,7 +51,7 @@
 
         {{-- Enhanced Filters --}}
         <div class="filter-bar">
-            <div class="flex items-center justify-between mb-4 w-full">
+            <div class="flex items-center justify-between mb-3 w-full">
                 <div class="flex items-center gap-x-3">
                     <h3 class="micro-label">{{ __('filters.benchmark_filters') }}</h3>
                     @php $activeFilterCount = count($selectedPlatforms) + count($selectedIndustries) + count($selectedCountries) + count($selectedCategories) + count($selectedSubCategories) + count($selectedFunnelStages); @endphp
@@ -82,13 +76,13 @@
                         <x-heroicon-o-server class="h-4 w-4 inline me-1 text-gray-400" />
                         {{ __('labels.platform') }}
                     </label>
-                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
                         <span class="truncate">{{ empty($selectedPlatforms) ? __('filters.all_platforms') : trans_choice('common.selected_count', count($selectedPlatforms)) }}</span>
                         <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
                         @foreach($availablePlatforms as $value => $label)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
                                 <input type="checkbox" value="{{ $value }}" wire:model.live="selectedPlatforms" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
                                 <span class="text-gray-700">{{ $label }}</span>
                             </label>
@@ -102,13 +96,13 @@
                         <x-heroicon-o-building-office class="h-4 w-4 inline me-1 text-gray-400" />
                         {{ __('labels.industry') }}
                     </label>
-                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
                         <span class="truncate">{{ empty($selectedIndustries) ? __('filters.all_industries') : trans_choice('common.selected_count', count($selectedIndustries)) }}</span>
                         <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
                         @foreach($availableIndustries as $ind)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
                                 <input type="checkbox" value="{{ $ind }}" wire:model.live="selectedIndustries" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
                                 <span class="text-gray-700">{{ $this->getIndustryLabel($ind) }}</span>
                             </label>
@@ -122,13 +116,13 @@
                         <x-heroicon-o-globe-alt class="h-4 w-4 inline me-1 text-gray-400" />
                         {{ __('labels.country') }}
                     </label>
-                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
                         <span class="truncate">{{ empty($selectedCountries) ? __('filters.all_countries') : trans_choice('common.selected_count', count($selectedCountries)) }}</span>
                         <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
                         @foreach($availableCountries as $country)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
                                 <input type="checkbox" value="{{ $country }}" wire:model.live="selectedCountries" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
                                 <span class="text-gray-700">{{ $country }}</span>
                             </label>
@@ -142,13 +136,13 @@
                         <x-heroicon-o-tag class="h-4 w-4 inline me-1 text-gray-400" />
                         {{ __('labels.category') }}
                     </label>
-                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
                         <span class="truncate">{{ empty($selectedCategories) ? __('filters.all_categories') : trans_choice('common.selected_count', count($selectedCategories)) }}</span>
                         <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
                         @foreach($availableCategories as $cat => $catLabel)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
                                 <input type="checkbox" value="{{ $cat }}" wire:model.live="selectedCategories" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
                                 <span class="text-gray-700">{{ $catLabel }}</span>
                             </label>
@@ -162,13 +156,13 @@
                         <x-heroicon-o-tag class="h-4 w-4 inline me-1 text-gray-400" />
                         {{ __('labels.sub_category') }}
                     </label>
-                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
                         <span class="truncate">{{ empty($selectedSubCategories) ? __('filters.all_sub_industries') : trans_choice('common.selected_count', count($selectedSubCategories)) }}</span>
                         <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
                         @foreach($availableSubCategories as $sub => $subLabel)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
                                 <input type="checkbox" value="{{ $sub }}" wire:model.live="selectedSubCategories" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
                                 <span class="text-gray-700">{{ $subLabel }}</span>
                             </label>
@@ -182,13 +176,13 @@
                         <x-heroicon-o-funnel class="h-4 w-4 inline me-1 text-gray-400" />
                         {{ __('funnel_stages.label') }}
                     </label>
-                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                    <button @click="open = !open" type="button" class="input-field w-full px-3 py-2 text-start flex items-center justify-between cursor-pointer">
                         <span class="truncate">{{ empty($selectedFunnelStages) ? __('filters.all_stages') : trans_choice('common.selected_count', count($selectedFunnelStages)) }}</span>
                         <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
                         @foreach($availableFunnelStages as $stage)
-                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">
                                 <input type="checkbox" value="{{ $stage }}" wire:model.live="selectedFunnelStages" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
                                 <span class="text-gray-700">{{ $stage }}</span>
                             </label>
@@ -232,20 +226,20 @@
             <div class="card mb-6">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                     <div class="animate-pulse">
-                        <div class="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
-                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="h-6 bg-gray-100 rounded w-1/4 mb-2"></div>
+                        <div class="h-4 bg-gray-100 rounded w-1/2"></div>
                     </div>
                 </div>
                 <div class="p-6 animate-pulse">
-                    <div class="h-64 bg-gray-200 rounded"></div>
+                    <div class="h-64 bg-gray-100 rounded"></div>
                 </div>
             </div>
         @else
             {{-- Your Performance Overview --}}
             <div class="card mb-6">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.your_performance_title') }}</h3>
-                    <p class="mt-1 text-sm text-gray-500">{{ __('pages.benchmarks.your_performance_subtitle') }}</p>
+                    <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.your_performance_title') }}</h3>
+                    <p class="mt-0.5 text-sm text-gray-500">{{ __('pages.benchmarks.your_performance_subtitle') }}</p>
                 </div>
                 <div class="px-4 py-5 sm:p-6">
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -256,7 +250,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.industries_tracked') }}</p>
                                     <p class="kpi-value">{{ $yourOverallMetrics['industries_count'] }}</p>
                                 </div>
-                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-chart-bar class="h-5 w-5" /></div>
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-500"><x-heroicon-o-chart-bar class="h-5 w-5" /></div>
                             </div>
                         </div>
 
@@ -267,7 +261,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_accounts') }}</p>
                                     <p class="kpi-value">{{ $yourOverallMetrics['accounts_count'] }}</p>
                                 </div>
-                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-building-office class="h-5 w-5" /></div>
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-500"><x-heroicon-o-building-office class="h-5 w-5" /></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">{{ $yourOverallMetrics['campaigns_count'] }} {{ __('pages.benchmarks.campaigns') }}</p>
                         </div>
@@ -279,7 +273,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_spend') }}</p>
                                     <p class="kpi-value">{{ $this->formatCurrency($yourOverallMetrics['total_spend']) }}</p>
                                 </div>
-                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-currency-dollar class="h-5 w-5" /></div>
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-500"><x-heroicon-o-currency-dollar class="h-5 w-5" /></div>
                             </div>
                         </div>
 
@@ -290,7 +284,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_impressions') }}</p>
                                     <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_impressions']) }}</p>
                                 </div>
-                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-eye class="h-5 w-5" /></div>
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-500"><x-heroicon-o-eye class="h-5 w-5" /></div>
                             </div>
                         </div>
 
@@ -301,7 +295,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_clicks') }}</p>
                                     <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_clicks']) }}</p>
                                 </div>
-                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-cursor-arrow-rays class="h-5 w-5" /></div>
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-500"><x-heroicon-o-cursor-arrow-rays class="h-5 w-5" /></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">{{ __('kpis.ctr') }}: {{ number_format($yourPerformanceIndicators['ctr'], 2) }}%</p>
                         </div>
@@ -313,7 +307,7 @@
                                     <p class="kpi-label">{{ __('pages.benchmarks.total_conversions') }}</p>
                                     <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_conversions']) }}</p>
                                 </div>
-                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-check-circle class="h-5 w-5" /></div>
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-500"><x-heroicon-o-check-circle class="h-5 w-5" /></div>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">{{ __('kpis.cvr') }}: {{ number_format($yourPerformanceIndicators['cvr'], 2) }}%</p>
                         </div>
@@ -326,8 +320,8 @@
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.performance.comparison_title') }}</h3>
-                            <p class="mt-1 text-sm text-gray-500">{{ __('pages.benchmarks.performance.comparison_description') }}</p>
+                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.performance.comparison_title') }}</h3>
+                            <p class="mt-0.5 text-sm text-gray-500">{{ __('pages.benchmarks.performance.comparison_description') }}</p>
                         </div>
                         <div class="flex items-center gap-x-2">
                             <span class="micro-label">{{ __('pages.benchmarks.performance.sort_by') }}</span>
@@ -354,12 +348,12 @@
                 <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                     <div class="flex items-center gap-x-2">
                         <span class="text-sm text-gray-500 me-2">{{ __('common.view') }}:</span>
-                        <button wire:click="$set('viewMode', 'card')" class="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'card' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            <x-heroicon-o-squares-2x2 class="h-5 w-5 me-1.5" />
+                        <button wire:click="$set('viewMode', 'card')" class="flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'card' ? 'bg-brand-600 text-white border border-brand-600' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50' }}">
+                            <x-heroicon-o-squares-2x2 class="h-4 w-4 me-1.5" />
                             {{ __('common.cards') }}
                         </button>
-                        <button wire:click="$set('viewMode', 'table')" class="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'table' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            <x-heroicon-o-table-cells class="h-5 w-5 me-1.5" />
+                        <button wire:click="$set('viewMode', 'table')" class="flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'table' ? 'bg-brand-600 text-white border border-brand-600' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50' }}">
+                            <x-heroicon-o-table-cells class="h-4 w-4 me-1.5" />
                             {{ __('common.table') }}
                         </button>
                     </div>
@@ -387,7 +381,7 @@
                         @else
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 @foreach($filteredIndustries as $industryKey => $industry)
-                                    <div class="card p-4">
+                                    <div class="card p-4 hover:border-gray-300 transition-colors">
                                         <button wire:click="showIndustryAccounts('{{ $industry['industry_slug'] ?? $industryKey }}')" class="text-base font-semibold tracking-tight text-gray-900 mb-1 hover:underline cursor-pointer text-start">
                                             {{ $industry['industry'] ?? $this->getIndustryLabel($industryKey) }}
                                         </button>
@@ -450,10 +444,10 @@
                                 {{-- Group By Toggle --}}
                                 <div class="flex items-center gap-x-2">
                                     <span class="text-sm text-gray-700">{{ __('labels.group_by') }}:</span>
-                                    <button wire:click="$set('tableGroupBy', 'industry')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'industry' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                    <button wire:click="$set('tableGroupBy', 'industry')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'industry' ? 'bg-brand-600 text-white border border-brand-600' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50' }}">
                                         {{ __('labels.industry') }}
                                     </button>
-                                    <button wire:click="$set('tableGroupBy', 'client')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'client' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                    <button wire:click="$set('tableGroupBy', 'client')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'client' ? 'bg-brand-600 text-white border border-brand-600' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50' }}">
                                         {{ __('labels.client') }}
                                     </button>
                                 </div>
