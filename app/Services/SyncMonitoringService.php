@@ -47,6 +47,10 @@ class SyncMonitoringService
         $key = self::CACHE_PREFIX . "{$platform}:{$integrationId}";
         $existing = Cache::get($key, []);
 
+        // Partial success should not reset consecutive failures — preserve the
+        // current streak so degraded syncs (auth errors, permission denied) remain visible.
+        $consecutiveFailures = $existing['consecutive_failures'] ?? 0;
+
         $data = [
             'platform' => $platform,
             'integration_id' => $integrationId,
@@ -55,9 +59,8 @@ class SyncMonitoringService
             'last_warning_message' => $warning,
             'last_stats' => $stats,
             'health_override' => 'warning',
-            'consecutive_failures' => 0,
+            'consecutive_failures' => $consecutiveFailures,
             'total_syncs' => $this->incrementCounter($key, 'total_syncs'),
-            'total_successes' => $this->incrementCounter($key, 'total_successes'),
             'total_partial' => $this->incrementCounter($key, 'total_partial'),
         ];
 

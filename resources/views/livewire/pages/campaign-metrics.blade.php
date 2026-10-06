@@ -1,18 +1,18 @@
 <div class="space-y-6">
     {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div class="rounded-md bg-green-50 p-4">
+        <div class="rounded-xl border border-[#346538]/20 bg-[#EDF3EC] p-4">
             <div class="flex">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
-                <p class="ml-3 text-sm font-medium text-green-800">{{ session('message') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
+                <p class="ms-3 text-sm font-medium text-[#346538]">{{ session('message') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="rounded-md bg-red-50 p-4">
+        <div class="rounded-xl border border-[#9F2F2D]/20 bg-[#FDEBEC] p-4">
             <div class="flex">
-                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-red-400" />
-                <p class="ml-3 text-sm font-medium text-red-800">{{ session('error') }}</p>
+                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-[#9F2F2D]" />
+                <p class="ms-3 text-sm font-medium text-[#9F2F2D]">{{ session('error') }}</p>
             </div>
         </div>
     @endif
@@ -21,17 +21,17 @@
     @if($loading)
         <div class="flex justify-center items-center py-12">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <span class="ml-3 text-gray-600">{{ __('pages.campaign_metrics.loading_metrics') }}</span>
+            <span class="ms-3 text-gray-600">{{ __('pages.campaign_metrics.loading_metrics') }}</span>
         </div>
     @elseif($error)
         {{-- Error State --}}
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="rounded-xl border border-[#9F2F2D]/20 bg-[#FDEBEC] p-4">
             <div class="flex">
-                <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-red-400" />
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-red-800">{{ __('pages.campaign_metrics.error_loading_metrics') }}</h3>
-                    <p class="mt-1 text-sm text-red-600">{{ $error }}</p>
-                    <button wire:click="loadMetrics" class="mt-2 text-sm bg-red-100 px-3 py-1 rounded-md text-red-800 hover:bg-red-200">
+                <x-heroicon-o-exclamation-triangle class="h-5 w-5 text-[#9F2F2D]" />
+                <div class="ms-3">
+                    <h3 class="text-sm font-semibold text-[#9F2F2D]">{{ __('pages.campaign_metrics.error_loading_metrics') }}</h3>
+                    <p class="mt-1 text-sm text-[#9F2F2D]/80">{{ $error }}</p>
+                    <button wire:click="loadMetrics" class="mt-2 inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white/70 text-[#9F2F2D] hover:bg-white">
                         {{ __('common.try_again') }}
                     </button>
                 </div>
@@ -39,62 +39,60 @@
         </div>
     @elseif(!$campaign)
         {{-- Campaign Not Found --}}
-        <div class="text-center py-12">
-            <p class="text-gray-500">Campaign not found.</p>
-            <a href="{{ route('ad-accounts') }}" wire:navigate class="mt-4 inline-flex items-center text-primary-600 hover:text-primary-800">
-                <x-heroicon-o-arrow-left class="h-4 w-4 mr-2" />
-                Back to accounts
+        <div class="empty-state">
+            <p class="empty-title">{{ __('pages.campaign_metrics.campaign_not_found') }}</p>
+            <a href="{{ route('ad-accounts') }}" wire:navigate class="btn-secondary mt-4">
+                <x-heroicon-o-arrow-left class="h-4 w-4 me-2" />
+                {{ __('pages.ad_accounts.back_to_accounts') }}
             </a>
         </div>
     @elseif(!$this->hasMetricsData)
         {{-- No Metrics Data State --}}
-        <div class="flex items-center space-x-4 mb-6">
+        <div class="flex items-center gap-x-4 mb-6">
             @if($adAccount)
                 <a href="{{ route('ad-account-detail', ['id' => $adAccount['id']]) }}" wire:navigate
-                    class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-2" />
+                    class="btn-secondary">
+                    <x-heroicon-o-arrow-left class="h-4 w-4 me-2" />
                     {{ __('common.back') }}
                 </a>
             @endif
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">{{ $campaign['name'] }}</h1>
+                <h1 class="section-title">{{ $campaign['name'] }}</h1>
             </div>
         </div>
 
-        <div class="bg-white shadow-sm rounded-lg p-8 text-center border border-gray-200">
-            <x-heroicon-o-chart-bar class="mx-auto h-16 w-16 text-gray-300 mb-4" />
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No Metrics Data Available</h3>
-            <p class="text-sm text-gray-500 max-w-md mx-auto mb-6">
-                This campaign doesn't have any performance metrics recorded yet.
+        <div class="card empty-state">
+            <x-heroicon-o-chart-bar class="h-16 w-16 text-gray-300 mb-4" />
+            <h3 class="empty-title">{{ __('pages.campaign_metrics.no_metrics_data_title') }}</h3>
+            <p class="empty-message mb-6">
+                {{ __('pages.campaign_metrics.no_metrics_data_description') }}
             </p>
             @if($adAccount)
                 <a href="{{ route('ad-account-detail', ['id' => $adAccount['id']]) }}" wire:navigate
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-2" />
-                    Back to Account
-                </a>
+                    class="btn-secondary">
+                    <x-heroicon-o-arrow-left class="h-4 w-4 me-2" />{{ __('pages.campaign_metrics.back_to_account') }}</a>
             @endif
         </div>
     @else
         {{-- Header with Back Button --}}
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center gap-x-4">
             @if($adAccount)
                 <a href="{{ route('ad-account-detail', ['id' => $adAccount['id']]) }}" wire:navigate
-                    class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    <x-heroicon-o-arrow-left class="h-4 w-4 mr-2" />
+                    class="btn-secondary">
+                    <x-heroicon-o-arrow-left class="h-4 w-4 me-2" />
                     {{ __('common.back') }}
                 </a>
             @endif
 
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">{{ $campaign['name'] }}</h1>
-                <div class="flex items-center space-x-2 mt-1">
+                <h1 class="section-title">{{ $campaign['name'] }}</h1>
+                <div class="flex items-center gap-x-2 mt-1">
                     <span class="text-sm text-gray-500">{{ $adAccount['account_name'] ?? '' }}</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ ($campaign['status'] ?? '') === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ ($campaign['status'] ?? '') === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
                         {{ $campaign['status'] ?? 'unknown' }}
                     </span>
                     @if(!empty($campaign['funnel_stage']))
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                        <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#E1F3FE] text-[#1F6C9F]">
                             {{ $campaign['funnel_stage'] }}
                         </span>
                     @endif
@@ -103,36 +101,34 @@
         </div>
 
         {{-- Date Filter Bar --}}
-        <div class="bg-white shadow-sm rounded-lg border border-gray-200 px-4 py-3">
-            <div class="flex flex-wrap items-center gap-3">
-                <x-date-range-picker
-                    wire-model-from="filterStartDate"
-                    wire-model-to="filterEndDate"
-                    :label="__('Date Range')"
-                    align="left"
-                />
-                <div class="ml-auto">
-                    <button wire:click="loadMetrics" wire:loading.attr="disabled"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
-                        <x-heroicon-o-arrow-path class="h-4 w-4 mr-2" wire:loading.class="animate-spin" wire:target="loadMetrics" />
-                        <span wire:loading.remove wire:target="loadMetrics">Refresh</span>
-                        <span wire:loading wire:target="loadMetrics">Loading...</span>
-                    </button>
-                </div>
+        <div class="filter-bar">
+            <x-date-range-picker
+                wire-model-from="filterStartDate"
+                wire-model-to="filterEndDate"
+                :label="__('Date Range')"
+                align="left"
+            />
+            <div class="ms-auto">
+                <button wire:click="loadMetrics" wire:loading.attr="disabled"
+                    class="btn-secondary disabled:opacity-50">
+                    <x-heroicon-o-arrow-path class="h-4 w-4 me-2" wire:loading.class="animate-spin" wire:target="loadMetrics" />
+                    <span wire:loading.remove wire:target="loadMetrics">{{ __('buttons.refresh') }}</span>
+                    <span wire:loading wire:target="loadMetrics">{{ __('common.loading') }}</span>
+                </button>
             </div>
         </div>
 
         {{-- Hero Metric Cards --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {{-- Spend Card --}}
-            <div class="bg-white shadow-sm rounded-lg p-5 border border-gray-200">
+            <div class="kpi-card">
                 <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-gray-500">Total Spend</p>
-                    <div class="p-2 bg-primary-50 rounded-lg">
-                        <x-heroicon-o-currency-dollar class="h-5 w-5 text-primary-600" />
+                    <p class="kpi-label">{{ __('pages.campaign_metrics.total_spend') }}</p>
+                    <div class="p-2 bg-[#F1F1EF] rounded-lg">
+                        <x-heroicon-o-currency-dollar class="h-5 w-5 text-[#6B6B66]" />
                     </div>
                 </div>
-                <p class="text-2xl font-bold text-gray-900 mt-2">
+                <p class="kpi-value mt-2">
                     @php
                         $spend = $metrics['spend'] ?? 0;
                         if ($spend >= 1000000) {
@@ -149,20 +145,20 @@
                     @if($filterStartDate && $filterEndDate)
                         {{ $filterStartDate }} - {{ $filterEndDate }}
                     @else
-                        All time
+                        {{ __('date.all_time') }}
                     @endif
                 </p>
             </div>
 
             {{-- Impressions Card --}}
-            <div class="bg-white shadow-sm rounded-lg p-5 border border-gray-200">
+            <div class="kpi-card">
                 <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-gray-500">Impressions</p>
-                    <div class="p-2 bg-emerald-50 rounded-lg">
-                        <x-heroicon-o-eye class="h-5 w-5 text-emerald-600" />
+                    <p class="kpi-label">{{ __('alerts.metrics.impressions') }}</p>
+                    <div class="p-2 bg-[#E1F3FE] rounded-lg">
+                        <x-heroicon-o-eye class="h-5 w-5 text-[#1F6C9F]" />
                     </div>
                 </div>
-                <p class="text-2xl font-bold text-gray-900 mt-2">
+                <p class="kpi-value mt-2">
                     @php
                         $impressions = $metrics['impressions'] ?? 0;
                         if ($impressions >= 1000000) {
@@ -175,11 +171,11 @@
                     @endphp
                     {{ $formattedImpressions }}
                 </p>
-                <p class="text-xs text-gray-500 mt-1">Total views</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('pages.campaign_metrics.total_views') }}</p>
             </div>
 
             {{-- Clicks/Leads Card --}}
-            <div class="bg-white shadow-sm rounded-lg p-5 border border-gray-200">
+            <div class="kpi-card">
                 @php
                     $isLeadsCampaign = ($campaign['objective'] ?? '') === 'leads';
                     $clicksOrLeads = $isLeadsCampaign ? ($metrics['leads'] ?? 0) : ($metrics['clicks'] ?? 0);
@@ -192,24 +188,24 @@
                     }
                 @endphp
                 <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-gray-500">{{ $isLeadsCampaign ? 'Leads' : 'Clicks' }}</p>
-                    <div class="p-2 bg-amber-50 rounded-lg">
-                        <x-heroicon-o-cursor-arrow-rays class="h-5 w-5 text-amber-600" />
+                    <p class="kpi-label">{{ $isLeadsCampaign ? __('alerts.metrics.leads') : __('alerts.metrics.clicks') }}</p>
+                    <div class="p-2 bg-[#FBF3DB] rounded-lg">
+                        <x-heroicon-o-cursor-arrow-rays class="h-5 w-5 text-[#956400]" />
                     </div>
                 </div>
-                <p class="text-2xl font-bold text-gray-900 mt-2">{{ $formattedClicksLeads }}</p>
-                <p class="text-xs text-gray-500 mt-1">{{ $isLeadsCampaign ? 'Generated' : 'Total clicks' }}</p>
+                <p class="kpi-value mt-2">{{ $formattedClicksLeads }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ $isLeadsCampaign ? __('pages.campaign_metrics.generated') : __('pages.benchmarks.total_clicks') }}</p>
             </div>
 
             {{-- CTR/CPL Card --}}
-            <div class="bg-white shadow-sm rounded-lg p-5 border border-gray-200">
+            <div class="kpi-card">
                 <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-gray-500">{{ $isLeadsCampaign ? 'Cost/Lead' : 'CTR' }}</p>
-                    <div class="p-2 bg-gray-100 rounded-lg">
-                        <x-heroicon-o-chart-bar class="h-5 w-5 text-gray-600" />
+                    <p class="kpi-label">{{ $isLeadsCampaign ? __('pages.campaign_metrics.cost_per_lead') : __('kpis.ctr') }}</p>
+                    <div class="p-2 bg-[#EDF3EC] rounded-lg">
+                        <x-heroicon-o-chart-bar class="h-5 w-5 text-[#346538]" />
                     </div>
                 </div>
-                <p class="text-2xl font-bold text-gray-900 mt-2">
+                <p class="kpi-value mt-2">
                     @if($isLeadsCampaign)
                         @php
                             $leads = $metrics['leads'] ?? 0;
@@ -220,32 +216,32 @@
                         {{ number_format($metrics['ctr'] ?? 0, 2) }}%
                     @endif
                 </p>
-                <p class="text-xs text-gray-500 mt-1">{{ $isLeadsCampaign ? 'Per lead' : 'Click-through rate' }}</p>
+                <p class="text-xs text-gray-500 mt-1">{{ $isLeadsCampaign ? __('pages.campaign_metrics.per_lead') : __('alerts.metrics.ctr_full') }}</p>
             </div>
         </div>
 
         {{-- Performance Metrics Grid --}}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Performance Metrics</h3>
+        <div class="card p-6">
+            <h3 class="section-title mb-4">{{ __('pages.campaign_metrics.performance_metrics') }}</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @if(($metrics['cpc'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500">CPC</p>
-                        <p class="text-xl font-semibold text-gray-900">SR {{ number_format($metrics['cpc'] ?? 0, 2) }}</p>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">{{ __('kpis.cpc') }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">SR {{ number_format($metrics['cpc'] ?? 0, 2) }}</p>
                     </div>
                 @endif
 
                 @if(($metrics['cpm'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500">CPM</p>
-                        <p class="text-xl font-semibold text-gray-900">SR {{ number_format($metrics['cpm'] ?? 0, 2) }}</p>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">{{ __('kpis.cpm') }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">SR {{ number_format($metrics['cpm'] ?? 0, 2) }}</p>
                     </div>
                 @endif
 
                 @if(($metrics['reach'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500">Reach</p>
-                        <p class="text-xl font-semibold text-gray-900">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">{{ __('kpis.reach') }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">
                             @php
                                 $reach = $metrics['reach'] ?? 0;
                                 if ($reach >= 1000000) {
@@ -261,49 +257,53 @@
                     </div>
                 @endif
 
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Conversions</p>
-                    <p class="text-xl font-semibold text-gray-900">{{ number_format($metrics['conversions'] ?? 0) }}</p>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-sm text-gray-500">{{ __('alerts.metrics.conversions') }}</p>
+                    <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['conversions'] ?? 0) }}</p>
                 </div>
 
                 @if(($metrics['roas'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500">ROAS</p>
-                        <p class="text-xl font-semibold text-gray-900">{{ number_format($metrics['roas'] ?? 0, 2) }}x</p>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">{{ __('kpis.roas') }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['roas'] ?? 0, 2) }}x</p>
                     </div>
                 @endif
 
                 @if(($metrics['cvr'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500">CVR</p>
-                        <p class="text-xl font-semibold text-gray-900">{{ number_format($metrics['cvr'] ?? 0, 2) }}%</p>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">{{ __('kpis.cvr') }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['cvr'] ?? 0, 2) }}%</p>
                     </div>
                 @endif
 
                 @if(($metrics['frequency'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500">Frequency</p>
-                        <p class="text-xl font-semibold text-gray-900">{{ number_format($metrics['frequency'] ?? 0, 1) }}</p>
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <p class="text-sm text-gray-500">{{ __('kpis.frequency') }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['frequency'] ?? 0, 1) }}</p>
                     </div>
                 @endif
 
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Objective</p>
-                    <p class="text-xl font-semibold text-gray-900 capitalize">{{ str_replace('_', ' ', $campaign['objective'] ?? 'N/A') }}</p>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-sm text-gray-500">{{ __('labels.objective') }}</p>
+                    <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 capitalize">{{ str_replace('_', ' ', $campaign['objective'] ?? __('status.na')) }}</p>
                 </div>
             </div>
         </div>
 
         {{-- Campaign Details Card --}}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Campaign Details</h3>
+        <div class="card p-6">
+            <h3 class="section-title mb-4">{{ __('pages.campaign_metrics.campaign_details') }}</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {{-- Category --}}
+                {{-- Sub-Category --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Category</label>
+                    <label class="micro-label block mb-1">{{ __('labels.sub_category') }}</label>
                     <select wire:model="editSubIndustry" wire:change="updateCampaignDetails"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="">Select category</option>
+                        class="input-field"
+                        title="{{ __('tooltips.sub_categories_source') }}">
+                        <option value="">{{ __('pages.campaign_metrics.select_sub_category') }}</option>
+                        @if($editSubIndustry && !in_array($editSubIndustry, $availableSubIndustries))
+                            <option value="{{ $editSubIndustry }}" selected>{{ $editSubIndustry }} {{ __('common.legacy') }}</option>
+                        @endif
                         @foreach($availableSubIndustries as $category)
                             <option value="{{ $category }}">{{ $category }}</option>
                         @endforeach
@@ -312,50 +312,50 @@
 
                 {{-- Objective --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Objective</label>
+                    <label class="micro-label block mb-1">{{ __('labels.objective') }}</label>
                     <p class="text-sm text-gray-900 py-2 capitalize">
-                        {{ $campaign['objective'] ? str_replace('_', ' ', $campaign['objective']) : 'Not set' }}
+                        {{ $campaign['objective'] ? str_replace('_', ' ', $campaign['objective']) : __('common.not_set') }}
                     </p>
                 </div>
 
                 {{-- Funnel Stage --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Funnel Stage</label>
+                    <label class="micro-label block mb-1">{{ __('labels.funnel_stage') }}</label>
                     <p class="text-sm text-gray-900 py-2">
                         @if(!empty($campaign['funnel_stage']))
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                            <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#E1F3FE] text-[#1F6C9F]">
                                 {{ $campaign['funnel_stage'] }}
                             </span>
                         @else
-                            <span class="text-gray-400">Not set</span>
+                            <span class="text-gray-400">{{ __('common.not_set') }}</span>
                         @endif
                     </p>
                 </div>
 
                 {{-- Platform --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Platform</label>
-                    <p class="text-sm text-gray-900 py-2 capitalize">{{ $adAccount['platform'] ?? 'Unknown' }}</p>
+                    <label class="micro-label block mb-1">{{ __('labels.platform') }}</label>
+                    <p class="text-sm text-gray-900 py-2 capitalize">{{ $adAccount['platform'] ?? __('common.unknown') }}</p>
                 </div>
 
                 {{-- Status --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Status</label>
+                    <label class="micro-label block mb-1">{{ __('labels.status') }}</label>
                     <p class="text-sm py-2">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ ($campaign['status'] ?? '') === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                            {{ $campaign['status'] ?? 'Unknown' }}
+                        <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ ($campaign['status'] ?? '') === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                            {{ $campaign['status'] ?? __('common.unknown') }}
                         </span>
                     </p>
                 </div>
 
                 {{-- Created --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Created</label>
+                    <label class="micro-label block mb-1">{{ __('labels.created') }}</label>
                     <p class="text-sm text-gray-900 py-2">
                         @if(!empty($campaign['created_at']))
                             {{ \Carbon\Carbon::parse($campaign['created_at'])->format('M d, Y') }}
                         @else
-                            N/A
+                            {{ __('status.na') }}
                         @endif
                     </p>
                 </div>
@@ -364,8 +364,8 @@
 
         {{-- Daily Performance Chart --}}
         @if(!empty($dailyData))
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" wire:ignore>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Daily Performance</h3>
+            <div class="card p-6" wire:ignore>
+                <h3 class="section-title mb-4">{{ __('pages.campaign_metrics.daily_performance') }}</h3>
                 <div class="h-80" x-data="{
                     chart: null,
                     dailyData: @js($dailyData),
@@ -389,19 +389,19 @@
                                 labels: labels,
                                 datasets: [
                                     {
-                                        label: 'Spend (SAR)',
+                                        label: '{{ __('pages.campaign_metrics.chart.spend_sar') }}',
                                         data: spendData,
-                                        borderColor: 'rgb(99, 102, 241)',
-                                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                        borderColor: 'rgb(239, 68, 68)',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                         fill: true,
                                         tension: 0.4,
                                         yAxisID: 'y',
                                     },
                                     {
-                                        label: 'Clicks',
+                                        label: '{{ __('alerts.metrics.clicks') }}',
                                         data: clicksData,
-                                        borderColor: 'rgb(245, 158, 11)',
-                                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                        borderColor: 'rgb(168, 168, 164)',
+                                        backgroundColor: 'rgba(168, 168, 164, 0.15)',
                                         fill: false,
                                         tension: 0.4,
                                         yAxisID: 'y1',
@@ -448,7 +448,7 @@
                                         position: 'left',
                                         title: {
                                             display: true,
-                                            text: 'Spend (SAR)'
+                                            text: '{{ __('pages.campaign_metrics.chart.spend_sar') }}'
                                         },
                                         beginAtZero: true,
                                         ticks: {
@@ -464,7 +464,7 @@
                                         position: 'right',
                                         title: {
                                             display: true,
-                                            text: 'Clicks'
+                                            text: '{{ __('alerts.metrics.clicks') }}'
                                         },
                                         beginAtZero: true,
                                         grid: {

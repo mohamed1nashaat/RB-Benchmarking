@@ -2,7 +2,7 @@
     <div class="px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex justify-between items-center text-sm text-gray-500">
             <div class="hidden sm:block">
-                &copy; {{ date('Y') }} RB Benchmarks. All rights reserved.
+                &copy; {{ date('Y') }} {{ __('app.name') }}. {{ __('footer.copyright') }}
             </div>
             <div class="flex gap-4">
                 <a href="{{ route('privacy-policy') }}" class="hover:text-gray-700">

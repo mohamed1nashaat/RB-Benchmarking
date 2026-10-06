@@ -38,8 +38,7 @@ class GoogleAdsIntegrationController extends Controller
                 ?? ($user->isSuperAdmin() ? \App\Models\Tenant::value('id') : null);
 
             $stateData = [
-                
-            'redirect_uri' => config('services.' . basename(app/Http/Controllers/Api/GoogleAdsIntegrationController.php, 'IntegrationController.php') . '.redirect_uri'),'user_id' => $user->id,
+                'user_id' => $user->id,
                 'tenant_id' => $tenantId,
                 'timestamp' => time(),
                 'nonce' => Str::random(32)

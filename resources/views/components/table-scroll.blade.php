@@ -1,6 +1,4 @@
-@props(['maxHeight' => '600px'])
-
-<div class="relative"
+@props(['maxHeight' => '600px'])<div class="relative"
      x-data="{
          atStart: true,
          atEnd: true,
@@ -18,13 +16,13 @@
     <div x-show="!atStart"
          x-transition:enter="transition-opacity duration-200"
          x-transition:leave="transition-opacity duration-200"
-         class="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-black/[0.06] to-transparent z-30 pointer-events-none"></div>
+         class="absolute start-0 top-0 bottom-2 w-8  /[0.06]  z-30 pointer-events-none"></div>
 
     {{-- Right scroll shadow --}}
     <div x-show="!atEnd"
          x-transition:enter="transition-opacity duration-200"
          x-transition:leave="transition-opacity duration-200"
-         class="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-black/[0.06] to-transparent z-30 pointer-events-none"></div>
+         class="absolute end-0 top-0 bottom-2 w-8  /[0.06]  z-30 pointer-events-none"></div>
 
     <div x-ref="scroll"
          x-on:scroll.passive="check()"

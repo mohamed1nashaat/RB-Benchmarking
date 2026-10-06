@@ -45,6 +45,11 @@ class TenantIsolationTest extends TestCase
         app()->instance('is_super_admin', true);
     }
 
+    protected function setViewAllTenants(): void
+    {
+        app()->instance('view_all_tenants', true);
+    }
+
     public function test_ad_accounts_are_filtered_by_tenant(): void
     {
         $integrationA = Integration::factory()->create(['tenant_id' => $this->tenantA->id, 'created_by' => $this->userA->id]);
@@ -181,6 +186,20 @@ class TenantIsolationTest extends TestCase
         Alert::factory()->create(['tenant_id' => $this->tenantB->id, 'user_id' => $this->userB->id]);
 
         $this->setSuperAdmin();
+        $this->assertCount(2, Integration::all());
+        $this->assertCount(2, Alert::all());
+    }
+
+    public function test_view_all_tenants_user_sees_all_records(): void
+    {
+        Integration::factory()->create(['tenant_id' => $this->tenantA->id, 'created_by' => $this->userA->id]);
+        Integration::factory()->create(['tenant_id' => $this->tenantB->id, 'created_by' => $this->userB->id]);
+
+        Alert::factory()->create(['tenant_id' => $this->tenantA->id, 'user_id' => $this->userA->id]);
+        Alert::factory()->create(['tenant_id' => $this->tenantB->id, 'user_id' => $this->userB->id]);
+
+        $this->setTenant($this->tenantA);
+        $this->setViewAllTenants();
         $this->assertCount(2, Integration::all());
         $this->assertCount(2, Alert::all());
     }

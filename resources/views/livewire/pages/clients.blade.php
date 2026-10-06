@@ -1,41 +1,41 @@
 <div class="space-y-6">
     {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div class="rounded-md bg-green-50 p-4">
-            <div class="flex">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
-                <p class="ml-3 text-sm font-medium text-green-800">{{ session('message') }}</p>
+        <div class="rounded-xl border border-gray-200 bg-[#EDF3EC] p-4">
+            <div class="flex items-center">
+                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
+                <p class="ms-3 text-sm font-medium text-[#346538]">{{ session('message') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="rounded-md bg-red-50 p-4">
-            <div class="flex">
-                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-red-400" />
-                <p class="ml-3 text-sm font-medium text-red-800">{{ session('error') }}</p>
+        <div class="rounded-xl border border-gray-200 bg-[#FDEBEC] p-4">
+            <div class="flex items-center">
+                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-[#9F2F2D]" />
+                <p class="ms-3 text-sm font-medium text-[#9F2F2D]">{{ session('error') }}</p>
             </div>
         </div>
     @endif
 
     {{-- Header --}}
-    <div class="md:flex md:items-center md:justify-between">
-        <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+    <div class="flex items-center justify-between gap-4">
+        <div class="min-w-0">
+            <h2 class="section-title">
                 {{ __('pages.clients.title') }}
             </h2>
             <p class="mt-1 text-sm text-gray-500">
                 {{ __('pages.clients.description') }}
             </p>
         </div>
-        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+        <div class="flex items-center gap-3 shrink-0">
             <button wire:click="openWizard"
-                class="inline-flex items-center px-4 py-2 border border-primary-600 text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                <x-heroicon-o-plus class="h-5 w-5 mr-2" />
+                class="btn-secondary">
+                <x-heroicon-o-plus class="h-5 w-5 me-2" />
                 {{ __('pages.clients.create_from_accounts') }}
             </button>
             <button wire:click="openCreateModal"
-                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                <x-heroicon-o-plus class="h-5 w-5 mr-2" />
+                class="btn-primary">
+                <x-heroicon-o-plus class="h-5 w-5 me-2" />
                 {{ __('pages.clients.add_manually') }}
             </button>
         </div>
@@ -43,88 +43,59 @@
 
     {{-- Overview Statistics --}}
     @if(!empty($overview))
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {{-- Total Clients --}}
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-primary-100 rounded-md p-3">
-                        <x-heroicon-o-user-group class="h-6 w-6 text-primary-600" />
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
-                            <dd class="flex items-baseline">
-                                <div class="text-2xl font-semibold text-gray-900">{{ $overview['totals']['clients'] ?? 0 }}</div>
-                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                    {{ $overview['totals']['active_clients'] ?? 0 }} active
-                                </div>
-                            </dd>
-                        </dl>
+            <div class="kpi-card">
+                <div class="kpi-label">{{ __('pages.clients.total_clients') }}</div>
+                <div class="flex items-baseline gap-2">
+                    <div class="kpi-value">{{ $overview['totals']['clients'] ?? 0 }}</div>
+                    <div class="kpi-change positive">
+                        {{ $overview['totals']['active_clients'] ?? 0 }} {{ __('status.active') }}
                     </div>
                 </div>
             </div>
 
             {{-- Ad Accounts --}}
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                        <x-heroicon-o-building-office class="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Ad Accounts</dt>
-                            <dd class="flex items-baseline">
-                                <div class="text-2xl font-semibold text-gray-900">{{ $overview['totals']['ad_accounts'] ?? 0 }}</div>
-                                <div class="ml-2 flex items-baseline text-sm font-semibold text-green-600">
-                                    {{ $overview['totals']['connected_accounts'] ?? 0 }} connected
-                                </div>
-                            </dd>
-                        </dl>
+            <div class="kpi-card">
+                <div class="kpi-label">{{ __('labels.ad_accounts') }}</div>
+                <div class="flex items-baseline gap-2">
+                    <div class="kpi-value">{{ $overview['totals']['ad_accounts'] ?? 0 }}</div>
+                    <div class="kpi-change positive">
+                        {{ $overview['totals']['connected_accounts'] ?? 0 }} {{ __('common.connected') }}
                     </div>
                 </div>
             </div>
 
             {{-- Total Spend --}}
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-                        <x-heroicon-o-currency-dollar class="h-6 w-6 text-green-600" />
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Total Spend</dt>
-                            <dd class="text-2xl font-semibold text-gray-900">
-                                SR {{ number_format($overview['totals']['total_spend'] ?? 0, 2) }}
-                            </dd>
-                        </dl>
-                    </div>
+            <div class="kpi-card">
+                <div class="kpi-label">{{ __('labels.total_spend') }}</div>
+                <div class="kpi-value">
+                    SR {{ number_format($overview['totals']['total_spend'] ?? 0, 2) }}
                 </div>
             </div>
         </div>
     @endif
 
     {{-- Filters --}}
-    <div class="bg-white shadow rounded-lg p-4">
+    <div class="filter-bar">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-medium text-gray-900">Filters</h3>
+            <h3 class="micro-label">{{ __('common.filters') }}</h3>
             @if($this->hasActiveFilters)
-                <button wire:click="clearAllFilters" class="text-sm text-primary-600 hover:text-primary-700">
-                    Clear all
-                </button>
+                <button wire:click="clearAllFilters" class="text-sm text-gray-500 hover:text-gray-900">{{ __('common.clear_all') }}</button>
             @endif
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             {{-- Search --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.search') }}</label>
-                <div class="relative rounded-md shadow-sm">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <label class="micro-label block mb-1">{{ __('labels.search') }}</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                         <x-heroicon-o-magnifying-glass class="h-5 w-5 text-gray-400" />
                     </div>
                     <input wire:model.live.debounce.300ms="search" type="text"
                         placeholder="{{ __('pages.clients.search_placeholder') }}"
-                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
+                        class="input-field ps-10" />
                 </div>
             </div>
 
@@ -172,28 +143,26 @@
 
     {{-- Bulk Actions Bar --}}
     @if(count($selectedClients) > 0)
-        <div class="bg-primary-50 border border-primary-200 rounded-lg p-4">
+        <div class="card p-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <span class="text-sm font-medium text-primary-900">
-                        {{ count($selectedClients) }} client{{ count($selectedClients) !== 1 ? 's' : '' }} selected
+                <div class="flex items-center gap-x-3">
+                    <span class="text-sm font-medium text-gray-900">
+                        {{ trans_choice('common.selected_count', count($selectedClients)) }}
                     </span>
-                    <button wire:click="clearSelection" class="text-sm text-primary-600 hover:text-primary-800">
-                        Clear selection
-                    </button>
+                    <button wire:click="clearSelection" class="text-sm text-gray-500 hover:text-gray-900">{{ __('common.clear_selection') }}</button>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center gap-x-2">
                     <button wire:click="bulkUpdateStatus('active')"
-                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                        Activate
+                        class="btn-secondary">
+                        {{ __('common.activate') }}
                     </button>
                     <button wire:click="bulkUpdateStatus('inactive')"
-                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">
-                        Deactivate
+                        class="btn-secondary">
+                        {{ __('common.deactivate') }}
                     </button>
                     <button wire:click="bulkDelete"
-                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                        Delete
+                        class="btn-danger">
+                        {{ __('common.delete') }}
                     </button>
                 </div>
             </div>
@@ -201,25 +170,25 @@
     @endif
 
     {{-- Clients Table --}}
-    <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <x-table-scroll max-height="600px" class="hover-primary">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-100 sticky top-0 z-10 shadow-sm">
+            <table class="data-table">
+                <thead class="sticky top-0 z-10">
                     <tr>
-                        <th scope="col" class="w-12 px-4 py-3 bg-gray-100">
+                        <th scope="col" class="w-12">
                             <input type="checkbox" wire:click="toggleSelectAll"
                                 @checked($clients->count() > 0 && count($selectedClients) === $clients->total())
-                                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                                class="h-4 w-4 text-gray-900 border-gray-300 rounded" />
                         </th>
                         <th scope="col" wire:click="sortBy('name')"
-                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 select-none bg-gray-100 sticky left-0 z-10 border-r border-gray-200">
+                            class="text-start cursor-pointer hover:bg-gray-100 select-none sticky start-0 z-10">
                             <div class="flex items-center gap-1">
                                 {{ __('labels.client') }}
                                 @if($sortField === 'name')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-900" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-900" />
                                     @endif
                                 @else
                                     <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -227,14 +196,14 @@
                             </div>
                         </th>
                         <th scope="col" wire:click="sortBy('industry')"
-                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 select-none bg-gray-100">
+                            class="text-start cursor-pointer hover:bg-gray-100 select-none">
                             <div class="flex items-center gap-1">
                                 {{ __('labels.industry') }}
                                 @if($sortField === 'industry')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-900" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-900" />
                                     @endif
                                 @else
                                     <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -242,14 +211,14 @@
                             </div>
                         </th>
                         <th scope="col" wire:click="sortBy('status')"
-                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 select-none bg-gray-100">
+                            class="text-start cursor-pointer hover:bg-gray-100 select-none">
                             <div class="flex items-center gap-1">
                                 {{ __('labels.status') }}
                                 @if($sortField === 'status')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-900" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-900" />
                                     @endif
                                 @else
                                     <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -257,57 +226,57 @@
                             </div>
                         </th>
                         <th scope="col" wire:click="sortBy('subscription_tier')"
-                            class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 select-none bg-gray-100">
+                            class="text-start cursor-pointer hover:bg-gray-100 select-none">
                             <div class="flex items-center gap-1">
                                 {{ __('labels.subscription') }}
                                 @if($sortField === 'subscription_tier')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-900" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-primary-600" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-900" />
                                     @endif
                                 @else
                                     <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
                                 @endif
                             </div>
                         </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-100">
+                        <th scope="col" class="text-start">
                             {{ __('labels.ad_accounts') }}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-100">
+                        <th scope="col" class="text-start">
                             {{ __('labels.total_spend') }}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-100">
+                        <th scope="col" class="text-start">
                             {{ __('labels.contract') }}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-100">
+                        <th scope="col" class="text-end">
                             {{ __('labels.actions') }}
                         </th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody>
                     @forelse($clients as $client)
-                        <tr class="even:bg-gray-50 hover:bg-primary-50 transition-colors duration-150 cursor-pointer border-l-2 border-l-transparent hover:border-l-primary-500"
+                        <tr class="cursor-pointer"
                             wire:click="viewClientDashboard({{ $client->id }})">
                             {{-- Checkbox --}}
-                            <td class="px-4 py-4" wire:click.stop>
+                            <td wire:click.stop>
                                 <input type="checkbox" value="{{ $client->id }}" wire:model.live="selectedClients"
-                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                                    class="h-4 w-4 text-gray-900 border-gray-300 rounded" />
                             </td>
 
                             {{-- Client Name --}}
-                            <td class="px-4 py-4 sticky left-0 z-10 sticky-col border-r border-gray-200">
+                            <td class="sticky start-0 z-10 sticky-col bg-white">
                                 <div class="flex items-center">
                                     @if($client->logo_url)
                                         <img src="{{ $client->logo_url }}" alt="{{ $client->name }}"
-                                            class="h-8 w-8 rounded-full object-cover mr-3 flex-shrink-0" />
+                                            class="h-8 w-8 rounded-full object-cover me-3 flex-shrink-0" />
                                     @else
-                                        <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center mr-3 flex-shrink-0">
-                                            <span class="text-xs font-medium text-primary-600">{{ strtoupper(substr($client->name, 0, 2)) }}</span>
+                                        <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center me-3 flex-shrink-0">
+                                            <span class="text-xs font-medium text-gray-500">{{ strtoupper(substr($client->name, 0, 2)) }}</span>
                                         </div>
                                     @endif
                                     <div>
-                                        <div class="text-sm font-medium text-gray-900 hover:text-primary-600">
+                                        <div class="text-sm font-medium text-gray-900">
                                             {{ $client->name }}
                                         </div>
                                         @if($client->contact_email)
@@ -318,9 +287,9 @@
                             </td>
 
                             {{-- Industry (inline editable) --}}
-                            <td class="px-4 py-4 text-sm text-gray-500" wire:click.stop>
+                            <td class="text-sm text-gray-500" wire:click.stop>
                                 <select wire:change="updateClientField({{ $client->id }}, 'industry', $event.target.value)"
-                                    class="text-xs border-gray-300 focus:ring-primary-500 focus:border-primary-500 rounded-md py-1">
+                                    class="input-field text-xs py-1">
                                     <option value="">-</option>
                                     @foreach($industries as $ind)
                                         <option value="{{ $ind->name }}" @selected($client->industry === $ind->name)>{{ $ind->display_name }}</option>
@@ -329,56 +298,50 @@
                             </td>
 
                             {{-- Status (inline editable) --}}
-                            <td class="px-4 py-4" wire:click.stop>
+                            <td wire:click.stop>
                                 <select wire:change="updateClientField({{ $client->id }}, 'status', $event.target.value)"
-                                    class="text-xs border-gray-300 focus:ring-primary-500 focus:border-primary-500 rounded-md py-1">
-                                    <option value="active" @selected($client->status === 'active')>Active</option>
-                                    <option value="inactive" @selected($client->status === 'inactive')>Inactive</option>
-                                    <option value="suspended" @selected($client->status === 'suspended')>Suspended</option>
+                                    class="input-field text-xs py-1">
+                                    <option value="active" @selected($client->status === 'active')>{{ __('status.active') }}</option>
+                                    <option value="inactive" @selected($client->status === 'inactive')>{{ __('status.inactive') }}</option>
+                                    <option value="suspended" @selected($client->status === 'suspended')>{{ __('status.suspended') }}</option>
                                 </select>
                             </td>
 
                             {{-- Subscription Tier (inline editable) --}}
-                            <td class="px-4 py-4 text-sm text-gray-500" wire:click.stop>
+                            <td class="text-sm text-gray-500" wire:click.stop>
                                 <select wire:change="updateClientField({{ $client->id }}, 'subscription_tier', $event.target.value)"
-                                    class="text-xs border-gray-300 focus:ring-primary-500 focus:border-primary-500 rounded-md py-1">
+                                    class="input-field text-xs py-1">
                                     <option value="">-</option>
-                                    <option value="basic" @selected($client->subscription_tier === 'basic')>Basic</option>
-                                    <option value="pro" @selected($client->subscription_tier === 'pro')>Pro</option>
-                                    <option value="enterprise" @selected($client->subscription_tier === 'enterprise')>Enterprise</option>
+                                    <option value="basic" @selected($client->subscription_tier === 'basic')>{{ __('subscription_tiers.basic') }}</option>
+                                    <option value="pro" @selected($client->subscription_tier === 'pro')>{{ __('subscription_tiers.pro') }}</option>
+                                    <option value="enterprise" @selected($client->subscription_tier === 'enterprise')>{{ __('subscription_tiers.enterprise') }}</option>
                                 </select>
                             </td>
 
                             {{-- Ad Accounts Count --}}
-                            <td class="px-4 py-4 text-sm text-gray-900 font-medium">
+                            <td class="text-sm text-gray-900 font-medium">
                                 {{ $client->ad_accounts_count ?? 0 }}
                             </td>
 
                             {{-- Total Spend --}}
-                            <td class="px-4 py-4 text-sm text-gray-900 font-medium">
+                            <td class="text-sm text-gray-900 font-medium">
                                 SR {{ number_format($client->total_spend ?? 0, 2) }}
                             </td>
 
                             {{-- Contract --}}
-                            <td class="px-4 py-4">
+                            <td>
                                 @if($client->contract_end_date)
                                     @php
                                         $daysLeft = $client->days_until_contract_expires;
                                         if ($daysLeft === null) {
                                             $contractClass = 'text-gray-400';
-                                            $contractText = 'N/A';
+                                            $contractText = __('N/A');
                                         } elseif ($daysLeft < 0) {
                                             $contractClass = 'text-red-600';
-                                            $contractText = 'Expired';
-                                        } elseif ($daysLeft <= 30) {
-                                            $contractClass = 'text-orange-600';
-                                            $contractText = $daysLeft . ' days left';
-                                        } elseif ($daysLeft <= 90) {
-                                            $contractClass = 'text-yellow-600';
-                                            $contractText = $daysLeft . ' days left';
+                                            $contractText = __('Expired');
                                         } else {
-                                            $contractClass = 'text-green-600';
-                                            $contractText = $daysLeft . ' days left';
+                                            $contractClass = $daysLeft <= 30 ? 'text-orange-600' : ($daysLeft <= 90 ? 'text-yellow-600' : 'text-green-600');
+                                            $contractText = trans_choice('pages.clients.days_left', $daysLeft, ['count' => $daysLeft]);
                                         }
                                     @endphp
                                     <span class="text-sm font-medium {{ $contractClass }}">
@@ -390,21 +353,21 @@
                             </td>
 
                             {{-- Actions --}}
-                            <td class="px-4 py-4 text-right" wire:click.stop>
-                                <div class="flex items-center justify-end space-x-2">
+                            <td class="text-end" wire:click.stop>
+                                <div class="flex items-center justify-end gap-x-2">
                                     <button wire:click="viewClientDashboard({{ $client->id }})"
-                                        class="p-1.5 text-gray-400 hover:text-primary-600 rounded hover:bg-gray-100"
+                                        class="p-1.5 text-gray-400 hover:text-gray-900 rounded hover:bg-gray-100"
                                         title="{{ __('tooltips.view_dashboard') }}">
                                         <x-heroicon-o-chart-bar class="w-5 h-5" />
                                     </button>
                                     <button wire:click="openEditModal({{ $client->id }})"
-                                        class="p-1.5 text-gray-400 hover:text-primary-600 rounded hover:bg-gray-100"
+                                        class="p-1.5 text-gray-400 hover:text-gray-900 rounded hover:bg-gray-100"
                                         title="{{ __('tooltips.edit_client') }}">
                                         <x-heroicon-o-pencil class="w-5 h-5" />
                                     </button>
                                     <button wire:click="confirmDelete({{ $client->id }})"
                                         class="p-1.5 text-gray-400 hover:text-red-600 rounded hover:bg-gray-100"
-                                        title="Delete client">
+                                        title="{{ __('pages.clients.delete_client') }}">
                                         <x-heroicon-o-trash class="w-5 h-5" />
                                     </button>
                                 </div>
@@ -412,22 +375,24 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
-                                <x-heroicon-o-user-group class="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('pages.clients.no_clients') }}</h3>
-                                <p class="mt-1 text-sm text-gray-500">
-                                    @if($this->hasActiveFilters)
-                                        {{ __('pages.clients.adjust_filters') }}
-                                    @else
-                                        {{ __('pages.clients.get_started') }}
-                                    @endif
-                                </p>
-                                <div class="mt-6">
-                                    <button wire:click="openCreateModal"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
-                                        <x-heroicon-o-plus class="h-5 w-5 mr-2" />
-                                        {{ __('pages.clients.add_manually') }}
-                                    </button>
+                            <td colspan="9" class="px-6 py-12">
+                                <div class="empty-state">
+                                    <x-heroicon-o-user-group class="mx-auto h-12 w-12 text-gray-300" />
+                                    <h3 class="empty-title">{{ __('pages.clients.no_clients') }}</h3>
+                                    <p class="empty-message">
+                                        @if($this->hasActiveFilters)
+                                            {{ __('pages.clients.adjust_filters') }}
+                                        @else
+                                            {{ __('pages.clients.get_started') }}
+                                        @endif
+                                    </p>
+                                    <div class="mt-6">
+                                        <button wire:click="openCreateModal"
+                                            class="btn-primary">
+                                            <x-heroicon-o-plus class="h-5 w-5 me-2" />
+                                            {{ __('pages.clients.add_manually') }}
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -444,10 +409,10 @@
     @if($showFormModal)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
             x-data x-on:keydown.escape.window="$wire.closeFormModal()">
-            <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+            <div class="relative top-20 mx-auto p-5 border border-gray-200 rounded-xl w-full max-w-lg bg-white">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">
-                        {{ $editingClientId ? 'Edit Client' : 'Create New Client' }}
+                    <h3 class="text-lg font-semibold tracking-tight text-gray-900">
+                        {{ $editingClientId ? __('Edit Client') : __('modals.create_client') }}
                     </h3>
                     <button wire:click="closeFormModal" class="text-gray-400 hover:text-gray-600">
                         <x-heroicon-o-x-mark class="h-5 w-5" />
@@ -457,10 +422,10 @@
                 <form wire:submit="saveClient" class="space-y-4">
                     {{-- Name --}}
                     <div>
-                        <label for="formName" class="block text-sm font-medium text-gray-700">Name *</label>
+                        <label for="formName" class="micro-label block mb-1">{{ __('labels.name') }} <span class="text-red-500">*</span></label>
                         <input wire:model="formName" type="text" id="formName"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                            placeholder="Client name" />
+                            class="input-field"
+                            placeholder="{{ __('placeholders.client_name') }}" />
                         @error('formName')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -468,9 +433,9 @@
 
                     {{-- Contact Email --}}
                     <div>
-                        <label for="formEmail" class="block text-sm font-medium text-gray-700">Contact Email</label>
+                        <label for="formEmail" class="micro-label block mb-1">{{ __('labels.contact_email') }}</label>
                         <input wire:model="formEmail" type="email" id="formEmail"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            class="input-field"
                             placeholder="client@example.com" />
                         @error('formEmail')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -479,10 +444,10 @@
 
                     {{-- Country --}}
                     <div>
-                        <label for="formCountry" class="block text-sm font-medium text-gray-700">Country</label>
+                        <label for="formCountry" class="micro-label block mb-1">{{ __('labels.country') }}</label>
                         <input wire:model="formCountry" type="text" id="formCountry"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                            placeholder="e.g. SA, AE, US" />
+                            class="input-field"
+                            placeholder="{{ __('placeholders.country_example') }}" />
                         @error('formCountry')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -490,12 +455,12 @@
 
                     {{-- Status --}}
                     <div>
-                        <label for="formStatus" class="block text-sm font-medium text-gray-700">Status</label>
+                        <label for="formStatus" class="micro-label block mb-1">{{ __('labels.status') }}</label>
                         <select wire:model="formStatus" id="formStatus"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="suspended">Suspended</option>
+                            class="input-field">
+                            <option value="active">{{ __('status.active') }}</option>
+                            <option value="inactive">{{ __('status.inactive') }}</option>
+                            <option value="suspended">{{ __('status.suspended') }}</option>
                         </select>
                         @error('formStatus')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -503,14 +468,14 @@
                     </div>
 
                     {{-- Buttons --}}
-                    <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <div class="flex items-center justify-end gap-x-3 pt-4 border-t border-gray-200">
                         <button type="button" wire:click="closeFormModal"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            Cancel
+                            class="btn-secondary">
+                            {{ __('common.cancel') }}
                         </button>
                         <button type="submit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                            {{ $editingClientId ? 'Update Client' : 'Create Client' }}
+                            class="btn-primary">
+                            {{ $editingClientId ? __('Update Client') : __('Create Client') }}
                         </button>
                     </div>
                 </form>
@@ -522,34 +487,29 @@
     @if($showDeleteDialog)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
             x-data x-on:keydown.escape.window="$wire.closeDeleteDialog()">
-            <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="relative top-20 mx-auto p-5 border border-gray-200 rounded-xl w-full max-w-md bg-white">
                 <div class="text-center">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                        <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FDEBEC] mb-4">
+                        <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-[#9F2F2D]" />
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Delete {{ $deletingClientName }}?</h3>
+                    <h3 class="text-lg font-semibold tracking-tight text-gray-900 mb-2">{{ __('pages.clients.delete_title', ['name' => $deletingClientName]) }}</h3>
                     @if($deletingClientAccountsCount > 0)
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
-                            <p class="text-sm text-yellow-800">
-                                This client has <strong>{{ $deletingClientAccountsCount }}</strong> ad account(s).
-                                The client will be deactivated instead of deleted.
-                            </p>
+                        <div class="bg-[#FBF3DB] border border-gray-200 rounded-xl p-3 mb-4">
+                            <p class="text-sm text-[#956400]">{{ trans_choice('pages.clients.deactivate_instead_of_delete_message', $deletingClientAccountsCount, ['count' => $deletingClientAccountsCount]) }}</p>
                         </div>
                     @else
-                        <p class="text-sm text-gray-500 mb-4">
-                            Are you sure you want to delete this client? This action cannot be undone.
-                        </p>
+                        <p class="text-sm text-gray-500 mb-4">{{ __('pages.clients.delete_confirm') }}</p>
                     @endif
                 </div>
 
-                <div class="flex items-center justify-end space-x-3">
+                <div class="flex items-center justify-end gap-x-3">
                     <button wire:click="closeDeleteDialog"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        class="btn-secondary">
                         Cancel
                     </button>
                     <button wire:click="deleteClient"
-                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">
-                        {{ $deletingClientAccountsCount > 0 ? 'Deactivate' : 'Delete' }}
+                        class="btn-danger">
+                        {{ $deletingClientAccountsCount > 0 ? __('common.deactivate') : __('common.delete') }}
                     </button>
                 </div>
             </div>
@@ -560,9 +520,9 @@
     @if($showWizard)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
             x-data x-on:keydown.escape.window="$wire.closeWizard()">
-            <div class="relative top-10 mx-auto p-6 border w-full max-w-3xl shadow-lg rounded-md bg-white mb-10">
+            <div class="relative top-10 mx-auto p-6 border border-gray-200 rounded-xl w-full max-w-3xl bg-white mb-10">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-lg font-medium text-gray-900">Create Client from Ad Accounts</h3>
+                    <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.clients.create_from_accounts') }}</h3>
                     <button wire:click="closeWizard" class="text-gray-400 hover:text-gray-600">
                         <x-heroicon-o-x-mark class="h-5 w-5" />
                     </button>
@@ -570,25 +530,23 @@
 
                 {{-- Step Indicator --}}
                 <div class="mb-8">
-                    <div class="flex items-center justify-center space-x-4">
+                    <div class="flex items-center justify-center gap-x-4">
                         @php
-                            $steps = ['Select Accounts', 'Review Suggestions', 'Complete Details', 'Review & Create'];
+                            $steps = [__('Select Accounts'), __('Review Suggestions'), __('Complete Details'), __('Review & Create')];
                         @endphp
-                        @foreach($steps as $index => $stepLabel)
-                            <div class="flex items-center">
-                                <div class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
-                                    {{ $wizardStep > $index ? 'bg-green-500 text-white' : ($wizardStep === $index ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-600') }}">
+                        @foreach($steps as $index => $stepLabel)<div class="flex items-center">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium {{ $wizardStep > $index ? 'bg-[#EDF3EC] text-[#346538]' : ($wizardStep === $index ? 'bg-brand-600 text-white' : 'bg-gray-200 text-gray-600') }}">
                                     @if($wizardStep > $index)
                                         <x-heroicon-o-check class="h-5 w-5" />
                                     @else
                                         {{ $index + 1 }}
                                     @endif
                                 </div>
-                                <span class="ml-2 text-sm {{ $wizardStep === $index ? 'text-primary-600 font-medium' : 'text-gray-500' }}">
+                                <span class="ms-2 text-sm {{ $wizardStep === $index ? 'text-gray-900 font-medium' : 'text-gray-500' }}">
                                     {{ $stepLabel }}
                                 </span>
                                 @if($index < count($steps) - 1)
-                                    <div class="mx-4 w-12 h-0.5 {{ $wizardStep > $index ? 'bg-green-500' : 'bg-gray-200' }}"></div>
+                                    <div class="mx-4 w-12 h-0.5 {{ $wizardStep > $index ? 'bg-[#346538]' : 'bg-gray-200' }}"></div>
                                 @endif
                             </div>
                         @endforeach
@@ -599,25 +557,25 @@
                 @if($wizardStep === 0)
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Search unassigned accounts</label>
+                            <label class="micro-label block mb-1">{{ __('pages.clients.search_unassigned_accounts') }}</label>
                             <input wire:model.live.debounce.300ms="wizardAccountSearch" type="text"
-                                placeholder="Search by name..."
-                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
+                                placeholder="{{ __('placeholders.search_by_name') }}"
+                                class="input-field" />
                         </div>
 
                         @if(count($unassignedAccounts) === 0)
-                            <div class="text-center py-8 text-gray-500">
-                                <x-heroicon-o-inbox class="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                                <p>No unassigned ad accounts available.</p>
+                            <div class="empty-state">
+                                <x-heroicon-o-inbox class="mx-auto h-10 w-10 text-gray-300" />
+                                <p class="empty-message">{{ __('pages.clients.no_unassigned_accounts') }}</p>
                             </div>
                         @else
-                            <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-md divide-y divide-gray-200">
+                            <div class="max-h-64 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-200">
                                 @foreach($unassignedAccounts as $account)
                                     @if(!$wizardAccountSearch || str_contains(strtolower($account['account_name']), strtolower($wizardAccountSearch)))
                                         <label class="flex items-center px-4 py-3 hover:bg-gray-50 cursor-pointer">
                                             <input type="checkbox" value="{{ $account['id'] }}" wire:model.live="wizardSelectedAccountIds"
-                                                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
-                                            <div class="ml-3 flex-1">
+                                                class="h-4 w-4 text-gray-900 border-gray-300 rounded" />
+                                            <div class="ms-3 flex-1">
                                                 <p class="text-sm font-medium text-gray-900">{{ $account['account_name'] }}</p>
                                                 <p class="text-xs text-gray-500">
                                                     {{ ucfirst($account['platform']) }}
@@ -626,16 +584,16 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $account['status'] === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ $account['status'] }}
+                                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $account['status'] === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                                                {{ __('status.'.$account['status']) }}
                                             </span>
                                         </label>
                                     @endif
                                 @endforeach
                             </div>
                             @if(count($wizardSelectedAccountIds) > 0)
-                                <p class="text-sm text-primary-600 font-medium">
-                                    {{ count($wizardSelectedAccountIds) }} account(s) selected
+                                <p class="text-sm text-gray-900 font-medium">
+                                    {{ trans_choice('pages.clients.accounts_selected', count($wizardSelectedAccountIds)) }}
                                 </p>
                             @endif
                         @endif
@@ -646,41 +604,40 @@
                 @if($wizardStep === 1)
                     <div class="space-y-4">
                         @if($wizardSuggestions && isset($wizardSuggestions['suggested']))
-                            <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
+                            <div class="bg-[#EDF3EC] border border-gray-200 rounded-xl p-4 mb-4">
                                 <div class="flex">
-                                    <x-heroicon-o-light-bulb class="h-5 w-5 text-green-500 mt-0.5" />
-                                    <div class="ml-3">
-                                        <h4 class="text-sm font-medium text-green-800">Auto-detected information</h4>
-                                        <p class="text-xs text-green-600 mt-1">
-                                            The following details were suggested based on the selected ad accounts.
-                                            You can modify them in the next step.
+                                    <x-heroicon-o-light-bulb class="h-5 w-5 text-[#346538] mt-0.5" />
+                                    <div class="ms-3">
+                                        <h4 class="text-sm font-medium text-[#346538]">{{ __('pages.clients.auto_detected_info') }}</h4>
+                                        <p class="text-xs text-[#346538] mt-1">
+                                            {{ __('pages.clients.suggestions_description') }}
                                         </p>
                                     </div>
                                 </div>
                             </div>
                             <dl class="space-y-3">
                                 @if(!empty($wizardSuggestions['suggested']['name']))
-                                    <div class="bg-gray-50 rounded-md p-3">
-                                        <dt class="text-xs font-medium text-gray-500">Suggested Name</dt>
+                                    <div class="bg-white border border-gray-200 rounded-xl p-3">
+                                        <dt class="micro-label">{{ __('pages.clients.suggested_name') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ $wizardSuggestions['suggested']['name'] }}</dd>
                                     </div>
                                 @endif
                                 @if(!empty($wizardSuggestions['suggested']['industry']))
-                                    <div class="bg-gray-50 rounded-md p-3">
-                                        <dt class="text-xs font-medium text-gray-500">Industry</dt>
+                                    <div class="bg-white border border-gray-200 rounded-xl p-3">
+                                        <dt class="micro-label">{{ __('labels.industry') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900 capitalize">{{ str_replace('_', ' ', $wizardSuggestions['suggested']['industry']) }}</dd>
                                     </div>
                                 @endif
                                 @if(!empty($wizardSuggestions['suggested']['description']))
-                                    <div class="bg-gray-50 rounded-md p-3">
-                                        <dt class="text-xs font-medium text-gray-500">Description</dt>
+                                    <div class="bg-white border border-gray-200 rounded-xl p-3">
+                                        <dt class="micro-label">{{ __('labels.description') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ $wizardSuggestions['suggested']['description'] }}</dd>
                                     </div>
                                 @endif
                             </dl>
                         @else
-                            <div class="text-center py-4 text-gray-500">
-                                <p class="text-sm">No suggestions could be generated. You can enter the details manually.</p>
+                            <div class="empty-state">
+                                <p class="empty-message">{{ __('pages.clients.no_suggestions') }}</p>
                             </div>
                         @endif
                     </div>
@@ -690,87 +647,87 @@
                 @if($wizardStep === 2)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Client Name *</label>
+                            <label class="micro-label block mb-1">{{ __('labels.client_name') }} <span class="text-red-500">*</span></label>
                             <input wire:model="wizardFormData.name" type="text"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                placeholder="Client name" />
+                                class="input-field"
+                                placeholder="{{ __('placeholders.client_name') }}" />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <label class="micro-label block mb-1">{{ __('Description') }}</label>
                             <textarea wire:model="wizardFormData.description" rows="2"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                placeholder="Brief description"></textarea>
+                                class="input-field"
+                                placeholder="{{ __('placeholders.brief_description') }}"></textarea>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Industry</label>
+                            <label class="micro-label block mb-1">{{ __('labels.industry') }}</label>
                             <select wire:model="wizardFormData.industry"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                                <option value="">Select Industry</option>
+                                class="input-field">
+                                <option value="">{{ __('placeholders.select_industry') }}</option>
                                 @foreach($industries as $ind)
                                     <option value="{{ $ind->name }}">{{ $ind->display_name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Subscription Tier</label>
+                            <label class="micro-label block mb-1">{{ __('labels.subscription') }}</label>
                             <select wire:model="wizardFormData.subscription_tier"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                                <option value="basic">Basic</option>
-                                <option value="pro">Pro</option>
-                                <option value="enterprise">Enterprise</option>
+                                class="input-field">
+                                <option value="basic">{{ __('subscription_tiers.basic') }}</option>
+                                <option value="pro">{{ __('subscription_tiers.pro') }}</option>
+                                <option value="enterprise">{{ __('subscription_tiers.enterprise') }}</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Monthly Budget</label>
+                            <label class="micro-label block mb-1">{{ __('labels.monthly_budget') }}</label>
                             <input wire:model="wizardFormData.monthly_budget" type="number" step="0.01"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                class="input-field"
                                 placeholder="0.00" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Contact Email</label>
+                            <label class="micro-label block mb-1">{{ __('labels.contact_email') }}</label>
                             <input wire:model="wizardFormData.contact_email" type="email"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                class="input-field"
                                 placeholder="email@example.com" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Contact Person</label>
+                            <label class="micro-label block mb-1">{{ __('labels.contact_person') }}</label>
                             <input wire:model="wizardFormData.contact_person" type="text"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                placeholder="Full name" />
+                                class="input-field"
+                                placeholder="{{ __('placeholders.full_name') }}" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Contact Phone</label>
+                            <label class="micro-label block mb-1">{{ __('labels.contact_phone') }}</label>
                             <input wire:model="wizardFormData.contact_phone" type="tel"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                class="input-field"
                                 placeholder="+966..." />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Website</label>
+                            <label class="micro-label block mb-1">{{ __('labels.website') }}</label>
                             <input wire:model="wizardFormData.website" type="url"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                class="input-field"
                                 placeholder="https://..." />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Billing Email</label>
+                            <label class="micro-label block mb-1">{{ __('labels.billing_email') }}</label>
                             <input wire:model="wizardFormData.billing_email" type="email"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                class="input-field"
                                 placeholder="billing@example.com" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Contract Start Date</label>
+                            <label class="micro-label block mb-1">{{ __('labels.contract_start_date') }}</label>
                             <input wire:model="wizardFormData.contract_start_date" type="date"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
+                                class="input-field" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Contract End Date</label>
+                            <label class="micro-label block mb-1">{{ __('labels.contract_end_date') }}</label>
                             <input wire:model="wizardFormData.contract_end_date" type="date"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm" />
+                                class="input-field" />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Notes</label>
+                            <label class="micro-label block mb-1">{{ __('labels.notes') }}</label>
                             <textarea wire:model="wizardFormData.notes" rows="2"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                placeholder="Additional notes..."></textarea>
+                                class="input-field"
+                                placeholder="{{ __('placeholders.additional_notes') }}"></textarea>
                         </div>
                     </div>
                 @endif
@@ -778,60 +735,60 @@
                 {{-- Step 3: Review & Create --}}
                 @if($wizardStep === 3)
                     <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="text-sm font-medium text-gray-900 mb-3">Review Client Information</h4>
+                        <div class="bg-white border border-gray-200 rounded-xl p-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-3">{{ __('pages.clients.review_client_info') }}</h4>
                             <dl class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
-                                    <dt class="text-xs font-medium text-gray-500">Name</dt>
+                                    <dt class="micro-label">{{ __('labels.name') }}</dt>
                                     <dd class="mt-1 text-sm text-gray-900">{{ $wizardFormData['name'] }}</dd>
                                 </div>
                                 @if(!empty($wizardFormData['industry']))
                                     <div>
-                                        <dt class="text-xs font-medium text-gray-500">Industry</dt>
+                                        <dt class="micro-label">{{ __('labels.industry') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900 capitalize">{{ str_replace('_', ' ', $wizardFormData['industry']) }}</dd>
                                     </div>
                                 @endif
                                 @if(!empty($wizardFormData['subscription_tier']))
                                     <div>
-                                        <dt class="text-xs font-medium text-gray-500">Tier</dt>
+                                        <dt class="micro-label">{{ __('labels.tier') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900 capitalize">{{ $wizardFormData['subscription_tier'] }}</dd>
                                     </div>
                                 @endif
                                 @if(!empty($wizardFormData['contact_email']))
                                     <div>
-                                        <dt class="text-xs font-medium text-gray-500">Email</dt>
+                                        <dt class="micro-label">{{ __('labels.email') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ $wizardFormData['contact_email'] }}</dd>
                                     </div>
                                 @endif
                                 @if(!empty($wizardFormData['contact_person']))
                                     <div>
-                                        <dt class="text-xs font-medium text-gray-500">Contact Person</dt>
+                                        <dt class="micro-label">{{ __('labels.contact_person') }}</dt>
                                         <dd class="mt-1 text-sm text-gray-900">{{ $wizardFormData['contact_person'] }}</dd>
                                     </div>
                                 @endif
                                 <div>
-                                    <dt class="text-xs font-medium text-gray-500">Ad Accounts</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ count($wizardSelectedAccountIds) }} account(s)</dd>
+                                    <dt class="micro-label">{{ __('labels.ad_accounts') }}</dt>
+                                    <dd class="mt-1 text-sm text-gray-900">{{ trans_choice('common.accounts', count($wizardSelectedAccountIds)) }}</dd>
                                 </div>
                             </dl>
                         </div>
 
                         @if(!empty($wizardFormData['description']))
-                            <div class="bg-gray-50 rounded-lg p-4">
-                                <dt class="text-xs font-medium text-gray-500 mb-1">Description</dt>
+                            <div class="bg-white border border-gray-200 rounded-xl p-4">
+                                <dt class="micro-label mb-1">{{ __('labels.description') }}</dt>
                                 <dd class="text-sm text-gray-900">{{ $wizardFormData['description'] }}</dd>
                             </div>
                         @endif
 
                         {{-- Selected Accounts Preview --}}
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="text-xs font-medium text-gray-500 mb-2">Selected Ad Accounts</h4>
+                        <div class="bg-white border border-gray-200 rounded-xl p-4">
+                            <h4 class="micro-label mb-2">{{ __('pages.clients.selected_ad_accounts') }}</h4>
                             <div class="space-y-2">
                                 @foreach($unassignedAccounts as $account)
                                     @if(in_array($account['id'], $wizardSelectedAccountIds))
                                         <div class="flex items-center justify-between py-1">
                                             <span class="text-sm text-gray-900">{{ $account['account_name'] }}</span>
-                                            <span class="text-xs text-gray-500 capitalize">{{ $account['platform'] }}</span>
+                                            <span class="text-xs text-gray-500 capitalize">{{ __('platforms.'.$account['platform']) }}</span>
                                         </div>
                                     @endif
                                 @endforeach
@@ -845,28 +802,28 @@
                     <div>
                         @if($wizardStep > 0)
                             <button wire:click="wizardPreviousStep"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                                Previous
+                                class="btn-secondary">
+                                {{ __('buttons.previous') }}
                             </button>
                         @endif
                     </div>
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center gap-x-3">
                         <button wire:click="closeWizard"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            Cancel
+                            class="btn-secondary">
+                            {{ __('Cancel') }}
                         </button>
                         @if($wizardStep < 3)
                             <button wire:click="wizardNextStep"
                                 @disabled($wizardStep === 0 && count($wizardSelectedAccountIds) === 0)
-                                class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                                Next
+                                class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ __('buttons.next') }}
                             </button>
                         @else
                             <button wire:click="createClientFromWizard"
                                 @disabled($wizardCreating || empty($wizardFormData['name']))
-                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span wire:loading.remove wire:target="createClientFromWizard">Create Client</span>
-                                <span wire:loading wire:target="createClientFromWizard">Creating...</span>
+                                class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span wire:loading.remove wire:target="createClientFromWizard">{{ __('Create Client') }}</span>
+                                <span wire:loading wire:target="createClientFromWizard">{{ __('common.creating') }}</span>
                             </button>
                         @endif
                     </div>

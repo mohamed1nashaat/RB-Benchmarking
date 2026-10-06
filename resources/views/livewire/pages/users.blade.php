@@ -1,48 +1,48 @@
 <div class="py-6">
     {{-- Flash Messages --}}
     @if (session()->has('success'))
-        <div class="mb-4 rounded-md bg-green-50 border border-green-200 p-4">
+        <div class="mb-4 rounded-xl bg-[#EDF3EC] border border-gray-200 p-4">
             <div class="flex">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
-                <p class="ml-3 text-sm text-green-800">{{ session('success') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
+                <p class="ms-3 text-sm text-[#346538]">{{ session('success') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="mb-4 rounded-md bg-red-50 border border-red-200 p-4">
+        <div class="mb-4 rounded-xl bg-[#FDEBEC] border border-gray-200 p-4">
             <div class="flex">
-                <x-heroicon-s-x-circle class="h-5 w-5 text-red-400" />
-                <p class="ml-3 text-sm text-red-800">{{ session('error') }}</p>
+                <x-heroicon-s-x-circle class="h-5 w-5 text-[#9F2F2D]" />
+                <p class="ms-3 text-sm text-[#9F2F2D]">{{ session('error') }}</p>
             </div>
         </div>
     @endif
 
     {{-- Header --}}
     <div class="mb-6">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between gap-4">
             <div>
                 @if($isSuperAdmin)
-                    <h1 class="text-2xl font-bold text-gray-900">{{ __('pages.admin_users.title') }}</h1>
+                    <h1 class="section-title">{{ __('pages.admin_users.title') }}</h1>
                     <p class="mt-1 text-sm text-gray-500">{{ __('pages.admin_users.description') }}</p>
                 @else
-                    <h1 class="text-2xl font-bold text-gray-900">{{ __('pages.users.title') }}</h1>
+                    <h1 class="section-title">{{ __('pages.users.title') }}</h1>
                     <p class="mt-1 text-sm text-gray-500">{{ __('pages.users.description') }}</p>
                 @endif
             </div>
             @if($isSuperAdmin)
                 <button
                     wire:click="$set('showCreateModal', true)"
-                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    class="btn-primary shrink-0"
                 >
-                    <x-heroicon-o-user-plus class="w-5 h-5 mr-2" />
+                    <x-heroicon-o-user-plus class="w-5 h-5 me-2" />
                     {{ __('pages.admin_users.create_user') }}
                 </button>
-            @else
+            @elseif($this->canInviteUsers())
                 <button
                     wire:click="openInviteModal"
-                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    class="btn-primary shrink-0"
                 >
-                    <x-heroicon-o-user-plus class="w-5 h-5 mr-2" />
+                    <x-heroicon-o-user-plus class="w-5 h-5 me-2" />
                     {{ __('pages.users.invite_user') }}
                 </button>
             @endif
@@ -51,25 +51,25 @@
 
     {{-- Tabs --}}
     <div class="border-b border-gray-200 mb-6">
-        <nav class="-mb-px flex space-x-8">
+        <nav class="-mb-px flex gap-x-8">
             <button
                 wire:click="$set('activeTab', 'users')"
-                class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'users' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
+                class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'users' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
             >
                 {{ __('pages.users.tabs.users') }}
                 @if($usersPaginated->total() > 0)
-                    <span class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
+                    <span class="ms-2 bg-[#F1F1EF] text-[#6B6B66] py-0.5 px-2 rounded-full text-xs font-semibold">
                         {{ $usersPaginated->total() }}
                     </span>
                 @endif
             </button>
             <button
                 wire:click="$set('activeTab', 'invitations')"
-                class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'invitations' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
+                class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'invitations' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
             >
                 {{ __('pages.users.tabs.invitations') }}
                 @if($invitationsList->count() > 0)
-                    <span class="ml-2 bg-yellow-100 text-yellow-600 py-0.5 px-2 rounded-full text-xs">
+                    <span class="ms-2 bg-[#FBF3DB] text-[#956400] py-0.5 px-2 rounded-full text-xs font-semibold">
                         {{ $invitationsList->count() }}
                     </span>
                 @endif
@@ -80,16 +80,16 @@
     {{-- Users Tab --}}
     @if($activeTab === 'users')
         {{-- Filters --}}
-        <div class="bg-white shadow rounded-lg p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-{{ $isSuperAdmin ? '4' : '3' }} gap-4">
+        <div class="filter-bar mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-{{ $isSuperAdmin ? '4' : '3' }} gap-4 w-full">
                 {{-- Search --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.search') }}</label>
+                    <label class="micro-label block mb-1">{{ __('labels.search') }}</label>
                     <input
                         wire:model.live.debounce.500ms="search"
                         type="text"
                         placeholder="{{ __('pages.users.search_placeholder') }}"
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        class="input-field"
                     />
                 </div>
 
@@ -111,7 +111,7 @@
                         wire-model="roleFilter"
                         :label="__('labels.role')"
                         :placeholder="__('filters.all_roles')"
-                        :options="['admin' => __('roles.admin'), 'viewer' => __('roles.viewer')]"
+                        :options="$roleOptions"
                     />
                 </div>
 
@@ -120,111 +120,117 @@
 
         {{-- Users Table --}}
         @if($usersPaginated->count() > 0)
-            <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="card overflow-hidden">
                 <x-table-scroll max-height="600px">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="data-table">
                     @if($isSuperAdmin)
                         {{-- Super Admin Table --}}
-                        <thead class="bg-gray-100">
+                        <thead>
                             <tr>
                                 <th
                                     wire:click="handleSort('name')"
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 bg-gray-100 sticky left-0 z-10 border-r border-gray-200"
+                                    class="sticky start-0 z-10 cursor-pointer hover:bg-gray-100"
                                 >
                                     <div class="flex items-center gap-1">
                                         {{ __('labels.user') }}
                                         @if($sortBy === 'name')
                                             @if($sortOrder === 'asc')
-                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-gray-900" />
                                             @else
-                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-gray-900" />
                                             @endif
                                         @endif
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th>
                                     {{ __('labels.role') }}
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th>
                                     {{ __('labels.tenants') }}
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th>
                                     {{ __('labels.last_login') }}
                                 </th>
                                 <th
                                     wire:click="handleSort('created_at')"
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                                    class="cursor-pointer hover:bg-gray-100"
                                 >
                                     <div class="flex items-center gap-1">
                                         {{ __('labels.created') }}
                                         @if($sortBy === 'created_at')
                                             @if($sortOrder === 'asc')
-                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-gray-900" />
                                             @else
-                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-gray-900" />
                                             @endif
                                         @endif
                                     </div>
                                 </th>
-                                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th class="!text-end">
                                     {{ __('labels.actions') }}
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($usersPaginated as $user)
-                                <tr class="hover:bg-gray-50" wire:key="user-{{ $user->id }}">
-                                    <td class="px-6 py-4 whitespace-nowrap sticky left-0 z-10 sticky-col border-r border-gray-200">
+                                <tr wire:key="user-{{ $user->id }}">
+                                    <td class="whitespace-nowrap sticky start-0 z-10 sticky-col border-e border-gray-200">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
                                                 @if($user->avatar_url)
                                                     <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="h-10 w-10 rounded-full object-cover" />
                                                 @else
-                                                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                                                        <span class="text-primary-700 font-medium text-sm">{{ $this->getInitials($user->name) }}</span>
+                                                    <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                        <span class="text-gray-600 font-medium text-sm">{{ $this->getInitials($user->name) }}</span>
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="ml-4">
+                                            <div class="ms-4">
                                                 <div class="text-sm font-medium text-gray-900">
                                                     {{ $user->name }}
                                                     @if($user->id === 1 || $user->email === 'technical@redbananas.com')
-                                                        <span class="ml-2 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">Super Admin</span>
+                                                        <span class="ms-2 bg-[#FBF3DB] text-[#956400] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">{{ __('common.super_admin') }}</span>
                                                     @endif
                                                 </div>
                                                 <div class="text-sm text-gray-500">{{ $user->email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td class="whitespace-nowrap">
                                         <div class="flex flex-wrap gap-1">
                                             @if($user->id === 1 || $user->email === 'technical@redbananas.com')
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                    Super Admin
+                                                <span class="bg-[#FBF3DB] text-[#956400] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                                    {{ __('common.super_admin') }}
                                                 </span>
                                             @endif
                                             @php
-                                                $distinctRoles = $user->tenants->pluck('pivot.role')->unique()->sort();
+                                                $distinctRoleIds = $user->tenants->pluck('pivot.tenant_role_id')->filter()->unique();
                                             @endphp
-                                            @foreach($distinctRoles as $role)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $role === 'admin' ? 'bg-primary-100 text-primary-800' : 'bg-gray-100 text-gray-800' }}">
-                                                    {{ __('roles.' . $role) }}
+                                            @foreach($distinctRoleIds as $roleId)
+                                                @php
+                                                    $roleForBadge = $this->getTenantRoleById($roleId);
+                                                @endphp
+                                                <span class="{{ $roleForBadge?->isAdmin() ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F1EF] text-[#6B6B66]' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                                    {{ $roleForBadge?->display_name ?? __('pages.roles.no_role_assigned') }}
                                                 </span>
                                             @endforeach
-                                            @if(!($user->id === 1 || $user->email === 'technical@redbananas.com') && $distinctRoles->isEmpty())
+                                            @if(!($user->id === 1 || $user->email === 'technical@redbananas.com') && $distinctRoleIds->isEmpty())
                                                 <span class="text-sm text-gray-400">—</span>
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4">
+                                    <td>
                                         <div class="flex flex-wrap gap-1">
                                             @foreach($user->tenants->take(3) as $tenant)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $tenant->pivot->role === 'admin' ? 'bg-primary-100 text-primary-800' : 'bg-gray-100 text-gray-800' }}" title="{{ $tenant->name }} ({{ $tenant->pivot->role }})">
+                                                @php
+                                                    $tenantRoleForBadge = $this->getTenantRoleById($tenant->pivot->tenant_role_id);
+                                                @endphp
+                                                <span class="{{ $tenantRoleForBadge?->isAdmin() ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F1EF] text-[#6B6B66]' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5" title="{{ $tenant->name }} ({{ $tenantRoleForBadge?->display_name ?? $tenant->pivot->role }})">
                                                     {{ $tenant->name }}
                                                 </span>
                                             @endforeach
                                             @if($user->tenants->count() > 3)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                                <span class="bg-[#F1F1EF] text-[#6B6B66] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
                                                     +{{ $user->tenants->count() - 3 }}
                                                 </span>
                                             @endif
@@ -235,7 +241,7 @@
                                                 <button
                                                     type="button"
                                                     wire:click="showAssignTenant({{ $user->id }})"
-                                                    class="inline-flex items-center justify-center w-5 h-5 text-gray-400 hover:text-primary-600 rounded hover:bg-primary-50 transition-colors"
+                                                    class="inline-flex items-center justify-center w-5 h-5 text-gray-400 hover:text-gray-900 rounded hover:bg-gray-100 transition-colors"
                                                     title="{{ __('pages.admin_users.assign_tenant') }}"
                                                 >
                                                     <x-heroicon-s-plus-circle class="h-4 w-4" />
@@ -243,14 +249,14 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500">
                                         {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : __('pages.users.never') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500">
                                         {{ $user->created_at->format('M d, Y') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex items-center justify-end space-x-2">
+                                    <td class="whitespace-nowrap text-end text-sm font-medium">
+                                        <div class="flex items-center justify-end gap-x-2">
                                             <button wire:click="editUser({{ $user->id }})" class="text-gray-600 hover:text-gray-900" title="{{ __('common.edit') }}">
                                                 <x-heroicon-o-pencil class="h-5 w-5" />
                                             </button>
@@ -266,20 +272,20 @@
                         </tbody>
                     @else
                         {{-- Regular Admin Table --}}
-                        <thead class="bg-gray-100">
+                        <thead>
                             <tr>
                                 <th
                                     scope="col"
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 bg-gray-100 sticky left-0 z-10 border-r border-gray-200"
+                                    class="sticky start-0 z-10 cursor-pointer hover:bg-gray-100"
                                     wire:click="handleSort('name')"
                                 >
                                     <div class="flex items-center gap-1">
                                         {{ __('labels.user') }}
                                         @if($sortBy === 'name')
                                             @if($sortOrder === 'asc')
-                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-gray-900" />
                                             @else
-                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-gray-900" />
                                             @endif
                                         @else
                                             <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -288,16 +294,16 @@
                                 </th>
                                 <th
                                     scope="col"
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                                    class="cursor-pointer hover:bg-gray-100"
                                     wire:click="handleSort('role')"
                                 >
                                     <div class="flex items-center gap-1">
                                         {{ __('labels.role') }}
                                         @if($sortBy === 'role')
                                             @if($sortOrder === 'asc')
-                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-gray-900" />
                                             @else
-                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-gray-900" />
                                             @endif
                                         @else
                                             <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -306,81 +312,85 @@
                                 </th>
                                 <th
                                     scope="col"
-                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200"
+                                    class="cursor-pointer hover:bg-gray-100"
                                     wire:click="handleSort('joined_at')"
                                 >
                                     <div class="flex items-center gap-1">
                                         {{ __('labels.joined') }}
                                         @if($sortBy === 'joined_at')
                                             @if($sortOrder === 'asc')
-                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-up class="h-4 w-4 text-gray-900" />
                                             @else
-                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-primary-600" />
+                                                <x-heroicon-s-chevron-down class="h-4 w-4 text-gray-900" />
                                             @endif
                                         @else
                                             <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
                                         @endif
                                     </div>
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th scope="col">
                                     {{ __('labels.last_login') }}
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="!text-end">
                                     {{ __('labels.actions') }}
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             @foreach($usersPaginated as $user)
-                                <tr class="hover:bg-gray-50" wire:key="user-{{ $user->id }}">
-                                    <td class="px-6 py-4 whitespace-nowrap sticky left-0 z-10 sticky-col border-r border-gray-200">
+                                <tr wire:key="user-{{ $user->id }}">
+                                    <td class="whitespace-nowrap sticky start-0 z-10 sticky-col border-e border-gray-200">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
                                                 @if($user->avatar_url)
                                                     <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="h-10 w-10 rounded-full object-cover" />
                                                 @else
-                                                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                                                        <span class="text-primary-700 font-medium text-sm">{{ $this->getInitials($user->name) }}</span>
+                                                    <div class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                        <span class="text-gray-600 font-medium text-sm">{{ $this->getInitials($user->name) }}</span>
                                                     </div>
                                                 @endif
                                             </div>
-                                            <div class="ml-4">
+                                            <div class="ms-4">
                                                 <div class="text-sm font-medium text-gray-900">
                                                     {{ $user->name }}
                                                     @if($user->id === auth()->id())
-                                                        <span class="ml-2 text-xs text-gray-500">({{ __('pages.users.you') }})</span>
+                                                        <span class="ms-2 text-xs text-gray-500">({{ __('pages.users.you') }})</span>
                                                     @endif
                                                 </div>
                                                 <div class="text-sm text-gray-500">{{ $user->email }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($user->id === auth()->id())
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $user->pivot->role === 'admin' ? 'bg-primary-100 text-primary-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ __('roles.' . $user->pivot->role) }}
+                                    <td class="whitespace-nowrap">
+                                        @php
+                                            $userRole = $roles->firstWhere('id', $user->pivot->tenant_role_id);
+                                        @endphp
+                                        @if($user->id === auth()->id() || !$this->canManageUsers())
+                                            <span class="{{ $userRole?->isAdmin() ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F1EF] text-[#6B6B66]' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                                {{ $userRole?->display_name ?? __('roles.' . $user->pivot->role) }}
                                             </span>
                                         @else
                                             <select
                                                 wire:change="changeUserRole({{ $user->id }}, $event.target.value)"
-                                                class="text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                                class="input-field !w-auto"
                                             >
-                                                <option value="viewer" @selected($user->pivot->role === 'viewer')>{{ __('roles.viewer') }}</option>
-                                                <option value="admin" @selected($user->pivot->role === 'admin')>{{ __('roles.admin') }}</option>
+                                                @foreach($roles as $roleOption)
+                                                    <option value="{{ $roleOption->id }}" @selected($user->pivot->tenant_role_id == $roleOption->id)>{{ $roleOption->display_name }}</option>
+                                                @endforeach
                                             </select>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500">
                                         {{ $user->pivot->joined_at ? \Carbon\Carbon::parse($user->pivot->joined_at)->format('M d, Y') : '-' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="whitespace-nowrap text-sm text-gray-500">
                                         {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : __('pages.users.never') }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        @if($user->id !== auth()->id())
+                                    <td class="whitespace-nowrap text-end text-sm font-medium">
+                                        @if($user->id !== auth()->id() && $this->canManageUsers())
                                             <button
                                                 wire:click="confirmRemoveUser({{ $user->id }})"
-                                                class="text-red-600 hover:text-red-900"
+                                                class="text-red-600 hover:text-red-900 text-sm font-medium"
                                             >
                                                 {{ __('pages.users.remove') }}
                                             </button>
@@ -398,23 +408,25 @@
             <x-pagination-wrapper :paginator="$usersPaginated" :per-page-options="[10, 25, 50]" />
         @else
             {{-- Empty State --}}
-            <div class="text-center py-12 bg-white shadow rounded-lg">
-                <x-heroicon-o-users class="mx-auto h-12 w-12 text-gray-400" />
+            <div class="card empty-state">
+                <x-heroicon-o-users class="h-12 w-12 text-gray-300 mb-3" />
                 @if($isSuperAdmin)
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('pages.admin_users.no_users') }}</h3>
-                    <p class="mt-1 text-sm text-gray-500">{{ __('pages.admin_users.no_users_description') }}</p>
+                    <h3 class="empty-title">{{ __('pages.admin_users.no_users') }}</h3>
+                    <p class="empty-message">{{ __('pages.admin_users.no_users_description') }}</p>
                 @else
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('pages.users.no_users') }}</h3>
-                    <p class="mt-1 text-sm text-gray-500">{{ __('pages.users.no_users_description') }}</p>
-                    <div class="mt-6">
-                        <button
-                            wire:click="openInviteModal"
-                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-                        >
-                            <x-heroicon-o-user-plus class="w-5 h-5 mr-2" />
-                            {{ __('pages.users.invite_user') }}
-                        </button>
-                    </div>
+                    <h3 class="empty-title">{{ __('pages.users.no_users') }}</h3>
+                    <p class="empty-message">{{ __('pages.users.no_users_description') }}</p>
+                    @if($this->canInviteUsers())
+                        <div class="mt-6">
+                            <button
+                                wire:click="openInviteModal"
+                                class="btn-primary"
+                            >
+                                <x-heroicon-o-user-plus class="w-5 h-5 me-2" />
+                                {{ __('pages.users.invite_user') }}
+                            </button>
+                        </div>
+                    @endif
                 @endif
             </div>
         @endif
@@ -423,20 +435,20 @@
     {{-- Invitations Tab --}}
     @if($activeTab === 'invitations')
         @if($invitationsList->count() > 0)
-            <div class="bg-white shadow rounded-lg divide-y divide-gray-200">
+            <div class="card divide-y divide-gray-200">
                 @foreach($invitationsList as $invitation)
-                    <div class="p-4 flex items-center justify-between" wire:key="invitation-{{ $invitation->id }}">
-                        <div>
+                    <div class="p-4 flex items-center justify-between gap-4" wire:key="invitation-{{ $invitation->id }}">
+                        <div class="min-w-0">
                             <div class="text-sm font-medium text-gray-900">{{ $invitation->email }}</div>
                             <div class="text-sm text-gray-500">
                                 @if($isSuperAdmin && $invitation->tenant)
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 mr-1">
+                                    <span class="bg-[#F1F1EF] text-[#6B6B66] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 me-1">
                                         {{ $invitation->tenant->name }}
                                     </span>
                                 @endif
                                 {{ __('pages.users.invited_as') }}
-                                <span class="font-medium {{ $invitation->role === 'admin' ? 'text-primary-600' : 'text-gray-600' }}">
-                                    {{ __('roles.' . $invitation->role) }}
+                                <span class="font-medium {{ $invitation->tenantRole?->isAdmin() ? 'text-gray-900' : 'text-gray-500' }}">
+                                    {{ $invitation->tenantRole?->display_name ?? __('roles.' . $invitation->role) }}
                                 </span>
                                 {{ __('pages.users.by') }} {{ $invitation->inviter?->name ?? __('pages.users.unknown') }}
                             </div>
@@ -444,30 +456,32 @@
                                 {{ __('pages.users.expires') }} {{ $invitation->expires_at->diffForHumans() }}
                             </div>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <button
-                                wire:click="resendInvitation({{ $invitation->id }})"
-                                @if($resendingId === $invitation->id) disabled @endif
-                                class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                {{ $resendingId === $invitation->id ? __('common.sending') : __('pages.users.resend') }}
-                            </button>
-                            <button
-                                wire:click="cancelInvitation({{ $invitation->id }})"
-                                @if($cancellingId === $invitation->id) disabled @endif
-                                class="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
-                            >
-                                {{ $cancellingId === $invitation->id ? __('common.cancelling') : __('common.cancel') }}
-                            </button>
+                        <div class="flex items-center gap-x-2 shrink-0">
+                            @if($this->canInviteUsers())
+                                <button
+                                    wire:click="resendInvitation({{ $invitation->id }})"
+                                    @if($resendingId === $invitation->id) disabled @endif
+                                    class="btn-secondary !py-1.5 !px-3 disabled:opacity-50"
+                                >
+                                    {{ $resendingId === $invitation->id ? __('common.sending') : __('pages.users.resend') }}
+                                </button>
+                                <button
+                                    wire:click="cancelInvitation({{ $invitation->id }})"
+                                    @if($cancellingId === $invitation->id) disabled @endif
+                                    class="btn-secondary !py-1.5 !px-3 !text-red-600 hover:!bg-[#FDEBEC] disabled:opacity-50"
+                                >
+                                    {{ $cancellingId === $invitation->id ? __('common.cancelling') : __('common.cancel') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
                 @endforeach
             </div>
         @else
-            <div class="text-center py-12 bg-white shadow rounded-lg">
-                <x-heroicon-o-envelope class="mx-auto h-12 w-12 text-gray-400" />
-                <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('pages.users.no_invitations') }}</h3>
-                <p class="mt-1 text-sm text-gray-500">{{ __('pages.users.no_invitations_description') }}</p>
+            <div class="card empty-state">
+                <x-heroicon-o-envelope class="h-12 w-12 text-gray-300 mb-3" />
+                <h3 class="empty-title">{{ __('pages.users.no_invitations') }}</h3>
+                <p class="empty-message">{{ __('pages.users.no_invitations_description') }}</p>
             </div>
         @endif
     @endif
@@ -480,15 +494,15 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
                 <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeInviteModal"></div>
-                    <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-auto p-6 text-left">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">
+                    <div class="relative bg-white border border-gray-200 rounded-xl max-w-md w-full mx-auto p-6 text-start">
+                        <h3 class="text-lg font-semibold tracking-tight text-gray-900">
                             {{ __('pages.users.invite_user') }}
                         </h3>
 
                         <div class="mt-4 space-y-4">
                             {{-- Email --}}
                             <div>
-                                <label for="invite_email" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="invite_email" class="micro-label block mb-1">
                                     {{ __('labels.email') }} <span class="text-red-500">*</span>
                                 </label>
                                 <input
@@ -497,7 +511,7 @@
                                     type="email"
                                     required
                                     placeholder="{{ __('placeholders.invite_email') }}"
-                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 @error('inviteEmail') border-red-300 @enderror"
+                                    class="input-field @error('inviteEmail') !border-red-300 @enderror"
                                 />
                                 @error('inviteEmail')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -506,65 +520,55 @@
 
                             {{-- Role --}}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <label class="micro-label block mb-2">
                                     {{ __('labels.role') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="space-y-2">
-                                    <label
-                                        class="flex items-start p-3 border rounded-lg cursor-pointer transition-colors {{ $inviteRole === 'viewer' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50' }}"
-                                    >
-                                        <input
-                                            type="radio"
-                                            wire:model="inviteRole"
-                                            value="viewer"
-                                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 mt-0.5"
-                                        />
-                                        <div class="ml-3">
-                                            <span class="block text-sm font-medium text-gray-900">{{ __('roles.viewer') }}</span>
-                                            <span class="block text-sm text-gray-500">{{ __('pages.users.role_descriptions.viewer') }}</span>
-                                        </div>
-                                    </label>
-                                    <label
-                                        class="flex items-start p-3 border rounded-lg cursor-pointer transition-colors {{ $inviteRole === 'admin' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50' }}"
-                                    >
-                                        <input
-                                            type="radio"
-                                            wire:model="inviteRole"
-                                            value="admin"
-                                            class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 mt-0.5"
-                                        />
-                                        <div class="ml-3">
-                                            <span class="block text-sm font-medium text-gray-900">{{ __('roles.admin') }}</span>
-                                            <span class="block text-sm text-gray-500">{{ __('pages.users.role_descriptions.admin') }}</span>
-                                        </div>
-                                    </label>
+                                    @foreach($roles as $roleOption)
+                                        <label
+                                            class="flex items-start p-3 border rounded-lg cursor-pointer transition-colors {{ $inviteRoleId == $roleOption->id ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:bg-gray-50' }}"
+                                        >
+                                            <input
+                                                type="radio"
+                                                wire:model="inviteRoleId"
+                                                value="{{ $roleOption->id }}"
+                                                class="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 mt-0.5"
+                                            />
+                                            <div class="ms-3">
+                                                <span class="block text-sm font-medium text-gray-900">{{ $roleOption->display_name }}</span>
+                                                @if($roleOption->description)
+                                                    <span class="block text-sm text-gray-500">{{ $roleOption->description }}</span>
+                                                @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
                                 </div>
                             </div>
 
                             {{-- Error Message --}}
                             @if($inviteError)
-                                <div class="p-3 rounded-md bg-red-50 border border-red-200">
-                                    <p class="text-sm text-red-600">{{ $inviteError }}</p>
+                                <div class="p-3 rounded-lg bg-[#FDEBEC] border border-gray-200">
+                                    <p class="text-sm text-[#9F2F2D]">{{ $inviteError }}</p>
                                 </div>
                             @endif
                         </div>
 
                         {{-- Actions --}}
-                        <div class="mt-6 flex justify-end space-x-3">
+                        <div class="mt-6 flex justify-end gap-x-3">
                             <button
                                 wire:click="closeInviteModal"
                                 @if($inviteSending) disabled @endif
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
+                                class="btn-secondary disabled:opacity-50"
                             >
                                 {{ __('common.cancel') }}
                             </button>
                             <button
                                 wire:click="sendInvitation"
                                 @if($inviteSending || empty($inviteEmail)) disabled @endif
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
+                                class="btn-primary disabled:opacity-50"
                             >
                                 @if($inviteSending)
-                                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <svg class="animate-spin -ms-1 me-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
@@ -584,13 +588,13 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
                 <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeRemoveDialog"></div>
-                    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto p-6">
+                    <div class="relative bg-white border border-gray-200 rounded-xl max-w-md w-full mx-auto p-6">
                         <div class="flex items-center gap-4 mb-4">
-                            <div class="flex-shrink-0 bg-red-100 rounded-full p-3">
+                            <div class="flex-shrink-0 bg-[#FDEBEC] rounded-full p-3">
                                 <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
                             </div>
-                            <div class="text-left">
-                                <h3 class="text-lg font-medium text-gray-900">{{ __('pages.users.remove_user') }}</h3>
+                            <div class="text-start">
+                                <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.users.remove_user') }}</h3>
                                 <p class="text-sm text-gray-500">
                                     {{ __('pages.users.remove_confirm', ['name' => $userToRemoveName]) }}
                                 </p>
@@ -599,14 +603,14 @@
                         <div class="flex justify-end gap-3">
                             <button
                                 wire:click="closeRemoveDialog"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                class="btn-secondary"
                             >
                                 {{ __('common.cancel') }}
                             </button>
                             <button
                                 wire:click="removeUser"
                                 @if($removeLoading) disabled @endif
-                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+                                class="btn-danger disabled:opacity-50"
                             >
                                 {{ $removeLoading ? __('common.removing') : __('pages.users.remove') }}
                             </button>
@@ -625,22 +629,22 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data @keydown.escape.window="$wire.set('showCreateModal', false)">
                 <div class="flex items-center justify-center min-h-screen p-4">
                     <div class="fixed inset-0 bg-black bg-opacity-25" wire:click="$set('showCreateModal', false)"></div>
-                    <div class="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('pages.admin_users.create_user') }}</h3>
+                    <div class="relative w-full max-w-md bg-white border border-gray-200 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.admin_users.create_user') }}</h3>
                         <form wire:submit="createUser" class="mt-4 space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.name') }} <span class="text-red-500">*</span></label>
-                                <input wire:model="newUserName" type="text" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+                                <label class="micro-label block mb-1">{{ __('labels.name') }} <span class="text-red-500">*</span></label>
+                                <input wire:model="newUserName" type="text" required class="input-field" />
                                 @error('newUserName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.email') }} <span class="text-red-500">*</span></label>
-                                <input wire:model="newUserEmail" type="email" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+                                <label class="micro-label block mb-1">{{ __('labels.email') }} <span class="text-red-500">*</span></label>
+                                <input wire:model="newUserEmail" type="email" required class="input-field" />
                                 @error('newUserEmail') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.password') }} <span class="text-red-500">*</span></label>
-                                <input wire:model="newUserPassword" type="password" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+                                <label class="micro-label block mb-1">{{ __('labels.password') }} <span class="text-red-500">*</span></label>
+                                <input wire:model="newUserPassword" type="password" required class="input-field" />
                                 @error('newUserPassword') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
@@ -652,17 +656,20 @@
                                 />
                             </div>
                             <div>
+                                @php
+                                    $createRoleOptions = $newUserTenantId ? $this->getTenantRoleOptions($newUserTenantId) : [];
+                                @endphp
                                 <x-select2
-                                    wire-model="newUserRole"
+                                    wire-model="newUserRoleId"
                                     :label="__('labels.role')"
-                                    :options="['viewer' => __('roles.viewer'), 'admin' => __('roles.admin')]"
+                                    :options="$createRoleOptions"
                                     :allow-clear="false"
                                     :searchable="false"
                                 />
                             </div>
-                            <div class="flex justify-end space-x-3 pt-4">
-                                <button type="button" wire:click="$set('showCreateModal', false)" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">{{ __('common.cancel') }}</button>
-                                <button type="submit" class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">{{ __('common.create') }}</button>
+                            <div class="flex justify-end gap-x-3 pt-4">
+                                <button type="button" wire:click="$set('showCreateModal', false)" class="btn-secondary">{{ __('common.cancel') }}</button>
+                                <button type="submit" class="btn-primary">{{ __('common.create') }}</button>
                             </div>
                         </form>
                     </div>
@@ -675,27 +682,27 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data @keydown.escape.window="$wire.set('showEditModal', false)">
                 <div class="flex items-center justify-center min-h-screen p-4">
                     <div class="fixed inset-0 bg-black bg-opacity-25" wire:click="$set('showEditModal', false)"></div>
-                    <div class="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('pages.admin_users.edit_user') }}</h3>
+                    <div class="relative w-full max-w-md bg-white border border-gray-200 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.admin_users.edit_user') }}</h3>
                         <form wire:submit="updateUser" class="mt-4 space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.name') }} <span class="text-red-500">*</span></label>
-                                <input wire:model="editUserName" type="text" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+                                <label class="micro-label block mb-1">{{ __('labels.name') }} <span class="text-red-500">*</span></label>
+                                <input wire:model="editUserName" type="text" required class="input-field" />
                                 @error('editUserName') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.email') }} <span class="text-red-500">*</span></label>
-                                <input wire:model="editUserEmail" type="email" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+                                <label class="micro-label block mb-1">{{ __('labels.email') }} <span class="text-red-500">*</span></label>
+                                <input wire:model="editUserEmail" type="email" required class="input-field" />
                                 @error('editUserEmail') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('labels.password') }} <span class="text-gray-400">({{ __('leave blank to keep current') }})</span></label>
-                                <input wire:model="editUserPassword" type="password" class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+                                <label class="micro-label block mb-1">{{ __('labels.password') }} <span class="text-gray-400">({{ __('leave blank to keep current') }})</span></label>
+                                <input wire:model="editUserPassword" type="password" class="input-field" />
                                 @error('editUserPassword') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             {{-- Organizations section --}}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('labels.tenants') }}</label>
+                                <label class="micro-label block mb-2">{{ __('labels.tenants') }}</label>
                                 <div class="space-y-2 max-h-48 overflow-y-auto">
                                     @php
                                         $editingUser = \App\Models\User::with('tenants')->find($editUserId);
@@ -704,18 +711,21 @@
                                     {{-- Existing organization rows --}}
                                     @if($editingUser)
                                         @foreach($editingUser->tenants as $tenant)
-                                            <div class="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 gap-2">
+                                            @php
+                                                $editRoleOptions = $this->getTenantRoleOptions($tenant->id);
+                                            @endphp
+                                            <div class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 gap-2">
                                                 <span class="text-sm text-gray-700 truncate flex-1">{{ $tenant->name }}</span>
                                                 <x-select2
                                                     wire-model="editUserTenantRoles.{{ $tenant->id }}"
-                                                    :options="['admin' => __('roles.admin'), 'viewer' => __('roles.viewer')]"
+                                                    :options="$editRoleOptions"
                                                     :allow-clear="false"
                                                     :searchable="false"
                                                 />
                                                 <button
                                                     type="button"
                                                     wire:click="removeTenantFromEditUser({{ $tenant->id }})"
-                                                    class="p-1 text-red-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
+                                                    class="p-1 text-red-600 hover:text-red-900 rounded hover:bg-[#FDEBEC] transition-colors"
                                                     title="{{ __('common.remove') }}"
                                                 >
                                                     <x-heroicon-s-x-mark class="h-4 w-4" />
@@ -725,9 +735,9 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="flex justify-end space-x-3 pt-4">
-                                <button type="button" wire:click="$set('showEditModal', false)" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">{{ __('common.cancel') }}</button>
-                                <button type="submit" class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">{{ __('common.save') }}</button>
+                            <div class="flex justify-end gap-x-3 pt-4">
+                                <button type="button" wire:click="$set('showEditModal', false)" class="btn-secondary">{{ __('common.cancel') }}</button>
+                                <button type="submit" class="btn-primary">{{ __('common.save') }}</button>
                             </div>
                         </form>
                     </div>
@@ -745,8 +755,8 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data @keydown.escape.window="$wire.set('showAssignModal', false)">
                 <div class="flex items-center justify-center min-h-screen p-4">
                     <div class="fixed inset-0 bg-black bg-opacity-25" wire:click="$set('showAssignModal', false)"></div>
-                    <div class="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('pages.admin_users.assign_tenant') }}</h3>
+                    <div class="relative w-full max-w-md bg-white border border-gray-200 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.admin_users.assign_tenant') }}</h3>
                         <form wire:submit="assignTenant" class="mt-4 space-y-4">
                             <div>
                                 <x-select2
@@ -758,17 +768,20 @@
                                 @error('assignTenantId') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
+                                @php
+                                    $assignRoleOptions = $assignTenantId ? $this->getTenantRoleOptions($assignTenantId) : [];
+                                @endphp
                                 <x-select2
-                                    wire-model="assignRole"
+                                    wire-model="assignRoleId"
                                     :label="__('labels.role')"
-                                    :options="['viewer' => __('roles.viewer'), 'admin' => __('roles.admin')]"
+                                    :options="$assignRoleOptions"
                                     :allow-clear="false"
                                     :searchable="false"
                                 />
                             </div>
-                            <div class="flex justify-end space-x-3 pt-4">
-                                <button type="button" wire:click="$set('showAssignModal', false)" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">{{ __('common.cancel') }}</button>
-                                <button type="submit" class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700">{{ __('common.assign') }}</button>
+                            <div class="flex justify-end gap-x-3 pt-4">
+                                <button type="button" wire:click="$set('showAssignModal', false)" class="btn-secondary">{{ __('common.cancel') }}</button>
+                                <button type="submit" class="btn-primary">{{ __('common.assign') }}</button>
                             </div>
                         </form>
                     </div>
@@ -781,19 +794,19 @@
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data @keydown.escape.window="$wire.set('showDeleteDialog', false)">
                 <div class="flex items-center justify-center min-h-screen p-4">
                     <div class="fixed inset-0 bg-black bg-opacity-25" wire:click="$set('showDeleteDialog', false)"></div>
-                    <div class="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <div class="relative w-full max-w-md bg-white border border-gray-200 rounded-xl p-6">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FDEBEC]">
                             <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
                         </div>
                         <div class="mt-3 text-center">
-                            <h3 class="text-lg font-medium text-gray-900">{{ __('pages.admin_users.delete_user') }}</h3>
+                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.admin_users.delete_user') }}</h3>
                             <p class="mt-2 text-sm text-gray-500">
-                                {{ __('Are you sure you want to delete') }} <strong>{{ $deleteUserName }}</strong>? {{ __('This action cannot be undone.') }}
+                                {{ __('pages.admin_users.delete_user_confirm', ['name' => $deleteUserName]) }}
                             </p>
                         </div>
-                        <div class="mt-5 flex justify-end space-x-3">
-                            <button wire:click="$set('showDeleteDialog', false)" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">{{ __('common.cancel') }}</button>
-                            <button wire:click="deleteUser" class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700">{{ __('common.delete') }}</button>
+                        <div class="mt-5 flex justify-end gap-x-3">
+                            <button wire:click="$set('showDeleteDialog', false)" class="btn-secondary">{{ __('common.cancel') }}</button>
+                            <button wire:click="deleteUser" class="btn-danger">{{ __('common.delete') }}</button>
                         </div>
                     </div>
                 </div>

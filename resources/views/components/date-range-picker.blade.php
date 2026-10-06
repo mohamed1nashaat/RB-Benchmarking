@@ -295,7 +295,7 @@
     @if($label)
         <label class="block text-sm font-medium text-gray-700 mb-1">
             @if($icon)
-                <x-dynamic-component :component="$icon" class="h-4 w-4 inline mr-1 text-gray-400" />
+                <x-dynamic-component :component="$icon" class="h-4 w-4 inline me-1 text-gray-400" />
             @endif
             {{ $label }}
         </label>
@@ -305,7 +305,7 @@
     <button
         @click="open = !open"
         type="button"
-        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
+        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 text-start text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
     >
         <div class="flex items-center justify-between">
             <span class="flex items-center gap-1.5 truncate">
@@ -334,17 +334,17 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute z-50 mt-1 {{ $align === 'left' ? 'ltr:left-0 rtl:right-0' : 'ltr:right-0 rtl:left-0' }} w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[640px] bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        class="absolute z-50 mt-1 {{ $align === 'left' ? 'start-0' : 'end-0' }} w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[640px] bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         x-cloak
     >
         <div class="flex flex-col sm:flex-row">
             {{-- Presets Sidebar --}}
-            <div class="w-full sm:w-40 border-b sm:border-b-0 sm:border-r border-gray-200 py-2 flex flex-row sm:flex-col overflow-x-auto sm:overflow-x-visible">
+            <div class="w-full sm:w-40 border-b sm:border-b-0 sm:border-e border-gray-200 py-2 flex flex-row sm:flex-col overflow-x-auto sm:overflow-x-visible">
                 <template x-for="(preset, key) in presets" :key="key">
                     <button
                         @click="applyPreset(key)"
                         type="button"
-                        class="w-full text-left px-3 py-2 text-sm transition-colors"
+                        class="w-full text-start px-3 py-2 text-sm transition-colors"
                         :class="activePreset === key ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
                         x-text="preset.label"
                     ></button>
@@ -353,7 +353,7 @@
                     <button
                         @click="clearDates()"
                         type="button"
-                        class="w-full text-left text-sm text-gray-500 hover:text-gray-700 py-1"
+                        class="w-full text-start text-sm text-gray-500 hover:text-gray-700 py-1"
                     >{{ __('Reset') }}</button>
                 </div>
             </div>

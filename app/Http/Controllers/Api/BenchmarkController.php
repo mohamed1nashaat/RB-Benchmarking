@@ -519,17 +519,48 @@ class BenchmarkController extends Controller
     public function calculateResults(Request $request)
     {
         try {
-            $request->validate([
-                'spend' => 'required|numeric|min:1|max:1000000',
+            $isTargetMode = $request->input('mode') === 'target_to_budget';
+
+            $rules = [
                 'industry' => 'required|string',
                 'objective' => 'nullable|string|in:leads,messages,calls,sales,conversions,catalog_sales,store_visits,traffic,link_clicks,engagement,video_views,page_likes,awareness,reach,impressions,app_installs,app_events',
+                'platform' => 'nullable|string|in:facebook,google,tiktok,snapchat,linkedin',
+                'country' => 'nullable|string',
+                'funnel_stage' => 'nullable|string|in:TOF,MOF,BOF',
+                'user_journey' => 'nullable|string|in:instant_form,landing_page',
+                'mode' => 'nullable|string|in:budget_to_results,target_to_budget',
+            ];
+
+            if ($isTargetMode) {
+                $rules['target'] = 'required|numeric|min:1|max:100000000';
+            } else {
+                $rules['spend'] = 'required|numeric|min:1|max:100000000';
+            }
+
+            $request->validate($rules);
+
+            $filters = array_filter([
+                'platform' => $request->platform ? [$request->platform] : null,
+                'country' => $request->country ? [$request->country] : null,
+                'funnel_stage' => $request->funnel_stage ? [$request->funnel_stage] : null,
+                'user_journey' => $request->user_journey ? [$request->user_journey] : null,
             ]);
 
-            $results = $this->benchmarkService->calculateExpectedResults(
-                $request->spend,
-                $request->industry,
-                $request->objective ?? 'leads'
-            );
+            if ($isTargetMode) {
+                $results = $this->benchmarkService->calculateRequiredBudget(
+                    (float) $request->target,
+                    $request->industry,
+                    $request->objective ?? 'leads',
+                    $filters
+                );
+            } else {
+                $results = $this->benchmarkService->calculateExpectedResults(
+                    (float) $request->spend,
+                    $request->industry,
+                    $request->objective ?? 'leads',
+                    $filters
+                );
+            }
 
             return response()->json(['data' => $results]);
 
@@ -537,6 +568,7 @@ class BenchmarkController extends Controller
             Log::error('Error calculating expected results', [
                 'error' => 'An unexpected error occurred',
                 'spend' => $request->spend ?? null,
+                'target' => $request->target ?? null,
                 'industry' => $request->industry ?? null,
             ]);
 

@@ -67,10 +67,10 @@ class SyncLinkedInCampaigns extends Command
             return 0;
         }
 
-        $totalSynced = 0;
-        $totalErrors = 0;
-
         foreach ($integrations as $integration) {
+            $totalSynced = 0;
+            $totalErrors = 0;
+
             $this->initSyncProgress($integration->id);
             $this->info("Processing LinkedIn integration for tenant {$integration->tenant_id}");
 

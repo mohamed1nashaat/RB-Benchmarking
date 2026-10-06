@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AdAccount;
 use App\Models\AdMetric;
 use App\Models\Industry;
+use App\Models\IndustryBenchmark;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -685,6 +686,20 @@ class BenchmarkService
     }
 
     /**
+     * Get global benchmarks computed across all synced accounts regardless of industry or client.
+     * Uses the same dynamic percentile logic as industry benchmarks.
+     */
+    public function getGlobalBenchmarks(string $dateFrom, string $dateTo, array $filters = []): array
+    {
+        $cacheKey = 'benchmarks:global:' . md5($dateFrom . $dateTo . json_encode($filters));
+
+        return Cache::remember($cacheKey, 900, function () use ($dateFrom, $dateTo, $filters) {
+            $accountAggregates = $this->loadAccountAggregates($dateFrom, $dateTo, $filters);
+            return $this->calculateIndustryBenchmarkRanges(array_values($accountAggregates));
+        });
+    }
+
+    /**
      * Get benchmark data for all accounts grouped by client (tenant).
      * Uses SQL aggregation + 15-minute cache.
      */
@@ -1169,21 +1184,181 @@ class BenchmarkService
     }
 
     /**
-     * Calculate expected results based on spend and industry benchmarks
+     * Calculate expected results based on spend and industry benchmarks.
+     * Accepts optional filters (platform, country, funnel_stage, user_journey, etc.)
+     * to narrow the benchmark dataset.
      */
-    public function calculateExpectedResults(float $spend, string $industry, string $objective = 'leads'): array
+    public function calculateExpectedResults(float $spend, string $industry, string $objective = 'leads', array $filters = []): array
+    {
+        $result = $this->buildPredictions($spend, $industry, $objective, $filters);
+        $result['input']['mode'] = 'budget_to_results';
+
+        return $result;
+    }
+
+    /**
+     * Calculate the budget required to hit a target number of results.
+     * Uses the average scenario yield to recommend a budget, then returns
+     * predictions for that budget plus a scenario-based budget range.
+     */
+    public function calculateRequiredBudget(float $targetResults, string $industry, string $objective = 'leads', array $filters = []): array
+    {
+        // Use a reference spend to determine the yield per scenario.
+        $referenceSpend = 10000;
+        $referenceResult = $this->buildPredictions($referenceSpend, $industry, $objective, $filters);
+
+        $budgets = [];
+        foreach ($referenceResult['predictions'] as $scenario => $prediction) {
+            $primaryValue = (float) ($prediction['primary_result']['value'] ?? 0);
+            $yield = $primaryValue > 0 ? ($primaryValue / $referenceSpend) : 0;
+
+            if ($yield <= 0) {
+                $budgets[$scenario] = null;
+                continue;
+            }
+
+            $budgets[$scenario] = (float) ($targetResults / $yield);
+        }
+
+        $recommendedSpend = $budgets['average'] ?? null;
+
+        if ($recommendedSpend === null || $recommendedSpend <= 0) {
+            throw new \Exception("Not enough data to calculate a budget for the target in {$industry} industry");
+        }
+
+        $result = $this->buildPredictions($recommendedSpend, $industry, $objective, $filters);
+        $result['input']['mode'] = 'target_to_budget';
+        $result['input']['target'] = $targetResults;
+        $result['budget'] = [
+            'recommended' => $recommendedSpend,
+            'poor' => $budgets['poor'],
+            'average' => $budgets['average'],
+            'good' => $budgets['good'],
+            'excellent' => $budgets['excellent'],
+        ];
+        $result['disclaimers'][] = 'The recommended budget is based on the average performance scenario.';
+
+        return $result;
+    }
+
+    /**
+     * Calculate predictions using global (external) benchmark data from the
+     * industry_benchmarks table. Returns null when no global data is available
+     * for the selected industry/platform combination.
+     */
+    public function calculateExpectedResultsFromGlobalBenchmarks(float $spend, string $industry, string $objective = 'leads', array $filters = []): ?array
+    {
+        $platform = !empty($filters['platform']) ? (is_array($filters['platform']) ? $filters['platform'][0] : $filters['platform']) : 'all';
+
+        $industries = $this->getIndustryAliases($industry);
+
+        $metrics = [];
+        foreach ($industries as $candidate) {
+            $metrics = IndustryBenchmark::forIndustry($candidate)
+                ->forPlatform($platform)
+                ->pluck('percentile_50', 'metric')
+                ->toArray();
+
+            if (!empty($metrics)) {
+                break;
+            }
+        }
+
+        if (empty($metrics)) {
+            foreach ($industries as $candidate) {
+                $metrics = IndustryBenchmark::forIndustry($candidate)
+                    ->pluck('percentile_50', 'metric')
+                    ->toArray();
+
+                if (!empty($metrics)) {
+                    break;
+                }
+            }
+        }
+
+        if (empty($metrics)) {
+            return null;
+        }
+
+        $benchmarks = [];
+        foreach (['ctr', 'cpc', 'cpm', 'cvr', 'cpl'] as $metric) {
+            $benchmarks[$metric] = ['avg' => $metrics[$metric] ?? $this->getDefaultBenchmarkValue($metric)];
+        }
+
+        $scenarios = [
+            'poor' => ['ctr' => 0.3, 'cpc' => 1.7, 'cpm' => 1.7, 'cvr' => 0.3, 'cpl' => 1.7],
+            'average' => ['ctr' => 0.65, 'cpc' => 1.3, 'cpm' => 1.3, 'cvr' => 0.65, 'cpl' => 1.3],
+            'good' => ['ctr' => 0.85, 'cpc' => 0.7, 'cpm' => 0.7, 'cvr' => 0.85, 'cpl' => 0.7],
+            'excellent' => ['ctr' => 1.2, 'cpc' => 0.5, 'cpm' => 0.5, 'cvr' => 1.2, 'cpl' => 0.5],
+        ];
+
+        $predictions = [];
+        foreach ($scenarios as $scenario => $multipliers) {
+            $predictions[$scenario] = $this->calculateScenarioPrediction($spend, $benchmarks, $multipliers, $objective);
+        }
+
+        return [
+            'source' => 'global_benchmarks',
+            'input' => [
+                'spend' => $spend,
+                'industry' => $industry,
+                'objective' => $objective,
+                'filters' => $filters,
+            ],
+            'predictions' => $predictions,
+        ];
+    }
+
+    /**
+     * Fallback benchmark values when a metric is missing.
+     */
+    private function getDefaultBenchmarkValue(string $metric): float
+    {
+        return match ($metric) {
+            'ctr' => 1.5,
+            'cpc' => 1.0,
+            'cpm' => 10.0,
+            'cvr' => 3.0,
+            'cpl' => 30.0,
+            default => 1.0,
+        };
+    }
+
+    /**
+     * Get industry aliases that should be treated as the same benchmark group.
+     * (e.g. retail / ecommerce / e_commerce_retail are aggregated together.)
+     */
+    private function getIndustryAliases(string $industry): array
+    {
+        return match ($industry) {
+            'e_commerce_retail', 'ecommerce', 'retail' => ['e_commerce_retail', 'ecommerce', 'retail'],
+            default => [$industry],
+        };
+    }
+
+    /**
+     * Build predictions for a given spend.
+     */
+    private function buildPredictions(float $spend, string $industry, string $objective, array $filters): array
     {
         // Get industry benchmarks (use broader date range to ensure data)
         $dateTo = now()->toDateString();
         $dateFrom = now()->subYear()->toDateString();
-        $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo);
-        
-        if (!isset($industryBenchmarks[$industry])) {
-            throw new \Exception("Not enough data to calculate predictions for {$industry} industry");
+        $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo, $filters);
+
+        $benchmarks = null;
+        $matchedIndustry = null;
+        foreach ($this->getIndustryAliases($industry) as $alias) {
+            if (isset($industryBenchmarks[$alias])) {
+                $benchmarks = $industryBenchmarks[$alias];
+                $matchedIndustry = $alias;
+                break;
+            }
         }
 
-        $benchmarks = $industryBenchmarks[$industry];
-        
+        $source = 'dynamic';
+        $dataPoints = $benchmarks ? array_sum(array_column($benchmarks, 'data_points')) : 0;
+
         // Calculate predictions for different performance scenarios
         $predictions = [
             'poor' => [],
@@ -1192,17 +1367,29 @@ class BenchmarkService
             'excellent' => []
         ];
 
-        // Define scenario multipliers based on performance levels
-        $scenarios = [
-            'poor' => ['ctr' => 0.3, 'cpc' => 1.7, 'cpm' => 1.7, 'cvr' => 0.3, 'cpl' => 1.7],      // Worse than min
-            'average' => ['ctr' => 0.65, 'cpc' => 1.3, 'cpm' => 1.3, 'cvr' => 0.65, 'cpl' => 1.3],   // Between min-avg
-            'good' => ['ctr' => 0.85, 'cpc' => 0.7, 'cpm' => 0.7, 'cvr' => 0.85, 'cpl' => 0.7],      // Between avg-max
-            'excellent' => ['ctr' => 1.2, 'cpc' => 0.5, 'cpm' => 0.5, 'cvr' => 1.2, 'cpl' => 0.5],   // Better than max
-        ];
+        if ($benchmarks !== null) {
+            // Define scenario multipliers based on performance levels
+            $scenarios = [
+                'poor' => ['ctr' => 0.3, 'cpc' => 1.7, 'cpm' => 1.7, 'cvr' => 0.3, 'cpl' => 1.7],      // Worse than min
+                'average' => ['ctr' => 0.65, 'cpc' => 1.3, 'cpm' => 1.3, 'cvr' => 0.65, 'cpl' => 1.3],   // Between min-avg
+                'good' => ['ctr' => 0.85, 'cpc' => 0.7, 'cpm' => 0.7, 'cvr' => 0.85, 'cpl' => 0.7],      // Between avg-max
+                'excellent' => ['ctr' => 1.2, 'cpc' => 0.5, 'cpm' => 0.5, 'cvr' => 1.2, 'cpl' => 0.5],   // Better than max
+            ];
 
-        foreach ($scenarios as $scenario => $multipliers) {
-            $prediction = $this->calculateScenarioPrediction($spend, $benchmarks, $multipliers, $objective);
-            $predictions[$scenario] = $prediction;
+            foreach ($scenarios as $scenario => $multipliers) {
+                $prediction = $this->calculateScenarioPrediction($spend, $benchmarks, $multipliers, $objective);
+                $predictions[$scenario] = $prediction;
+            }
+        } else {
+            // No dynamic account data: fall back to global benchmark table.
+            $global = $this->calculateExpectedResultsFromGlobalBenchmarks($spend, $industry, $objective, $filters);
+
+            if (!$global || empty($global['predictions'])) {
+                throw new \Exception("Not enough data to calculate predictions for {$industry} industry");
+            }
+
+            $predictions = $global['predictions'];
+            $source = 'global_benchmarks';
         }
 
         return [
@@ -1210,11 +1397,12 @@ class BenchmarkService
                 'spend' => $spend,
                 'industry' => $industry,
                 'objective' => $objective,
+                'filters' => $filters,
             ],
             'predictions' => $predictions,
             'benchmark_info' => [
-                'calculation_method' => 'dynamic',
-                'data_points' => array_sum(array_column($benchmarks, 'data_points')),
+                'calculation_method' => $source,
+                'data_points' => $dataPoints,
                 'date_range' => ['from' => $dateFrom, 'to' => $dateTo],
             ],
             'disclaimers' => [

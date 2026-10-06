@@ -34,11 +34,11 @@ class ContentSecurityPolicy
     {
         $directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "img-src 'self' data: blob: https://*.facebook.com https://*.fbcdn.net https://*.google.com https://*.googleusercontent.com https://*.linkedin.com https://*.snapchat.com",
             "font-src 'self' data: https://fonts.gstatic.com",
-            "connect-src 'self' https://*.facebook.com https://*.google.com https://*.snapchat.com https://*.tiktok.com https://*.linkedin.com",
+            "connect-src 'self' https://*.facebook.com https://*.google.com https://*.snapchat.com https://*.tiktok.com https://*.linkedin.com https://cloudflareinsights.com https://*.cloudflareinsights.com",
             "frame-src 'self' https://*.facebook.com",
             "object-src 'none'",
             "base-uri 'self'",

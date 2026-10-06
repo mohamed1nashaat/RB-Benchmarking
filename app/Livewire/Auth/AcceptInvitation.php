@@ -99,6 +99,6 @@ class AcceptInvitation extends Component
     public function render()
     {
         return view('livewire.auth.accept-invitation')
-            ->layout('layouts.guest', ['title' => 'Accept Invitation']);
+            ->layout('layouts.guest', ['title' => __('pages.invitation.title')]);
     }
 }

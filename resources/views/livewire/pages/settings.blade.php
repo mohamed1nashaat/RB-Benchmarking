@@ -2,7 +2,7 @@
     {{-- Header --}}
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+            <h2 class="section-title">
                 {{ __('pages.settings.title') }}
             </h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -12,9 +12,9 @@
     </div>
 
     {{-- Settings Tabs --}}
-    <div class="bg-white shadow">
+    <div class="card p-0">
         {{-- Mobile select --}}
-        <div class="sm:hidden">
+        <div class="sm:hidden p-3">
             <x-select2
                 wire-model="activeTab"
                 :options="['general' => __('pages.settings.tabs.general')]"
@@ -25,10 +25,10 @@
         {{-- Desktop tabs --}}
         <div class="hidden sm:block">
             <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8 px-4" aria-label="Tabs">
+                <nav class="-mb-px flex gap-x-8 px-4" aria-label="Tabs">
                     <button
                         wire:click="$set('activeTab', 'general')"
-                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'general' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'general' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
                     >
                         {{ __('pages.settings.tabs.general') }}
                     </button>
@@ -42,15 +42,15 @@
         @if($activeTab === 'general')
             <div class="space-y-6">
                 {{-- Profile Settings --}}
-                <div class="bg-white shadow rounded-lg divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-gray-200">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('pages.settings.profile.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.profile.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.profile.description') }}</p>
                     </div>
 
                     <div class="px-4 py-5 sm:p-6 space-y-6">
                         {{-- Avatar with upload --}}
-                        <div class="flex items-center space-x-6">
+                        <div class="flex items-center gap-x-6">
                             <div class="relative group">
                                 {{-- Avatar Image or Initials --}}
                                 @if($this->user->avatar_url)
@@ -62,8 +62,8 @@
                                         />
                                     </div>
                                 @else
-                                    <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center ring-2 ring-gray-200">
-                                        <span class="text-2xl font-semibold text-primary-700">{{ $this->userInitials }}</span>
+                                    <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center ring-2 ring-gray-200">
+                                        <span class="text-2xl font-semibold text-gray-600">{{ $this->userInitials }}</span>
                                     </div>
                                 @endif
 
@@ -90,8 +90,8 @@
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-gray-900">{{ $this->user->name }}</p>
                                 <p class="text-sm text-gray-500">{{ $this->user->email }}</p>
-                                <div class="mt-2 flex items-center space-x-3">
-                                    <label class="text-sm text-primary-600 hover:text-primary-700 cursor-pointer font-medium">
+                                <div class="mt-2 flex items-center gap-x-3">
+                                    <label class="text-sm text-gray-900 hover:text-gray-600 cursor-pointer font-medium">
                                         {{ __('pages.settings.profile.change_photo') }}
                                         <input
                                             type="file"
@@ -141,22 +141,22 @@
 
                         {{-- Name field --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.profile.name') }}</label>
+                            <label class="micro-label block">{{ __('pages.settings.profile.name') }}</label>
                             <input
                                 wire:model="profileName"
                                 type="text"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                class="input-field mt-1"
                             />
                         </div>
 
                         {{-- Email field (read-only) --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.profile.email') }}</label>
+                            <label class="micro-label block">{{ __('pages.settings.profile.email') }}</label>
                             <input
                                 value="{{ $this->user->email }}"
                                 type="email"
                                 disabled
-                                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm cursor-not-allowed"
+                                class="input-field mt-1 opacity-60 cursor-not-allowed"
                             />
                             <p class="mt-1 text-xs text-gray-500">{{ __('pages.settings.profile.email_hint') }}</p>
                         </div>
@@ -166,7 +166,7 @@
                             <button
                                 wire:click="saveProfile"
                                 @if($savingProfile) disabled @endif
-                                class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                class="btn-primary"
                             >
                                 {{ $savingProfile ? __('common.saving') : __('common.save_changes') }}
                             </button>
@@ -175,9 +175,9 @@
                 </div>
 
                 {{-- Change Password --}}
-                <div class="bg-white shadow rounded-lg divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-gray-200">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('pages.settings.password.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.password.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.password.description') }}</p>
                     </div>
 
@@ -195,34 +195,34 @@
                         @endif
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.password.current') }}</label>
+                            <label class="micro-label block">{{ __('pages.settings.password.current') }}</label>
                             <input
                                 wire:model="currentPassword"
                                 type="password"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                class="input-field mt-1"
                             />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.password.new') }}</label>
+                            <label class="micro-label block">{{ __('pages.settings.password.new') }}</label>
                             <input
                                 wire:model="newPassword"
                                 type="password"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                class="input-field mt-1"
                             />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.password.confirm') }}</label>
+                            <label class="micro-label block">{{ __('pages.settings.password.confirm') }}</label>
                             <input
                                 wire:model="newPasswordConfirmation"
                                 type="password"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                class="input-field mt-1"
                             />
                         </div>
                         <div class="flex justify-end">
                             <button
                                 wire:click="changePassword"
                                 @if($changingPassword || empty($currentPassword) || empty($newPassword)) disabled @endif
-                                class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                class="btn-primary"
                             >
                                 {{ $changingPassword ? __('common.updating') : __('pages.settings.password.update_button') }}
                             </button>
@@ -231,9 +231,9 @@
                 </div>
 
                 {{-- Notification Settings --}}
-                <div class="bg-white shadow rounded-lg divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-gray-200">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('pages.settings.notifications.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.notifications.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.notifications.description') }}</p>
                     </div>
 
@@ -247,12 +247,12 @@
                             <button
                                 type="button"
                                 wire:click="$toggle('emailAlerts')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {{ $emailAlerts ? 'bg-primary-600' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $emailAlerts ? 'bg-gray-900' : 'bg-gray-200' }}"
                                 role="switch"
                                 aria-checked="{{ $emailAlerts ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $emailAlerts ? 'translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $emailAlerts ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -266,12 +266,12 @@
                             <button
                                 type="button"
                                 wire:click="$toggle('inAppNotifications')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {{ $inAppNotifications ? 'bg-primary-600' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $inAppNotifications ? 'bg-gray-900' : 'bg-gray-200' }}"
                                 role="switch"
                                 aria-checked="{{ $inAppNotifications ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $inAppNotifications ? 'translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $inAppNotifications ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -285,12 +285,12 @@
                             <button
                                 type="button"
                                 wire:click="$toggle('weeklySummary')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 {{ $weeklySummary ? 'bg-primary-600' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $weeklySummary ? 'bg-gray-900' : 'bg-gray-200' }}"
                                 role="switch"
                                 aria-checked="{{ $weeklySummary ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $weeklySummary ? 'translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $weeklySummary ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -298,9 +298,9 @@
                 </div>
 
                 {{-- Display Preferences --}}
-                <div class="bg-white shadow rounded-lg divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-gray-200">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('pages.settings.display.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.display.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.display.description') }}</p>
                     </div>
 
@@ -318,10 +318,10 @@
 
                         {{-- Currency Display (read-only info) --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.display.currency') }}</label>
+                            <label class="micro-label block">{{ __('pages.settings.display.currency') }}</label>
                             <div class="mt-1 flex items-center text-sm text-gray-600">
                                 <span class="bg-gray-100 px-3 py-2 rounded-md font-medium">SAR ({{ __('pages.settings.display.saudi_riyal') }})</span>
-                                <span class="ml-2 text-xs text-gray-500">{{ __('pages.settings.display.currency_hint') }}</span>
+                                <span class="ms-2 text-xs text-gray-500">{{ __('pages.settings.display.currency_hint') }}</span>
                             </div>
                         </div>
 
@@ -329,10 +329,10 @@
                         <div>
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">{{ __('pages.settings.display.theme') }}</label>
+                                    <label class="micro-label block">{{ __('pages.settings.display.theme') }}</label>
                                     <p class="text-sm text-gray-500">{{ __('pages.settings.display.theme_light') }}</p>
                                 </div>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#F1F1EF] text-[#6B6B66]">
                                     {{ __('common.coming_soon') }}
                                 </span>
                             </div>

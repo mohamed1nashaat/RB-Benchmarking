@@ -9,7 +9,7 @@
                 <p class="kpi-change mt-1 {{ $change >= 0 ? 'positive' : 'negative' }}">
                     {{ $change >= 0 ? '+' : '' }}{{ $change }}%
                     @if($changeLabel)
-                        <span class="text-gray-400 ml-1">{{ $changeLabel }}</span>
+                        <span class="text-gray-400 ms-1">{{ $changeLabel }}</span>
                     @endif
                 </p>
             @endif

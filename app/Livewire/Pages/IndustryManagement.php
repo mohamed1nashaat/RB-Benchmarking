@@ -34,6 +34,7 @@ class IndustryManagement extends Component
     // Account Category modal
     public bool $showAccountCategoryModal = false;
     public ?int $editingAccountCategoryId = null;
+    public ?int $accountCategoryIndustryId = null;
     public string $accountCategoryDisplayName = '';
     public string $accountCategoryDescription = '';
 
@@ -335,9 +336,10 @@ class IndustryManagement extends Component
     }
 
     // Account Category CRUD
-    public function openAddAccountCategoryModal(): void
+    public function openAddAccountCategoryModal(?int $industryId = null): void
     {
         $this->resetAccountCategoryForm();
+        $this->accountCategoryIndustryId = $industryId;
         $this->showAccountCategoryModal = true;
     }
 
@@ -345,6 +347,7 @@ class IndustryManagement extends Component
     {
         $cat = AccountCategory::findOrFail($id);
         $this->editingAccountCategoryId = $cat->id;
+        $this->accountCategoryIndustryId = $cat->industry_id;
         $this->accountCategoryDisplayName = $cat->display_name;
         $this->accountCategoryDescription = $cat->description ?? '';
         $this->showAccountCategoryModal = true;
@@ -359,9 +362,15 @@ class IndustryManagement extends Component
         try {
             $slug = Str::slug($this->accountCategoryDisplayName, '_');
 
+            if (empty($this->accountCategoryIndustryId)) {
+                session()->flash('error', __('pages.industry_management.industry_required'));
+                return;
+            }
+
             if ($this->editingAccountCategoryId) {
                 $cat = AccountCategory::findOrFail($this->editingAccountCategoryId);
                 $cat->update([
+                    'industry_id' => $this->accountCategoryIndustryId,
                     'name' => $slug,
                     'display_name' => $this->accountCategoryDisplayName,
                     'description' => $this->accountCategoryDescription ?: null,
@@ -369,10 +378,11 @@ class IndustryManagement extends Component
                 session()->flash('success', __('pages.industry_management.account_category_updated'));
             } else {
                 AccountCategory::create([
+                    'industry_id' => $this->accountCategoryIndustryId,
                     'name' => $slug,
                     'display_name' => $this->accountCategoryDisplayName,
                     'description' => $this->accountCategoryDescription ?: null,
-                    'sort_order' => AccountCategory::max('sort_order') + 1,
+                    'sort_order' => AccountCategory::where('industry_id', $this->accountCategoryIndustryId)->max('sort_order') + 1,
                     'is_active' => true,
                 ]);
                 session()->flash('success', __('pages.industry_management.account_category_created'));
@@ -395,6 +405,7 @@ class IndustryManagement extends Component
     private function resetAccountCategoryForm(): void
     {
         $this->editingAccountCategoryId = null;
+        $this->accountCategoryIndustryId = null;
         $this->accountCategoryDisplayName = '';
         $this->accountCategoryDescription = '';
     }

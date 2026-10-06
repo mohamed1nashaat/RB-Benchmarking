@@ -79,6 +79,9 @@ class SyncFacebookMetrics extends Command
             $accessToken = $this->ensureValidFacebookToken($integration);
             if (!$accessToken) {
                 $this->error("No valid access token for integration {$integration->id}");
+                $integration->update(['status' => 'needs_reauth']);
+                $this->monitoringService->recordFailure('facebook', $integration->id, 'No valid access token — re-authorization required');
+                $this->failSyncProgress('No valid access token');
                 return;
             }
 

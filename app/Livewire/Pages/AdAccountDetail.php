@@ -3,10 +3,11 @@
 namespace App\Livewire\Pages;
 
 use App\Jobs\RunPlatformSync;
+use App\Models\AccountCategory;
+use App\Models\AccountSubCategory;
 use App\Models\AdAccount;
 use App\Models\AdCampaign;
 use App\Models\Industry;
-use App\Services\CategoryMapper;
 use App\Services\CurrencyConversionService;
 use App\Services\SyncProgressService;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +78,7 @@ class AdAccountDetail extends Component
         $account = AdAccount::with(['integration', 'tenant:id,name'])->find($this->accountId);
 
         if (!$account) {
-            session()->flash('error', 'Ad account not found.');
+            session()->flash('error', __('pages.ad_accounts.not_found_error'));
             return;
         }
 
@@ -102,7 +103,7 @@ class AdAccountDetail extends Component
             'currency' => $accountCurrency,
             'integration_id' => $account->integration_id,
             'last_metrics_sync_at' => $account->last_metrics_sync_at?->toISOString(),
-            'available_categories' => CategoryMapper::getCategoriesForIndustry($account->industry),
+            'available_categories' => $this->getAccountCategories($account->industry),
             'campaigns_count' => $account->adCampaigns()->count(),
             'total_spend' => (float) $totalSpend,
             'total_spend_sar' => $this->currencyService->convertToSAR((float) $totalSpend, $accountCurrency),
@@ -182,7 +183,7 @@ class AdAccountDetail extends Component
         ]);
 
         $this->loadAccountData();
-        session()->flash('message', 'Account information updated.');
+        session()->flash('message', __('pages.ad_accounts.account_updated'));
     }
 
     public function updateCampaign(int $campaignId, string $field, $value): void
@@ -250,22 +251,22 @@ class AdAccountDetail extends Component
         $this->selectAll = false;
         $this->bulkCategory = '';
         $this->loadCampaigns();
-        session()->flash('message', 'Campaigns updated successfully.');
+        session()->flash('message', __('pages.ad_accounts.campaigns_updated'));
     }
 
     public function autoDetectCategories(): void
     {
         $industry = $this->adAccount['industry'] ?? null;
         if (!$industry) {
-            session()->flash('error', 'Set the account industry first before auto-detecting categories.');
+            session()->flash('error', __('pages.ad_accounts.set_industry_first'));
             return;
         }
 
-        // Use sub-industries as the category source for the dropdown
-        $categories = CategoryMapper::getCategoriesForIndustry($industry);
+        // Use account sub-categories as the campaign sub-category source
+        $categories = $this->getCampaignSubCategories();
 
         if (empty($categories)) {
-            session()->flash('error', 'No categories found for this industry.');
+            session()->flash('error', __('pages.ad_accounts.no_categories_for_industry'));
             return;
         }
 
@@ -302,7 +303,7 @@ class AdAccountDetail extends Component
         $this->selectedCampaigns = [];
         $this->selectAll = false;
         $this->loadCampaigns();
-        session()->flash('message', "Auto-detected categories for {$updated} campaign(s).");
+        session()->flash('message', trans_choice('pages.ad_accounts.auto_detected_categories', $updated, ['count' => $updated]));
     }
 
     public function syncCampaigns(): void
@@ -318,7 +319,7 @@ class AdAccountDetail extends Component
 
         $account = AdAccount::with('integration')->find($this->accountId);
         if (!$account || !$account->integration) {
-            session()->flash('error', 'Integration not found for this account.');
+            session()->flash('error', __('pages.ad_accounts.integration_not_found'));
             return;
         }
 
@@ -326,7 +327,7 @@ class AdAccountDetail extends Component
         $command = $commandMap[$platform] ?? null;
 
         if (!$command) {
-            session()->flash('error', "Unknown platform '{$platform}' for sync.");
+            session()->flash('error', __('pages.ad_accounts.unknown_platform_sync', ['platform' => $platform]));
             return;
         }
 
@@ -472,19 +473,51 @@ class AdAccountDetail extends Component
         return array_sum(array_column($this->campaigns, 'total_spend_sar'));
     }
 
+    private function getAccountCategories(?string $industryName): array
+    {
+        if (!$industryName) {
+            return [];
+        }
+
+        $industry = Industry::where('name', $industryName)->first();
+        if (!$industry) {
+            return [];
+        }
+
+        return $industry->accountCategories()
+            ->where('is_active', true)
+            ->ordered()
+            ->pluck('display_name')
+            ->toArray();
+    }
+
+    private function getCampaignSubCategories(): array
+    {
+        $categoryName = $this->editableAccount['category'] ?? $this->adAccount['category'] ?? null;
+        if (!$categoryName) {
+            return [];
+        }
+
+        $category = AccountCategory::where('display_name', $categoryName)->first();
+        if (!$category) {
+            return [];
+        }
+
+        return $category->subCategories()
+            ->where('is_active', true)
+            ->pluck('display_name')
+            ->toArray();
+    }
+
     public function render()
     {
         $industries = Industry::active()->ordered()->pluck('display_name', 'name')->toArray();
-        $availableCategories = $this->adAccount
-            ? CategoryMapper::getCategoriesForIndustry($this->adAccount['industry'] ?? $this->editableAccount['industry'])
-            : [];
+        $availableCategories = $this->getAccountCategories(
+            $this->adAccount['industry'] ?? $this->editableAccount['industry'] ?? null
+        );
 
-        // Campaign categories from sub-industries
-        $campaignCategories = [];
-        $industryName = $this->adAccount['industry'] ?? $this->editableAccount['industry'] ?? null;
-        if ($industryName) {
-            $campaignCategories = CategoryMapper::getCategoriesForIndustry($industryName);
-        }
+        // Campaign sub-categories come from the account category's sub-categories
+        $campaignCategories = $this->getCampaignSubCategories();
 
         return view('livewire.pages.ad-account-detail', [
             'industries' => $industries,

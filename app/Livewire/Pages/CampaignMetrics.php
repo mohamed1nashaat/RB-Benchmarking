@@ -2,11 +2,10 @@
 
 namespace App\Livewire\Pages;
 
+use App\Models\AccountCategory;
 use App\Models\AdAccount;
 use App\Models\AdCampaign;
 use App\Models\AdMetric;
-use App\Models\Industry;
-use App\Services\CategoryMapper;
 use App\Services\CurrencyConversionService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -82,6 +81,7 @@ class CampaignMetrics extends Component
                 'account_name' => $account->account_name,
                 'platform' => $account->integration->platform ?? 'unknown',
                 'industry' => $account->industry,
+                'category' => $account->category,
                 'currency' => $accountCurrency,
             ];
 
@@ -177,23 +177,18 @@ class CampaignMetrics extends Component
 
     private function loadSubIndustries(): void
     {
-        $industry = $this->adAccount['industry'] ?? null;
-        if (!$industry) {
+        $categoryName = $this->adAccount['category'] ?? null;
+        if (!$categoryName) {
             $this->availableSubIndustries = [];
             return;
         }
 
-        $industryModel = Industry::where('name', $industry)->first();
-        if ($industryModel) {
-            $this->availableSubIndustries = $industryModel->subIndustries()
+        $category = AccountCategory::where('display_name', $categoryName)->first();
+        if ($category) {
+            $this->availableSubIndustries = $category->subCategories()
                 ->where('is_active', true)
-                ->orderBy('sort_order')
                 ->pluck('display_name')
                 ->toArray();
-        }
-
-        if (empty($this->availableSubIndustries)) {
-            $this->availableSubIndustries = CategoryMapper::getCategoriesForIndustry($industry);
         }
     }
 
@@ -212,7 +207,7 @@ class CampaignMetrics extends Component
             $this->campaign['sub_industry'] = $this->editSubIndustry;
         }
 
-        session()->flash('message', 'Campaign updated.');
+        session()->flash('message', __('pages.campaign_metrics.updated'));
     }
 
     public function setDateRange($from, $to): void

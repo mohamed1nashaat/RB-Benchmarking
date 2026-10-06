@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\TwitterIntegrationController;
 use App\Http\Controllers\AdAccountExportController;
 use App\Http\Controllers\SeoReportExportController;
 use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
 use App\Livewire\Auth\AcceptInvitation;
 use App\Livewire\Pages;
 use App\Livewire\Admin;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 // Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
+    Route::get('/register', Register::class)->name('register');
 });
 
 // Public pages (no auth required)
@@ -45,10 +47,12 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
     Route::get('/ad-accounts', Pages\AdAccounts::class)->name('ad-accounts');
     Route::get('/ad-accounts/export/excel', [AdAccountExportController::class, 'excel'])->name('ad-accounts-export-excel');
     Route::get('/ad-accounts/{id}', Pages\AdAccountDetail::class)->name('ad-account-detail');
-    Route::get('/spend-verification', Pages\SpendVerification::class)->name('spend-verification');
+    Route::get('/spend-verification', Pages\SpendVerification::class)->middleware('super-admin')->name('spend-verification');
     Route::get('/benchmarks', Pages\Benchmarks::class)->name('benchmarks');
-    Route::get('/industry-overview', Pages\IndustryOverview::class)->name('industry-overview');
-    Route::get('/industry-management', Pages\IndustryManagement::class)->name('industry-management');
+    Route::get('/global-benchmarks', Pages\GlobalBenchmarks::class)->name('global-benchmarks');
+    Route::get('/calculator', Pages\Calculator::class)->name('calculator');
+    Route::get('/industry-overview', Pages\IndustryOverview::class)->middleware('super-admin')->name('industry-overview');
+    Route::get('/industry-management', Pages\IndustryManagement::class)->middleware('super-admin')->name('industry-management');
     Route::get('/clients', Pages\Clients::class)->name('clients');
     Route::get('/clients/{id}/dashboard', Pages\ClientDashboard::class)->name('client-dashboard');
     Route::get('/clients/{id}/seo-report', Pages\SeoReport::class)->name('client-seo-report');
@@ -110,7 +114,8 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
         return redirect($data['oauth_url'] ?? '/integrations?error=oauth_failed');
     })->name('auth.twitter.redirect');
     Route::get('/settings', Pages\Settings::class)->name('settings');
-    Route::get('/users', Pages\Users::class)->name('users');
+    Route::get('/users', Pages\Users::class)->middleware('can:view_users')->name('users');
+    Route::get('/roles', Pages\RoleManagement::class)->middleware('can:manage_roles')->name('roles');
 
     Route::post('/logout', function () {
         auth()->logout();

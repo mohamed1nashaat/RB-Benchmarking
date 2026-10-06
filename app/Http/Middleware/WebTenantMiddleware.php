@@ -15,6 +15,7 @@ class WebTenantMiddleware
         if ($user) {
             $isSuperAdmin = $user->isSuperAdmin();
             app()->instance('is_super_admin', $isSuperAdmin);
+            app()->instance('view_all_tenants', $user->canViewAllTenants());
 
             // Safety net: auto-assign tenant if session has none
             if (!session('current_tenant_id')) {

@@ -251,7 +251,7 @@ class AdAccounts extends Component
         ]);
 
         $this->closeCreateClientModal();
-        session()->flash('message', 'Client created successfully.');
+        session()->flash('message', __('pages.ad_accounts.client_created'));
     }
 
     // Bulk edit
@@ -305,11 +305,15 @@ class AdAccounts extends Component
         }
 
         $this->closeBulkModal();
-        session()->flash('message', 'Accounts updated successfully.');
+        session()->flash('message', __('pages.ad_accounts.accounts_updated'));
     }
 
     public function resetPermissionDenied(): void
     {
+        if (!$this->isAdmin()) {
+            return;
+        }
+
         if (empty($this->selectedAccounts)) {
             return;
         }
@@ -319,7 +323,7 @@ class AdAccounts extends Component
             ->update(['status' => 'active']);
 
         $this->selectedAccounts = [];
-        session()->flash('message', "{$count} account(s) reset to active. Next sync will retry access.");
+        session()->flash('message', trans_choice('pages.ad_accounts.accounts_reset_to_active', $count, ['count' => $count]));
     }
 
     // Verification
@@ -354,7 +358,7 @@ class AdAccounts extends Component
         $count = count($this->accountsToVerify);
         $this->closeVerificationModal();
         $this->selectedAccounts = [];
-        session()->flash('message', "Successfully {$this->verificationAction} {$count} account(s).");
+        session()->flash('message', trans_choice('pages.ad_accounts.verification_success', $count, ['action' => $this->verificationAction, 'count' => $count]));
     }
 
     // Build the filtered query

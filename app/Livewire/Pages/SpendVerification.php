@@ -140,7 +140,7 @@ class SpendVerification extends Component
         $count = count($this->accountsToVerify);
         $action = $this->verificationAction;
         $this->closeVerificationModal();
-        session()->flash('message', "Successfully {$action} {$count} account(s).");
+        session()->flash('message', trans_choice('pages.spend_verification.verification_success', $count, ['action' => $action, 'count' => $count]));
     }
 
     public function getHasActiveFiltersProperty(): bool
@@ -218,10 +218,13 @@ class SpendVerification extends Component
             }
         }
 
-        // Group by period
+        // Group by period (driver-aware for SQLite vs MySQL)
+        $driver = DB::connection()->getDriverName();
         $periodExpr = match ($this->groupBy) {
             'daily' => "DATE(ad_metrics.date)",
-            'monthly' => "DATE_FORMAT(ad_metrics.date, '%Y-%m')",
+            'monthly' => $driver === 'sqlite'
+                ? "strftime('%Y-%m', ad_metrics.date)"
+                : "DATE_FORMAT(ad_metrics.date, '%Y-%m')",
             default => "''",
         };
 

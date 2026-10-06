@@ -2,6 +2,10 @@
 
 namespace App\Livewire\Pages;
 
+use App\Models\AdAccount;
+use App\Models\AdCampaign;
+use App\Models\AccountCategory;
+use App\Models\Industry;
 use App\Models\Integration;
 use App\Models\SeoTechnicalIssue;
 use App\Models\Tenant;
@@ -76,6 +80,12 @@ class ClientDashboard extends Component
     public ?int $editingIssueId = null;
     public string $editingIssueStatus = '';
     public string $editingIssueNotes = '';
+
+    // Inline editing state for Ad Accounts
+    public ?int $editingAccountId = null;
+    public string $editAccountIndustry = '';
+    public string $editAccountCategory = '';
+    public string $editAccountSubCategory = '';
 
     public function mount(int $id)
     {
@@ -825,7 +835,7 @@ class ClientDashboard extends Component
             return ['type' => $this->platformChartType, 'data' => ['labels' => [], 'datasets' => [['data' => []]]], 'options' => ['responsive' => true, 'maintainAspectRatio' => false]];
         }
 
-        $colors = ['rgba(59,130,246,0.8)', 'rgba(234,67,53,0.8)', 'rgba(37,244,238,0.8)', 'rgba(255,252,0,0.8)', 'rgba(0,119,181,0.8)', 'rgba(168,85,247,0.8)'];
+        $colors = ['rgba(239, 68, 68,0.8)', 'rgba(107, 107, 102, 0.85)', 'rgba(17, 17, 17, 0.85)', 'rgba(63, 63, 60, 0.85)', 'rgba(168, 168, 164, 0.9)', 'rgba(107, 107, 102,0.8)'];
 
         return [
             'type' => $this->platformChartType,
@@ -858,9 +868,9 @@ class ClientDashboard extends Component
             'data' => [
                 'labels' => $labels,
                 'datasets' => [
-                    ['label' => 'Spend (SAR)', 'data' => array_map(fn($t) => $t['value'], $trends['spend']), 'borderColor' => 'rgb(59,130,246)', 'backgroundColor' => 'rgba(59,130,246,0.1)', 'tension' => 0.3, 'fill' => true, 'yAxisID' => 'y'],
-                    ['label' => 'Clicks', 'data' => array_map(fn($t) => $t['value'], $trends['clicks']), 'borderColor' => 'rgb(168,85,247)', 'backgroundColor' => 'rgba(168,85,247,0.1)', 'tension' => 0.3, 'yAxisID' => 'y1'],
-                    ['label' => 'Conversions', 'data' => array_map(fn($t) => $t['value'], $trends['conversions']), 'borderColor' => 'rgb(245,158,11)', 'backgroundColor' => 'rgba(245,158,11,0.1)', 'tension' => 0.3, 'yAxisID' => 'y1'],
+                    ['label' => 'Spend (SAR)', 'data' => array_map(fn($t) => $t['value'], $trends['spend']), 'borderColor' => 'rgb(239, 68, 68)', 'backgroundColor' => 'rgba(239, 68, 68,0.1)', 'tension' => 0.3, 'fill' => true, 'yAxisID' => 'y'],
+                    ['label' => 'Clicks', 'data' => array_map(fn($t) => $t['value'], $trends['clicks']), 'borderColor' => 'rgb(107, 107, 102)', 'backgroundColor' => 'rgba(107, 107, 102,0.1)', 'tension' => 0.3, 'yAxisID' => 'y1'],
+                    ['label' => 'Conversions', 'data' => array_map(fn($t) => $t['value'], $trends['conversions']), 'borderColor' => 'rgb(212, 212, 210)', 'backgroundColor' => 'rgba(212, 212, 210,0.1)', 'tension' => 0.3, 'yAxisID' => 'y1'],
                 ],
             ],
             'options' => [
@@ -888,8 +898,8 @@ class ClientDashboard extends Component
             'data' => [
                 'labels' => array_map(fn($c) => substr($c['name'], 0, 30), $campaigns),
                 'datasets' => [
-                    ['label' => 'Spend (SAR)', 'data' => array_map(fn($c) => $c['spend'], $campaigns), 'backgroundColor' => 'rgba(59,130,246,0.7)'],
-                    ['label' => 'Conversions', 'data' => array_map(fn($c) => $c['conversions'], $campaigns), 'backgroundColor' => 'rgba(16,185,129,0.7)'],
+                    ['label' => 'Spend (SAR)', 'data' => array_map(fn($c) => $c['spend'], $campaigns), 'backgroundColor' => 'rgba(239, 68, 68,0.7)'],
+                    ['label' => 'Conversions', 'data' => array_map(fn($c) => $c['conversions'], $campaigns), 'backgroundColor' => 'rgba(120, 119, 116,0.7)'],
                 ],
             ],
             'options' => [
@@ -915,8 +925,8 @@ class ClientDashboard extends Component
                     [
                         'label' => __('client_dashboard.seo.clicks'),
                         'data' => array_column($timeseries, 'clicks'),
-                        'borderColor' => 'rgb(59,130,246)',
-                        'backgroundColor' => 'rgba(59,130,246,0.1)',
+                        'borderColor' => 'rgb(239, 68, 68)',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.1)',
                         'tension' => 0.3,
                         'fill' => true,
                         'yAxisID' => 'y',
@@ -924,8 +934,8 @@ class ClientDashboard extends Component
                     [
                         'label' => __('client_dashboard.seo.impressions'),
                         'data' => array_column($timeseries, 'impressions'),
-                        'borderColor' => 'rgb(168,85,247)',
-                        'backgroundColor' => 'rgba(168,85,247,0.1)',
+                        'borderColor' => 'rgb(107, 107, 102)',
+                        'backgroundColor' => 'rgba(107, 107, 102,0.1)',
                         'tension' => 0.3,
                         'yAxisID' => 'y1',
                     ],
@@ -958,8 +968,8 @@ class ClientDashboard extends Component
                     [
                         'label' => __('client_dashboard.seo.sessions'),
                         'data' => array_column($timeseries, 'sessions'),
-                        'borderColor' => 'rgb(59,130,246)',
-                        'backgroundColor' => 'rgba(59,130,246,0.1)',
+                        'borderColor' => 'rgb(239, 68, 68)',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.1)',
                         'tension' => 0.3,
                         'fill' => true,
                         'yAxisID' => 'y',
@@ -967,16 +977,16 @@ class ClientDashboard extends Component
                     [
                         'label' => __('client_dashboard.seo.users'),
                         'data' => array_column($timeseries, 'users'),
-                        'borderColor' => 'rgb(16,185,129)',
-                        'backgroundColor' => 'rgba(16,185,129,0.1)',
+                        'borderColor' => 'rgba(120, 119, 116, 0.1)',
+                        'backgroundColor' => 'rgba(120, 119, 116,0.1)',
                         'tension' => 0.3,
                         'yAxisID' => 'y',
                     ],
                     [
                         'label' => __('client_dashboard.seo.bounce_rate'),
                         'data' => array_column($timeseries, 'bounce_rate'),
-                        'borderColor' => 'rgb(245,158,11)',
-                        'backgroundColor' => 'rgba(245,158,11,0.1)',
+                        'borderColor' => 'rgb(212, 212, 210)',
+                        'backgroundColor' => 'rgba(212, 212, 210,0.1)',
                         'tension' => 0.3,
                         'yAxisID' => 'y1',
                     ],
@@ -1054,7 +1064,7 @@ class ClientDashboard extends Component
         $secondHalf = array_slice($values, (int)($count / 2));
         $firstAvg = count($firstHalf) > 0 ? array_sum($firstHalf) / count($firstHalf) : 0;
         $secondAvg = count($secondHalf) > 0 ? array_sum($secondHalf) / count($secondHalf) : 0;
-        $trendColor = $secondAvg >= $firstAvg ? '#10b981' : '#ef4444';
+        $trendColor = $secondAvg >= $firstAvg ? '#787774' : '#ef4444';
 
         return '<svg width="' . $width . '" height="' . $height . '" viewBox="0 0 ' . $width . ' ' . $height . '" xmlns="http://www.w3.org/2000/svg">'
             . '<polyline fill="none" stroke="' . $trendColor . '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="' . implode(' ', $points) . '"/>'
@@ -1302,7 +1312,7 @@ class ClientDashboard extends Component
                 'datasets' => [[
                     'label' => 'Volume',
                     'data' => $values,
-                    'backgroundColor' => ['#3b82f6', '#8b5cf6', '#F93549', '#10b981'],
+                    'backgroundColor' => ['#EF4444', '#6B6B66', '#EF4444', '#787774'],
                     'borderRadius' => 6,
                 ]],
             ],
@@ -1313,7 +1323,7 @@ class ClientDashboard extends Component
                 'plugins' => ['legend' => ['display' => false]],
                 'scales' => [
                     'x' => ['display' => false],
-                    'y' => ['grid' => ['display' => false], 'ticks' => ['font' => ['size' => 11], 'color' => '#374151']],
+                    'y' => ['grid' => ['display' => false], 'ticks' => ['font' => ['size' => 11], 'color' => '#3F3F3C']],
                 ],
             ],
         ];
@@ -1334,8 +1344,8 @@ class ClientDashboard extends Component
                     [
                         'label' => 'Leads',
                         'data' => $leads,
-                        'borderColor' => '#10b981',
-                        'backgroundColor' => 'rgba(16,185,129,0.1)',
+                        'borderColor' => '#787774',
+                        'backgroundColor' => 'rgba(120, 119, 116,0.1)',
                         'tension' => 0.3,
                         'fill' => true,
                         'yAxisID' => 'y',
@@ -1343,8 +1353,8 @@ class ClientDashboard extends Component
                     [
                         'label' => 'CPL (SAR)',
                         'data' => $cpl,
-                        'borderColor' => '#F93549',
-                        'backgroundColor' => 'rgba(249,53,73,0.05)',
+                        'borderColor' => '#EF4444',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.05)',
                         'tension' => 0.3,
                         'fill' => false,
                         'yAxisID' => 'y1',
@@ -1378,13 +1388,13 @@ class ClientDashboard extends Component
                     [
                         'label' => 'Leads',
                         'data' => $leads,
-                        'backgroundColor' => '#10b981',
+                        'backgroundColor' => '#787774',
                         'yAxisID' => 'y',
                     ],
                     [
                         'label' => 'Spend (SAR)',
                         'data' => $spend,
-                        'backgroundColor' => '#3b82f6',
+                        'backgroundColor' => '#EF4444',
                         'yAxisID' => 'y1',
                     ],
                 ],
@@ -1415,8 +1425,8 @@ class ClientDashboard extends Component
                     [
                         'label' => 'Revenue (SAR)',
                         'data' => $revenue,
-                        'borderColor' => '#10b981',
-                        'backgroundColor' => 'rgba(16,185,129,0.1)',
+                        'borderColor' => '#787774',
+                        'backgroundColor' => 'rgba(120, 119, 116,0.1)',
                         'tension' => 0.3,
                         'fill' => true,
                         'yAxisID' => 'y',
@@ -1424,8 +1434,8 @@ class ClientDashboard extends Component
                     [
                         'label' => 'ROAS',
                         'data' => $roas,
-                        'borderColor' => '#F93549',
-                        'backgroundColor' => 'rgba(249,53,73,0.05)',
+                        'borderColor' => '#EF4444',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.05)',
                         'tension' => 0.3,
                         'fill' => false,
                         'yAxisID' => 'y1',
@@ -1459,13 +1469,13 @@ class ClientDashboard extends Component
                     [
                         'label' => 'Conversions',
                         'data' => $conversions,
-                        'backgroundColor' => '#10b981',
+                        'backgroundColor' => '#787774',
                         'yAxisID' => 'y',
                     ],
                     [
                         'label' => 'CPA (SAR)',
                         'data' => $cpa,
-                        'backgroundColor' => '#F93549',
+                        'backgroundColor' => '#EF4444',
                         'yAxisID' => 'y1',
                     ],
                 ],
@@ -1494,7 +1504,7 @@ class ClientDashboard extends Component
                 'datasets' => [[
                     'label' => 'Volume',
                     'data' => $values,
-                    'backgroundColor' => ['#3b82f6', '#8b5cf6', '#F93549', '#10b981'],
+                    'backgroundColor' => ['#EF4444', '#6B6B66', '#EF4444', '#787774'],
                     'borderRadius' => 6,
                 ]],
             ],
@@ -1505,14 +1515,144 @@ class ClientDashboard extends Component
                 'plugins' => ['legend' => ['display' => false]],
                 'scales' => [
                     'x' => ['display' => false],
-                    'y' => ['grid' => ['display' => false], 'ticks' => ['font' => ['size' => 11], 'color' => '#374151']],
+                    'y' => ['grid' => ['display' => false], 'ticks' => ['font' => ['size' => 11], 'color' => '#3F3F3C']],
                 ],
             ],
         ];
     }
 
+    /* ================================================================
+       Inline Editing for Ad Accounts & Campaigns
+       ================================================================ */
+
+    public function startEditAccount(int $accountId): void
+    {
+        $accounts = $this->dashboardData['ad_accounts'] ?? [];
+        $account = collect($accounts)->firstWhere('id', $accountId);
+
+        if (!$account) {
+            return;
+        }
+
+        $this->editingAccountId = $accountId;
+        $this->editAccountIndustry = $account['industry'] ?? '';
+        $this->editAccountCategory = $account['category'] ?? '';
+        $this->editAccountSubCategory = $account['sub_industry'] ?? '';
+    }
+
+    public function cancelAccountEdit(): void
+    {
+        $this->editingAccountId = null;
+        $this->editAccountIndustry = '';
+        $this->editAccountCategory = '';
+        $this->editAccountSubCategory = '';
+    }
+
+    public function saveAccountEdit(): void
+    {
+        $account = AdAccount::find($this->editingAccountId);
+        if (!$account) {
+            $this->cancelAccountEdit();
+            return;
+        }
+
+        $update = [];
+        if ($this->editAccountIndustry !== '') {
+            $update['industry'] = $this->editAccountIndustry ?: null;
+        }
+        if ($this->editAccountCategory !== '') {
+            $update['category'] = $this->editAccountCategory ?: null;
+        }
+        if ($this->editAccountSubCategory !== '') {
+            $update['sub_industry'] = $this->editAccountSubCategory ?: null;
+        }
+
+        $industryChanged  = isset($update['industry'])  && $update['industry']  !== $account->industry;
+        $categoryChanged  = isset($update['category'])  && $update['category']  !== $account->category;
+        $subCategoryChanged = isset($update['sub_industry']) && $update['sub_industry'] !== $account->sub_industry;
+
+        // Cascade: clear dependent fields only if they weren't explicitly changed
+        if ($industryChanged && !$categoryChanged) {
+            $update['category'] = null;
+        }
+        if (($industryChanged || $categoryChanged) && !$subCategoryChanged) {
+            $update['sub_industry'] = null;
+        }
+
+        if (!empty($update)) {
+            $account->update($update);
+        }
+
+        $this->cancelAccountEdit();
+        $this->fetchDashboard();
+    }
+
+    public function updatedEditAccountIndustry(): void
+    {
+        $this->editAccountCategory = '';
+        $this->editAccountSubCategory = '';
+    }
+
+    public function updatedEditAccountCategory(): void
+    {
+        $this->editAccountSubCategory = '';
+    }
+
+    public function updateCampaign(int $campaignId, string $field, $value): void
+    {
+        $campaign = AdCampaign::find($campaignId);
+        if (!$campaign) {
+            return;
+        }
+
+        $allowedFields = ['objective', 'sub_industry', 'funnel_stage'];
+        if (!in_array($field, $allowedFields)) {
+            return;
+        }
+
+        $campaign->update([$field => $value ?: null]);
+        $this->fetchDashboard();
+    }
+
     public function render()
     {
+        $industries = Industry::active()->ordered()->pluck('display_name', 'name')->toArray();
+
+        $categories = [];
+        $subCategories = [];
+        if ($this->editingAccountId) {
+            $industry = Industry::where('name', $this->editAccountIndustry)->first();
+            if ($industry) {
+                $categories = $industry->accountCategories()
+                    ->where('is_active', true)
+                    ->ordered()
+                    ->pluck('display_name')
+                    ->toArray();
+            }
+            if ($this->editAccountCategory) {
+                $categoryModel = AccountCategory::where('display_name', $this->editAccountCategory)->first();
+                $subCategories = $categoryModel
+                    ? $categoryModel->subCategories->mapWithKeys(fn($sub) => [$sub->name => $sub->display_name])->all()
+                    : [];
+            }
+        }
+
+        // Campaign sub-categories come from each account's category sub-categories
+        $campaignCategories = [];
+        $accounts = $this->dashboardData['ad_accounts'] ?? [];
+        foreach ($accounts as $account) {
+            $categoryName = $account['category'] ?? null;
+            if ($categoryName) {
+                $categoryModel = AccountCategory::where('display_name', $categoryName)->first();
+                if ($categoryModel) {
+                    foreach ($categoryModel->subCategories as $sub) {
+                        $campaignCategories[$sub->display_name] = $sub->display_name;
+                    }
+                }
+            }
+        }
+        ksort($campaignCategories);
+
         return view('livewire.pages.client-dashboard', [
             'platformChartConfig' => $this->getPlatformChartConfigProperty(),
             'trendChartConfig' => $this->getTrendChartConfigProperty(),
@@ -1526,6 +1666,10 @@ class ClientDashboard extends Component
             'revenueVsRoasChartConfig' => $this->getRevenueVsRoasChartConfigProperty(),
             'conversionsVsCpaChartConfig' => $this->getConversionsVsCpaChartConfigProperty(),
             'ecommerceFunnelChartConfig' => $this->getEcommerceFunnelChartConfigProperty(),
+            'industries' => $industries,
+            'categories' => $categories,
+            'subCategories' => $subCategories,
+            'campaignCategories' => $campaignCategories,
         ])->layout('layouts.app');
     }
 }

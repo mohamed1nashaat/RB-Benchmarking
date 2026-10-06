@@ -26,8 +26,8 @@
 .select2-container--default .select2-selection--single .select2-selection__rendered {
   line-height: 38px;
   color: #111827; /* gray-900 */
-  padding-left: 10px;
-  padding-right: 56px; /* 18px clear badge + 8px gap + 20px arrow */
+  padding-inline-start: 10px;
+  padding-inline-end: 56px; /* 18px clear badge + 8px gap + 20px arrow */
   font-size: 0.875rem; /* text-sm */
   white-space: nowrap;
   overflow: hidden;
@@ -37,14 +37,14 @@
 .select2-container--default .select2-selection--single .select2-selection__arrow {
   height: 36px;
   top: 1px;
-  right: 6px;
+  inset-inline-end: 6px;
 }
 .select2-container--default .select2-selection--single .select2-selection__placeholder {
   color: #9ca3af; /* gray-400 */
 }
 .select2-container--default .select2-selection--single .select2-selection__clear {
   position: absolute;
-  right: 30px;
+  inset-inline-end: 30px;
   top: 50%;
   transform: translateY(-50%);
   width: 18px;
@@ -91,7 +91,7 @@
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
   color: #e53e3e; /* primary-500 */
-  margin-right: 4px;
+  margin-inline-end: 4px;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
   color: #9b2c2c; /* primary-700 */
@@ -133,17 +133,17 @@
 }
 
 /* RTL support */
-html[dir="rtl"] .select2-container--default .select2-selection--single .select2-selection__rendered {
-  padding-left: 24px;
-  padding-right: 0;
-}
 html[dir="rtl"] .select2-container--default .select2-selection--single .select2-selection__arrow {
-  right: auto;
-  left: 4px;
+  inset-inline-end: auto;
+  inset-inline-start: 6px;
+}
+html[dir="rtl"] .select2-container--default .select2-selection--single .select2-selection__clear {
+  inset-inline-end: auto;
+  inset-inline-start: 30px;
 }
 html[dir="rtl"] .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-  margin-right: 0;
-  margin-left: 4px;
+  margin-inline-end: 0;
+  margin-inline-start: 4px;
 }
 html[dir="rtl"] .select2-dropdown {
   text-align: right;
@@ -175,53 +175,99 @@ html[dir="rtl"] .select2-dropdown {
   html[dir="rtl"] h6,
   html[dir="rtl"] .font-display,
   html[dir="rtl"] .font-serif {
-    font-family: 'Noto Naskh Arabic', 'Traditional Arabic', serif;
+    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white text-sm font-semibold py-2.5 px-4 rounded-md transition disabled:opacity-50 disabled:pointer-events-none;
   }
-  
+
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium py-2 px-4 rounded-md transition;
   }
-  
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 text-sm font-medium py-2 px-3 rounded-md transition;
+  }
+
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+    @apply inline-flex items-center justify-center gap-1.5 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-sm font-semibold py-2 px-4 rounded-md transition;
   }
-  
+
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-white rounded-xl border border-gray-200;
   }
-  
+
+  .section-title {
+    @apply text-lg font-semibold tracking-tight text-gray-900;
+  }
+
+  .micro-label {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-gray-400;
+  }
+
   .input-field {
-    @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500;
+    @apply block w-full rounded-lg border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 focus:outline-none transition;
   }
-  
+
   .kpi-card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200;
+    @apply bg-white rounded-xl border border-gray-200 p-5;
   }
-  
+
   .kpi-value {
-    @apply text-2xl font-bold text-gray-900;
+    @apply text-[28px] leading-8 font-semibold tracking-tight tabular-nums text-gray-900;
   }
-  
+
   .kpi-label {
-    @apply text-sm font-medium text-gray-600;
+    @apply micro-label;
   }
-  
+
   .kpi-change {
     @apply text-xs font-medium;
   }
-  
+
   .kpi-change.positive {
-    @apply text-green-600;
+    @apply text-green-700;
   }
-  
+
   .kpi-change.negative {
-    @apply text-red-600;
+    @apply text-red-700;
+  }
+
+  .stat-num {
+    @apply text-2xl font-semibold tracking-tight tabular-nums text-gray-900;
+  }
+
+  .data-table {
+    @apply w-full text-sm;
+  }
+  .data-table thead th {
+    @apply micro-label text-left px-4 py-2.5 border-b border-gray-200 font-semibold;
+  }
+  .data-table tbody td {
+    @apply px-4 py-3 text-gray-700 border-b border-gray-100;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .data-table tbody tr {
+    @apply transition-colors hover:bg-gray-50;
+  }
+
+  .filter-bar {
+    @apply card p-4 flex flex-wrap items-end gap-3;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center py-14 px-6;
+  }
+  .empty-state .empty-title {
+    @apply text-sm font-semibold text-gray-900;
+  }
+  .empty-state .empty-message {
+    @apply text-[13px] text-gray-500 mt-1 max-w-sm;
   }
   
   .table-container {
@@ -233,14 +279,10 @@ html[dir="rtl"] .select2-dropdown {
   }
   
   .data-table th {
-    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
+    @apply px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
     position: sticky;
     top: 0;
     z-index: 10;
-  }
-
-  html[dir="rtl"] .data-table th {
-    text-align: right;
   }
   
   .data-table td {
@@ -282,10 +324,7 @@ html[dir="rtl"] .select2-dropdown {
 
 @layer utilities {
   .text-gradient {
-    background: linear-gradient(135deg, #e53e3e 0%, #f59e0b 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #EF4444;
   }
   
   .shadow-glow {
@@ -293,7 +332,7 @@ html[dir="rtl"] .select2-dropdown {
   }
   
   .border-gradient {
-    border-image: linear-gradient(135deg, #e53e3e 0%, #f59e0b 100%) 1;
+    border-color: #EF4444;
   }
 }
 

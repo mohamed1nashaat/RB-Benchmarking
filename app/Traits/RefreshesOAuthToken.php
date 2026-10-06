@@ -112,7 +112,10 @@ trait RefreshesOAuthToken
                 Log::error("{$platform}: Token refresh failed", [
                     'integration_id' => $integration->id,
                 ]);
-                return $accessToken;
+
+                // Refresh failed — the existing token is no longer reliable.
+                // Return null so callers can mark the integration as needs_reauth.
+                return null;
             } finally {
                 $lock->release();
             }

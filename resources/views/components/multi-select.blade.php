@@ -27,7 +27,7 @@
     @if($label)
         <label class="block text-sm font-medium text-gray-700 mb-1">
             @if($icon)
-                <x-dynamic-component :component="$icon" class="h-4 w-4 inline mr-1 text-gray-400" />
+                <x-dynamic-component :component="$icon" class="h-4 w-4 inline me-1 text-gray-400" />
             @endif
             {{ $label }}
         </label>
@@ -37,7 +37,7 @@
     <button
         @click="open = !open"
         type="button"
-        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 text-left text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
+        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 text-start text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
     >
         <div class="flex items-center justify-between">
             <span x-show="selected.length === 0" class="text-gray-500">{{ $placeholder }}</span>
@@ -74,7 +74,7 @@
                         class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 pointer-events-none"
                         tabindex="-1"
                     />
-                    <span class="ml-2 text-sm text-gray-700">{{ $optionLabel }}</span>
+                    <span class="ms-2 text-sm text-gray-700">{{ $optionLabel }}</span>
                 </label>
             @endforeach
         </div>

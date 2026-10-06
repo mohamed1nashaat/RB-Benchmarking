@@ -1,23 +1,28 @@
 @php
     $primaryNavigation = [
         ['name' => 'benchmarks', 'href' => '/benchmarks', 'label' => 'navigation.benchmarks'],
-        ['name' => 'industry-overview', 'href' => '/industry-overview', 'label' => 'navigation.industry_overview'],
-        ['name' => 'spend-verification', 'href' => '/spend-verification', 'label' => 'navigation.spend_verification'],
+        ['name' => 'global-benchmarks', 'href' => '/global-benchmarks', 'label' => 'navigation.global_benchmarks'],
+        ['name' => 'calculator', 'href' => '/calculator', 'label' => 'navigation.calculator'],
     ];
+
+    if (auth()->check() && auth()->user()->isSuperAdmin()) {
+        $primaryNavigation[] = ['name' => 'industry-overview', 'href' => '/industry-overview', 'label' => 'navigation.industry_overview'];
+        $primaryNavigation[] = ['name' => 'spend-verification', 'href' => '/spend-verification', 'label' => 'navigation.spend_verification'];
+    }
 @endphp
 
 <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
     <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             <!-- Left: Logo + Primary Nav -->
-            <div class="flex items-center {{ app()->getLocale() === 'ar' ? 'space-x-reverse space-x-8' : 'space-x-8' }}">
+            <div class="flex items-center gap-x-8">
                 <!-- Logo -->
                 <a href="/benchmarks" class="flex-shrink-0">
-                    <img src="/logo.svg" alt="RB Benchmarks" class="h-8 w-auto">
+                    <img src="/logo.svg" alt="{{ __('app.name') }}" class="h-8 w-auto">
                 </a>
 
                 <!-- Desktop Navigation -->
-                <nav class="hidden lg:flex items-center {{ app()->getLocale() === 'ar' ? 'space-x-reverse space-x-1' : 'space-x-1' }}">
+                <nav class="hidden lg:flex items-center gap-x-1">
                     @foreach($primaryNavigation as $item)
                         <a
                             href="{{ $item['href'] }}"
@@ -30,7 +35,7 @@
             </div>
 
             <!-- Right: Actions -->
-            <div class="flex items-center {{ app()->getLocale() === 'ar' ? 'space-x-reverse space-x-3' : 'space-x-3' }}">
+            <div class="flex items-center gap-x-3">
                 <!-- Language Switcher -->
                 <livewire:components.language-switcher />
 

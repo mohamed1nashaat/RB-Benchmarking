@@ -243,12 +243,12 @@ class Clients extends Component
             $client = Tenant::find($this->editingClientId);
             if ($client) {
                 $client->update($data);
-                session()->flash('message', 'Client updated successfully.');
+                session()->flash('message', __('pages.clients.updated_success'));
             }
         } else {
             $data['slug'] = Str::slug($this->formName) . '-' . Str::random(6);
             Tenant::create($data);
-            session()->flash('message', 'Client created successfully.');
+            session()->flash('message', __('pages.clients.created_success'));
         }
 
         $this->closeFormModal();
@@ -286,13 +286,13 @@ class Clients extends Component
 
         $accountsCount = $client->adAccounts()->count();
         if ($accountsCount > 0) {
-            session()->flash('error', "Cannot delete client with {$accountsCount} ad accounts. Remove them first.");
+            session()->flash('error', trans_choice('pages.clients.delete_blocked', $accountsCount, ['count' => $accountsCount]));
             $this->closeDeleteDialog();
             return;
         }
 
         $client->update(['status' => 'inactive']);
-        session()->flash('message', 'Client deactivated successfully.');
+        session()->flash('message', __('pages.clients.deactivated_success'));
         $this->closeDeleteDialog();
     }
 
@@ -304,7 +304,7 @@ class Clients extends Component
         }
         Tenant::whereIn('id', $this->selectedClients)->update(['status' => $status]);
         $this->selectedClients = [];
-        session()->flash('message', 'Clients updated successfully.');
+        session()->flash('message', __('pages.clients.bulk_updated_success'));
     }
 
     public function bulkDelete(): void
@@ -321,9 +321,9 @@ class Clients extends Component
             ->whereDoesntHave('adAccounts')
             ->update(['status' => 'inactive']);
 
-        $msg = 'Clients without ad accounts have been deactivated.';
+        $msg = __('pages.clients.bulk_deactivated');
         if ($clientsWithAccounts > 0) {
-            $msg .= " {$clientsWithAccounts} client(s) with ad accounts were skipped.";
+            $msg .= ' ' . trans_choice('pages.clients.bulk_skipped', $clientsWithAccounts, ['count' => $clientsWithAccounts]);
         }
 
         $this->selectedClients = [];
@@ -441,11 +441,11 @@ class Clients extends Component
 
             DB::commit();
 
-            session()->flash('message', 'Client created successfully with ' . count($this->wizardSelectedAccountIds) . ' ad account(s).');
+            session()->flash('message', trans_choice('pages.clients.wizard_created_success', count($this->wizardSelectedAccountIds), ['count' => count($this->wizardSelectedAccountIds)]));
             $this->closeWizard();
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Failed to create client: ' . $e->getMessage());
+            session()->flash('error', __('pages.clients.create_failed') . ': ' . $e->getMessage());
         } finally {
             $this->wizardCreating = false;
         }

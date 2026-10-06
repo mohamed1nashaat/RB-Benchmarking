@@ -7,6 +7,7 @@ use App\Models\TenantRole;
 use App\Models\TenantUser;
 use App\Models\User;
 use App\Models\UserInvitation;
+use App\Services\RolePermissionService;
 use App\Services\UserInvitationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +25,7 @@ class Users extends Component
 
     // Filters
     public string $search = '';
-    public string $roleFilter = '';
+    public ?int $roleFilter = null;
     public ?int $tenantFilter = null;
     public int $perPage = 10;
     public string $sortBy = 'name';
@@ -33,7 +34,7 @@ class Users extends Component
     // Invite modal (regular admin)
     public bool $showInviteModal = false;
     public string $inviteEmail = '';
-    public string $inviteRole = 'viewer';
+    public ?int $inviteRoleId = null;
     public string $inviteError = '';
     public array $inviteErrors = [];
     public bool $inviteSending = false;
@@ -57,7 +58,7 @@ class Users extends Component
     public string $newUserEmail = '';
     public string $newUserPassword = '';
     public ?int $newUserTenantId = null;
-    public string $newUserRole = 'viewer';
+    public ?int $newUserRoleId = null;
 
     // Edit User Modal (super admin)
     public bool $showEditModal = false;
@@ -71,16 +72,19 @@ class Users extends Component
     public bool $showAssignModal = false;
     public ?int $assignUserId = null;
     public ?int $assignTenantId = null;
-    public string $assignRole = 'viewer';
+    public ?int $assignRoleId = null;
 
     // Delete User (super admin)
     public bool $showDeleteDialog = false;
     public ?int $deleteUserId = null;
     public string $deleteUserName = '';
 
+    /** @var array<int, TenantRole|null> */
+    protected array $roleCache = [];
+
     protected $queryString = [
         'search' => ['except' => ''],
-        'roleFilter' => ['except' => ''],
+        'roleFilter' => ['except' => null, 'as' => 'role'],
         'tenantFilter' => ['except' => null, 'as' => 'tenant'],
         'activeTab' => ['except' => 'users'],
     ];
@@ -93,6 +97,10 @@ class Users extends Component
             $this->sortBy = 'created_at';
             $this->sortOrder = 'desc';
         }
+
+        $this->resetInviteForm();
+        $this->resetCreateForm();
+        $this->resetAssignForm();
     }
 
     public function updatedSearch(): void
@@ -115,6 +123,16 @@ class Users extends Component
         $this->resetPage();
     }
 
+    public function updatedNewUserTenantId(): void
+    {
+        $this->newUserRoleId = $this->getDefaultRoleIdForTenant($this->newUserTenantId);
+    }
+
+    public function updatedAssignTenantId(): void
+    {
+        $this->assignRoleId = $this->getDefaultRoleIdForTenant($this->assignTenantId);
+    }
+
     public function getTenantProperty(): ?Tenant
     {
         $tenantId = session('current_tenant_id');
@@ -129,8 +147,15 @@ class Users extends Component
 
         return TenantRole::where('tenant_id', $tenant->id)
             ->orderBy('is_system', 'desc')
-            ->orderBy('name')
+            ->orderBy('display_name')
             ->get();
+    }
+
+    public function getRoleOptionsProperty(): array
+    {
+        return $this->roles
+            ->mapWithKeys(fn (TenantRole $role) => [$role->id => $role->display_name])
+            ->all();
     }
 
     public function getUsersProperty()
@@ -148,7 +173,7 @@ class Users extends Component
         if (!$tenant) return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage);
 
         $query = $tenant->users()
-            ->withPivot('role', 'tenant_role_id', 'invited_at', 'joined_at', 'last_activity_at', 'invited_by');
+            ->withPivot('id', 'role', 'tenant_role_id', 'invited_at', 'joined_at', 'last_activity_at', 'invited_by');
 
         // Search filter
         if (!empty($this->search)) {
@@ -160,15 +185,15 @@ class Users extends Component
         }
 
         // Role filter
-        if (!empty($this->roleFilter)) {
-            $query->wherePivot('role', $this->roleFilter);
+        if ($this->roleFilter) {
+            $query->wherePivot('tenant_role_id', $this->roleFilter);
         }
 
         // Sorting
         if (in_array($this->sortBy, ['name', 'email', 'last_login_at'])) {
             $query->orderBy($this->sortBy, $this->sortOrder);
         } elseif ($this->sortBy === 'role') {
-            $query->orderByPivot('role', $this->sortOrder);
+            $query->orderByPivot('tenant_role_id', $this->sortOrder);
         } elseif ($this->sortBy === 'joined_at') {
             $query->orderByPivot('joined_at', $this->sortOrder);
         } else {
@@ -194,7 +219,7 @@ class Users extends Component
             })
             ->when($this->roleFilter, function ($q) {
                 $q->whereHas('tenants', function ($q2) {
-                    $q2->where('tenant_users.role', $this->roleFilter);
+                    $q2->where('tenant_users.tenant_role_id', $this->roleFilter);
                 });
             })
             ->orderBy($this->sortBy, $this->sortOrder);
@@ -215,7 +240,7 @@ class Users extends Component
     {
         if ($this->isSuperAdmin) {
             return UserInvitation::pending()
-                ->with(['inviter:id,name', 'tenant:id,name'])
+                ->with(['inviter:id,name', 'tenant:id,name', 'tenantRole:id,display_name'])
                 ->orderBy('created_at', 'desc')
                 ->get();
         }
@@ -225,9 +250,69 @@ class Users extends Component
 
         return UserInvitation::forTenant($tenant->id)
             ->pending()
-            ->with('inviter:id,name')
+            ->with(['inviter:id,name', 'tenantRole:id,display_name'])
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    public function getTenantRoleOptions(int $tenantId): array
+    {
+        return TenantRole::where('tenant_id', $tenantId)
+            ->orderBy('is_system', 'desc')
+            ->orderBy('display_name')
+            ->get()
+            ->mapWithKeys(fn (TenantRole $role) => [$role->id => $role->display_name])
+            ->all();
+    }
+
+    private function getDefaultRoleIdForTenant(?int $tenantId): ?int
+    {
+        if (!$tenantId) return null;
+
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) return null;
+
+        $role = app(RolePermissionService::class)->getDefaultRole($tenant);
+
+        return $role?->id;
+    }
+
+    // ─── Permissions ─────────────────────────────────────────────────────
+
+    public function canViewUsers(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        $tenant = $this->tenant;
+        return $tenant && $user->hasPermissionForTenant($tenant, 'view_users');
+    }
+
+    public function canInviteUsers(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        $tenant = $this->tenant;
+        return $tenant && $user->hasPermissionForTenant($tenant, 'invite_users');
+    }
+
+    public function canManageUsers(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        $tenant = $this->tenant;
+        return $tenant && $user->hasPermissionForTenant($tenant, 'manage_users');
+    }
+
+    public function canManageRoles(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isSuperAdmin()) return true;
+        $tenant = $this->tenant;
+        return $tenant && $user->hasPermissionForTenant($tenant, 'manage_roles');
     }
 
     // Sorting
@@ -247,6 +332,11 @@ class Users extends Component
     // Invite user
     public function openInviteModal(): void
     {
+        if (!$this->canInviteUsers()) {
+            session()->flash('error', __('pages.users.permissions.invite_users'));
+            return;
+        }
+
         $this->resetInviteForm();
         $this->showInviteModal = true;
     }
@@ -262,26 +352,53 @@ class Users extends Component
     private function resetInviteForm(): void
     {
         $this->inviteEmail = '';
-        $this->inviteRole = 'viewer';
+        $this->inviteRoleId = $this->getDefaultViewerRoleId();
         $this->inviteError = '';
         $this->inviteErrors = [];
     }
 
+    private function getDefaultViewerRoleId(): ?int
+    {
+        $tenant = $this->tenant;
+        if (!$tenant) return null;
+
+        return $this->roles->firstWhere('name', 'viewer')?->id
+            ?? $this->roles->first()?->id;
+    }
+
     public function sendInvitation(): void
     {
+        if (!$this->canInviteUsers()) {
+            session()->flash('error', __('pages.users.permissions.invite_users'));
+            return;
+        }
+
         $tenant = $this->tenant;
         if (!$tenant) return;
 
         $this->inviteErrors = [];
         $this->inviteError = '';
 
+        $allowedDomain = 'redbananas.com';
+
         $this->validate([
-            'inviteEmail' => 'required|email',
-            'inviteRole' => 'required|in:admin,viewer',
-        ], [], [
+            'inviteEmail' => 'required|email|regex:/@' . preg_quote($allowedDomain, '/') . '$/i',
+            'inviteRoleId' => 'required|exists:tenant_roles,id',
+        ], [
+            'inviteEmail.regex' => __('pages.users.email_domain_not_allowed', ['domain' => $allowedDomain]),
+        ], [
             'inviteEmail' => __('labels.email'),
-            'inviteRole' => __('labels.role'),
+            'inviteRoleId' => __('labels.role'),
         ]);
+
+        $role = TenantRole::where('id', $this->inviteRoleId)
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        if (!$role) {
+            $this->inviteError = __('Selected role is not valid for this organization.');
+            return;
+        }
 
         $this->inviteSending = true;
 
@@ -290,7 +407,7 @@ class Users extends Component
             $service->invite(
                 $tenant,
                 $this->inviteEmail,
-                $this->inviteRole,
+                $role->id,
                 auth()->user()
             );
 
@@ -307,8 +424,13 @@ class Users extends Component
     }
 
     // Change user role
-    public function changeUserRole(int $userId, string $newRole): void
+    public function changeUserRole(int $userId, int $newRoleId): void
     {
+        if (!$this->canManageUsers()) {
+            session()->flash('error', __('pages.users.permissions.change_role'));
+            return;
+        }
+
         $tenant = $this->tenant;
         if (!$tenant) return;
 
@@ -323,19 +445,9 @@ class Users extends Component
                 return;
             }
 
-            $updateData = ['role' => $newRole];
+            $service = app(RolePermissionService::class);
+            $service->assignRole($tenant, $targetUser->id, $newRoleId);
 
-            // Find matching tenant role
-            $tenantRole = TenantRole::where('tenant_id', $tenant->id)
-                ->where('name', $newRole)
-                ->where('is_system', true)
-                ->first();
-
-            if ($tenantRole) {
-                $updateData['tenant_role_id'] = $tenantRole->id;
-            }
-
-            $tenant->users()->updateExistingPivot($userId, $updateData);
             session()->flash('success', __('pages.users.role_updated'));
         } catch (\Exception $e) {
             session()->flash('error', __('pages.users.role_update_failed') . ': ' . $e->getMessage());
@@ -347,6 +459,10 @@ class Users extends Component
     // Remove user
     public function confirmRemoveUser(int $userId): void
     {
+        if (!$this->canManageUsers()) {
+            return;
+        }
+
         $user = User::findOrFail($userId);
         $this->userToRemoveId = $user->id;
         $this->userToRemoveName = $user->name;
@@ -355,6 +471,11 @@ class Users extends Component
 
     public function removeUser(): void
     {
+        if (!$this->canManageUsers()) {
+            session()->flash('error', __('pages.users.permissions.remove_users'));
+            return;
+        }
+
         $tenant = $this->tenant;
         if (!$tenant || !$this->userToRemoveId) return;
 
@@ -364,15 +485,22 @@ class Users extends Component
             $targetUser = User::findOrFail($this->userToRemoveId);
 
             // Check if this would leave the tenant without an admin
-            $adminCount = TenantUser::where('tenant_id', $tenant->id)
-                ->where('role', 'admin')
-                ->count();
+            $adminRole = app(RolePermissionService::class)->getAdminRole($tenant);
+            $adminCount = $adminRole
+                ? TenantUser::where('tenant_id', $tenant->id)
+                    ->where('tenant_role_id', $adminRole->id)
+                    ->count()
+                : TenantUser::where('tenant_id', $tenant->id)
+                    ->where('role', 'admin')
+                    ->count();
 
             $targetTenantUser = TenantUser::where('tenant_id', $tenant->id)
                 ->where('user_id', $targetUser->id)
                 ->first();
 
-            if ($targetTenantUser && $targetTenantUser->role === 'admin' && $adminCount <= 1) {
+            $targetIsAdmin = $adminRole && $targetTenantUser?->tenant_role_id === $adminRole->id;
+
+            if ($targetIsAdmin && $adminCount <= 1) {
                 session()->flash('error', __('pages.users.cannot_remove_last_admin'));
                 $this->showRemoveDialog = false;
                 return;
@@ -406,6 +534,11 @@ class Users extends Component
     // Invitation actions
     public function resendInvitation(int $invitationId): void
     {
+        if (!$this->canInviteUsers()) {
+            session()->flash('error', __('pages.users.permissions.resend_invitations'));
+            return;
+        }
+
         $this->resendingId = $invitationId;
 
         try {
@@ -422,6 +555,11 @@ class Users extends Component
 
     public function cancelInvitation(int $invitationId): void
     {
+        if (!$this->canInviteUsers()) {
+            session()->flash('error', __('pages.users.permissions.cancel_invitations'));
+            return;
+        }
+
         $this->cancellingId = $invitationId;
 
         try {
@@ -456,12 +594,19 @@ class Users extends Component
                 'password' => Hash::make($this->newUserPassword),
             ]);
 
-            if ($this->newUserTenantId) {
-                $user->tenants()->attach($this->newUserTenantId, [
-                    'role' => $this->newUserRole,
-                    'joined_at' => now(),
-                ]);
-                $user->update(['default_tenant_id' => $this->newUserTenantId]);
+            if ($this->newUserTenantId && $this->newUserRoleId) {
+                $role = TenantRole::where('id', $this->newUserRoleId)
+                    ->where('tenant_id', $this->newUserTenantId)
+                    ->first();
+
+                if ($role) {
+                    $user->tenants()->attach($this->newUserTenantId, [
+                        'role' => $role->is_system ? $role->name : 'viewer',
+                        'tenant_role_id' => $role->id,
+                        'joined_at' => now(),
+                    ]);
+                    $user->update(['default_tenant_id' => $this->newUserTenantId]);
+                }
             }
         });
 
@@ -476,7 +621,7 @@ class Users extends Component
         $this->newUserEmail = '';
         $this->newUserPassword = '';
         $this->newUserTenantId = null;
-        $this->newUserRole = 'viewer';
+        $this->newUserRoleId = null;
     }
 
     // Edit User
@@ -491,7 +636,15 @@ class Users extends Component
             $this->editUserEmail = $user->email;
             $this->editUserPassword = '';
             $this->editUserTenantRoles = $user->tenants->mapWithKeys(function ($tenant) {
-                return [$tenant->id => $tenant->pivot->role];
+                $roleId = $tenant->pivot->tenant_role_id;
+
+                if (!$roleId && $tenant->pivot->role) {
+                    $roleId = TenantRole::where('tenant_id', $tenant->id)
+                        ->where('name', $tenant->pivot->role)
+                        ->value('id');
+                }
+
+                return [$tenant->id => $roleId];
             })->toArray();
             $this->showEditModal = true;
         }
@@ -523,9 +676,16 @@ class Users extends Component
             }
             $user->update($data);
 
-            foreach ($this->editUserTenantRoles as $tenantId => $role) {
-                if (in_array($role, ['admin', 'viewer'])) {
-                    $user->tenants()->updateExistingPivot($tenantId, ['role' => $role]);
+            foreach ($this->editUserTenantRoles as $tenantId => $roleId) {
+                $role = TenantRole::where('id', $roleId)
+                    ->where('tenant_id', $tenantId)
+                    ->first();
+
+                if ($role) {
+                    $user->tenants()->updateExistingPivot($tenantId, [
+                        'role' => $role->is_system ? $role->name : 'viewer',
+                        'tenant_role_id' => $role->id,
+                    ]);
                 }
             }
         }
@@ -559,7 +719,7 @@ class Users extends Component
 
         $this->assignUserId = $userId;
         $this->assignTenantId = null;
-        $this->assignRole = 'viewer';
+        $this->assignRoleId = null;
         $this->showAssignModal = true;
     }
 
@@ -569,18 +729,29 @@ class Users extends Component
 
         $this->validate([
             'assignTenantId' => 'required|exists:tenants,id',
-            'assignRole' => 'required|in:admin,viewer',
+            'assignRoleId' => 'required|exists:tenant_roles,id',
         ]);
+
+        $role = TenantRole::where('id', $this->assignRoleId)
+            ->where('tenant_id', $this->assignTenantId)
+            ->first();
+
+        if (!$role) {
+            session()->flash('error', __('pages.admin_users.invalid_role_for_organization'));
+            return;
+        }
 
         $user = User::find($this->assignUserId);
         if ($user) {
             if ($user->tenants()->where('tenants.id', $this->assignTenantId)->exists()) {
                 $user->tenants()->updateExistingPivot($this->assignTenantId, [
-                    'role' => $this->assignRole,
+                    'role' => $role->is_system ? $role->name : 'viewer',
+                    'tenant_role_id' => $role->id,
                 ]);
             } else {
                 $user->tenants()->attach($this->assignTenantId, [
-                    'role' => $this->assignRole,
+                    'role' => $role->is_system ? $role->name : 'viewer',
+                    'tenant_role_id' => $role->id,
                     'joined_at' => now(),
                 ]);
             }
@@ -592,12 +763,20 @@ class Users extends Component
 
             // If edit modal is open for this user, sync its tenant roles
             if ($this->showEditModal && $this->editUserId === $user->id) {
-                $this->editUserTenantRoles[$this->assignTenantId] = $this->assignRole;
+                $this->editUserTenantRoles[$this->assignTenantId] = $role->id;
             }
         }
 
         $this->showAssignModal = false;
+        $this->resetAssignForm();
         session()->flash('success', __('pages.admin_users.tenant_assigned'));
+    }
+
+    private function resetAssignForm(): void
+    {
+        $this->assignUserId = null;
+        $this->assignTenantId = null;
+        $this->assignRoleId = null;
     }
 
     // Delete User
@@ -644,6 +823,28 @@ class Users extends Component
         );
     }
 
+    /**
+     * Get a tenant role by ID with in-memory caching for the current request.
+     */
+    public function getTenantRoleById(?int $roleId): ?TenantRole
+    {
+        if (!$roleId) return null;
+
+        if (!isset($this->roleCache[$roleId])) {
+            $this->roleCache[$roleId] = TenantRole::find($roleId);
+        }
+
+        return $this->roleCache[$roleId];
+    }
+
+    /**
+     * Get the display name for a tenant role ID.
+     */
+    public function getRoleDisplayName(?int $roleId): string
+    {
+        return $this->getTenantRoleById($roleId)?->display_name ?? __('pages.roles.no_role_assigned');
+    }
+
     public function render()
     {
         $title = $this->isSuperAdmin ? __('pages.admin_users.title') : __('pages.users.title');
@@ -652,6 +853,8 @@ class Users extends Component
             'usersPaginated' => $this->users,
             'invitationsList' => $this->invitations,
             'tenants' => $this->isSuperAdmin ? $this->tenants : collect(),
+            'roles' => $this->roles,
+            'roleOptions' => $this->roleOptions,
         ])->layout('layouts.app', ['title' => $title]);
     }
 }

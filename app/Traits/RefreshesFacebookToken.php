@@ -58,15 +58,41 @@ trait RefreshesFacebookToken
 
             if ($response->successful()) {
                 $tokenData = $response->json();
-                $config['access_token'] = $tokenData['access_token'];
-                $config['token_expires_at'] = now()->addDays(60)->toISOString();
-                $integration->update(['app_config' => $config]);
 
-                Log::info('Facebook: Token extended successfully', [
+                if (!empty($tokenData['access_token'])) {
+                    $config['access_token'] = $tokenData['access_token'];
+                    $config['token_expires_at'] = now()->addDays(60)->toISOString();
+                    $integration->update(['app_config' => $config]);
+
+                    Log::info('Facebook: Token extended successfully', [
+                        'integration_id' => $integration->id,
+                    ]);
+
+                    return $tokenData['access_token'];
+                }
+
+                // Successful HTTP but no access_token in body — likely a non-token endpoint
+                // response hit in tests or unusual API behavior. Fall back to existing token.
+                Log::warning('Facebook: Token extension response missing access_token, using existing token', [
                     'integration_id' => $integration->id,
                 ]);
+                return $accessToken;
+            }
 
-                return $tokenData['access_token'];
+            $errorBody = $response->json();
+            $errorMessage = strtolower($errorBody['error']['message'] ?? '');
+            $isAuthError = str_contains($errorMessage, 'invalid_grant') ||
+                           str_contains($errorMessage, 'expired') ||
+                           str_contains($errorMessage, 'invalid token') ||
+                           str_contains($errorMessage, 'session has expired');
+
+            if ($isAuthError) {
+                Log::warning('Facebook: Token extension failed with auth error, marking integration for re-authorization', [
+                    'integration_id' => $integration->id,
+                    'status' => $response->status(),
+                ]);
+                $integration->update(['status' => 'needs_reauth']);
+                return null;
             }
 
             Log::warning('Facebook: Token extension failed, using existing token', [

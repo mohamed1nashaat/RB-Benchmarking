@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_super_admin',
+        'view_all_tenants',
         'default_tenant_id',
         'avatar',
         'last_login_at',
@@ -54,6 +55,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
+            'view_all_tenants' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }
@@ -66,7 +68,8 @@ class User extends Authenticatable
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_users')
-            ->withPivot('role', 'tenant_role_id', 'invited_at', 'joined_at')
+            ->using(TenantUser::class)
+            ->withPivot('id', 'role', 'tenant_role_id', 'invited_at', 'joined_at')
             ->withTimestamps();
     }
 
@@ -194,6 +197,14 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return (bool) $this->is_super_admin;
+    }
+
+    /**
+     * Check if the user can view data across all tenants.
+     */
+    public function canViewAllTenants(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->view_all_tenants;
     }
 
     /**

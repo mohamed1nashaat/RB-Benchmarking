@@ -390,10 +390,10 @@ class IndustryOverview extends Component
         $sorted = collect($this->industryData)->sortByDesc($metricKey)->take(10);
 
         $colors = [
-            'rgba(59,130,246,0.7)', 'rgba(16,185,129,0.7)', 'rgba(168,85,247,0.7)',
-            'rgba(251,191,36,0.7)', 'rgba(239,68,68,0.7)', 'rgba(236,72,153,0.7)',
-            'rgba(14,165,233,0.7)', 'rgba(245,158,11,0.7)', 'rgba(99,102,241,0.7)',
-            'rgba(20,184,166,0.7)',
+            'rgba(239, 68, 68,0.7)', 'rgba(120, 119, 116,0.7)', 'rgba(107, 107, 102,0.7)',
+            'rgba(212, 212, 210, 0.7)', 'rgba(239,68,68,0.7)', 'rgba(168, 168, 164,0.7)',
+            'rgba(63, 63, 60, 0.7)', 'rgba(212, 212, 210,0.7)', 'rgba(63, 63, 60,0.7)',
+            'rgba(107, 107, 102, 0.7)',
         ];
 
         return [
@@ -433,8 +433,8 @@ class IndustryOverview extends Component
                 'datasets' => [[
                     'label' => 'Monthly Spend (SAR)',
                     'data' => array_map(fn($v) => round($v, 2), $data),
-                    'borderColor' => 'rgba(59,130,246,1)',
-                    'backgroundColor' => 'rgba(59,130,246,0.1)',
+                    'borderColor' => 'rgba(239, 68, 68,1)',
+                    'backgroundColor' => 'rgba(239, 68, 68,0.1)',
                     'fill' => true,
                     'tension' => 0.3,
                     'pointRadius' => 4,
@@ -466,13 +466,13 @@ class IndustryOverview extends Component
                     [
                         'label' => 'Avg CPC (SAR)',
                         'data' => $cpcData,
-                        'backgroundColor' => 'rgba(99,102,241,0.7)',
+                        'backgroundColor' => 'rgba(63, 63, 60,0.7)',
                         'borderWidth' => 1,
                     ],
                     [
                         'label' => 'Avg CPM (SAR)',
                         'data' => $cpmData,
-                        'backgroundColor' => 'rgba(236,72,153,0.7)',
+                        'backgroundColor' => 'rgba(168, 168, 164,0.7)',
                         'borderWidth' => 1,
                     ],
                 ],
@@ -499,14 +499,14 @@ class IndustryOverview extends Component
         ];
 
         $platformColors = [
-            'facebook' => 'rgba(59,130,246,0.8)',
-            'google' => 'rgba(234,67,53,0.8)',
-            'tiktok' => 'rgba(37,244,238,0.8)',
-            'snapchat' => 'rgba(255,252,0,0.8)',
-            'linkedin' => 'rgba(0,119,181,0.8)',
+            'facebook' => 'rgba(239, 68, 68,0.8)',
+            'google' => 'rgba(107, 107, 102, 0.85)',
+            'tiktok' => 'rgba(17, 17, 17, 0.85)',
+            'snapchat' => 'rgba(63, 63, 60, 0.85)',
+            'linkedin' => 'rgba(168, 168, 164, 0.9)',
         ];
 
-        $defaultColor = 'rgba(156,163,175,0.8)';
+        $defaultColor = 'rgba(168, 168, 164, 0.8)';
 
         $labels = [];
         $data = [];

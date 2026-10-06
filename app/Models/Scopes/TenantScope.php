@@ -10,8 +10,12 @@ class TenantScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        // Super admins bypass tenant filtering (see all data)
+        // Super admins and cross-tenant viewers bypass tenant filtering (see all data)
         if (app()->bound('is_super_admin') && app('is_super_admin')) {
+            return;
+        }
+
+        if (app()->bound('view_all_tenants') && app('view_all_tenants')) {
             return;
         }
 

@@ -81,7 +81,7 @@
 
         /* ===== HEADER ===== */
         .pdf-header {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            background: linear-gradient(135deg, #1f2937 0%, #3F3F3C 100%);
             color: #fff;
             padding: 10px 15mm;
             margin: -15mm -12mm 15px -12mm;
@@ -254,7 +254,7 @@
             text-transform: uppercase;
             letter-spacing: 0.03em;
             color: #ffffff;
-            background: #374151;
+            background: #3F3F3C;
             text-align: left;
         }
 
@@ -264,7 +264,7 @@
         .data-table tbody td {
             padding: 6px 10px;
             border-bottom: 1px solid #f1f5f9;
-            color: #374151;
+            color: #3F3F3C;
         }
 
         .data-table tbody tr:nth-child(even) { background: #f8fafc; }
@@ -343,7 +343,7 @@
 <div class="cover-page">
     <div class="cover-content">
         <div class="cover-client-name">{{ $client->name }}</div>
-        <div class="cover-title">SEO Performance Report</div>
+        <div class="cover-title">{{ __("SEO Performance Report") }}</div>
         <div class="cover-meta"><strong>Period:</strong> {{ $startDate }} to {{ $endDate }}</div>
         @if($client->website)
             <div class="cover-meta"><strong>Website:</strong> {{ $client->website }}</div>
@@ -363,7 +363,7 @@
 <div class="pdf-header">
     <div class="pdf-header-left">
         <div class="client-name">{{ $client->name }}</div>
-        <div class="report-type">SEO Performance Report</div>
+        <div class="report-type">{{ __("SEO Performance Report") }}</div>
     </div>
     <div class="pdf-header-right">
         {{ $startDate }} — {{ $endDate }}
@@ -371,7 +371,7 @@
 </div>
 
 {{-- KPI GRID --}}
-<div class="section-title">Key Performance Indicators</div>
+<div class="section-title">{{ __("Key Performance Indicators") }}</div>
 
 <table class="kpi-grid">
     <tr>
@@ -380,13 +380,13 @@
             <td>
                 <div class="kpi-box">
                     <div class="value">{{ pdfFmt($ga4['sessions'] ?? 0) }}</div>
-                    <div class="label">Total Sessions</div>
+                    <div class="label">{{ __("Total Sessions") }}</div>
                 </div>
             </td>
             <td>
                 <div class="kpi-box">
                     <div class="value">{{ pdfFmt($ga4['active_users'] ?? 0) }}</div>
-                    <div class="label">Active Users</div>
+                    <div class="label">{{ __("Active Users") }}</div>
                 </div>
             </td>
         @endif
@@ -395,13 +395,13 @@
             <td>
                 <div class="kpi-box">
                     <div class="value">{{ pdfFmt($sc['total_impressions']) }}</div>
-                    <div class="label">Search Impressions</div>
+                    <div class="label">{{ __("Search Impressions") }}</div>
                 </div>
             </td>
             <td>
                 <div class="kpi-box">
                     <div class="value">{{ pdfFmt($sc['total_clicks']) }}</div>
-                    <div class="label">Search Clicks</div>
+                    <div class="label">{{ __("Search Clicks") }}</div>
                 </div>
             </td>
         @endif
@@ -411,13 +411,13 @@
             <td>
                 <div class="kpi-box">
                     <div class="value">{{ $report['search_console']['summary']['avg_position'] }}</div>
-                    <div class="label">Avg Position</div>
+                    <div class="label">{{ __("Avg Position") }}</div>
                 </div>
             </td>
             <td>
                 <div class="kpi-box">
                     <div class="value">{{ $report['search_console']['summary']['avg_ctr'] }}%</div>
-                    <div class="label">Avg CTR</div>
+                    <div class="label">{{ __("Avg CTR") }}</div>
                 </div>
             </td>
         @endif
@@ -425,7 +425,7 @@
             <td>
                 <div class="kpi-box">
                     <div class="value {{ pdfScoreColor($report['pagespeed_mobile']['scores']['performance']) }}">{{ $report['pagespeed_mobile']['scores']['performance'] }}</div>
-                    <div class="label">Mobile Speed</div>
+                    <div class="label">{{ __("Mobile Speed") }}</div>
                 </div>
             </td>
         @endif
@@ -433,7 +433,7 @@
             <td>
                 <div class="kpi-box">
                     <div class="value {{ pdfScoreColor($report['pagespeed_desktop']['scores']['performance']) }}">{{ $report['pagespeed_desktop']['scores']['performance'] }}</div>
-                    <div class="label">Desktop Speed</div>
+                    <div class="label">{{ __("Desktop Speed") }}</div>
                 </div>
             </td>
         @endif
@@ -449,16 +449,16 @@
     $pdfPsIsQuotaError = ($pdfPsMobile['_error'] ?? null) === 'quota_exceeded' || ($pdfPsDesktop['_error'] ?? null) === 'quota_exceeded';
 @endphp
 @if($pdfPsHasScores || $pdfPsHasError)
-    <div class="section-title">PageSpeed Insights</div>
+    <div class="section-title">{{ __("PageSpeed Insights") }}</div>
 
     @if($pdfPsHasError && !$pdfPsHasScores)
         <div style="text-align: center; padding: 20px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 20px;">
             @if($pdfPsIsQuotaError)
-                <div style="font-size: 11pt; font-weight: 600; color: #d97706; margin-bottom: 4px;">API Quota Exceeded</div>
-                <div style="font-size: 8pt; color: #64748b;">PageSpeed Insights API quota has been exceeded. Data will refresh automatically when the quota resets.</div>
+                <div style="font-size: 11pt; font-weight: 600; color: #d97706; margin-bottom: 4px;">{{ __("API Quota Exceeded") }}</div>
+                <div style="font-size: 8pt; color: #64748b;">{{ __("PageSpeed Insights API quota has been exceeded. Data will refresh automatically when the quota resets.") }}</div>
             @else
-                <div style="font-size: 11pt; font-weight: 600; color: #dc2626; margin-bottom: 4px;">PageSpeed Data Unavailable</div>
-                <div style="font-size: 8pt; color: #64748b;">Unable to retrieve PageSpeed data. This is usually temporary — please try again later.</div>
+                <div style="font-size: 11pt; font-weight: 600; color: #dc2626; margin-bottom: 4px;">{{ __("PageSpeed Data Unavailable") }}</div>
+                <div style="font-size: 8pt; color: #64748b;">{{ __("Unable to retrieve PageSpeed data. This is usually temporary — please try again later.") }}</div>
             @endif
         </div>
     @endif
@@ -510,7 +510,7 @@
 {{-- TRAFFIC SOURCES --}}
 @if(isset($report['ga4']['traffic_sources']) && count($report['ga4']['traffic_sources']) > 0)
     <div class="avoid-break">
-        <div class="section-title">Traffic Sources</div>
+        <div class="section-title">{{ __("Traffic Sources") }}</div>
         @php $totalSrc = array_sum(array_column($report['ga4']['traffic_sources'], 'sessions')); @endphp
         <table class="data-table">
             <thead>
@@ -546,7 +546,7 @@
 <div class="pdf-header">
     <div class="pdf-header-left">
         <div class="client-name">{{ $client->name }}</div>
-        <div class="report-type">Search Console Data</div>
+        <div class="report-type">{{ __("Search Console Data") }}</div>
     </div>
     <div class="pdf-header-right">
         {{ $startDate }} — {{ $endDate }}
@@ -558,7 +558,7 @@
         {{-- Top Pages --}}
         <td>
             @if(isset($report['search_console']['pages']) && count($report['search_console']['pages']) > 0)
-                <div class="section-title">Top Pages</div>
+                <div class="section-title">{{ __("Top Pages") }}</div>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -585,7 +585,7 @@
         {{-- Top Queries --}}
         <td>
             @if(isset($report['search_console']['queries']) && count($report['search_console']['queries']) > 0)
-                <div class="section-title">Top Search Queries</div>
+                <div class="section-title">{{ __("Top Search Queries") }}</div>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -618,21 +618,21 @@
     <div class="pdf-header">
         <div class="pdf-header-left">
             <div class="client-name">{{ $client->name }}</div>
-            <div class="report-type">Analytics Data</div>
+            <div class="report-type">{{ __("Analytics Data") }}</div>
         </div>
         <div class="pdf-header-right">
             {{ $startDate }} — {{ $endDate }}
         </div>
     </div>
 
-    <div class="section-title">Top Pages (Analytics)</div>
+    <div class="section-title">{{ __("Top Pages (Analytics)") }}</div>
     <table class="data-table">
         <thead>
             <tr>
                 <th>Page</th>
                 <th class="text-right">Views</th>
                 <th class="text-right">Users</th>
-                <th class="text-right">Avg Time</th>
+                <th class="text-right">{{ __("Avg Time") }}</th>
             </tr>
         </thead>
         <tbody>
@@ -656,7 +656,7 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Device / Browser</th>
+                    <th>{{ __("Device / Browser") }}</th>
                     <th class="text-right">Sessions</th>
                     <th class="text-right">Share</th>
                 </tr>
@@ -677,7 +677,7 @@
 
 {{-- FOOTER --}}
 <div class="pdf-footer">
-    Generated on {{ now()->format('F j, Y \a\t g:i A') }} &middot; <span class="brand">RB Benchmarks</span>
+    Generated on {{ now()->format('F j, Y \a\t g:i A') }} &middot; <span class="brand">{{ __("RB Benchmarks") }}</span>
     @if($client->website)
         &middot; {{ $client->website }}
     @endif

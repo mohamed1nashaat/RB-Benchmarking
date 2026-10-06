@@ -238,7 +238,7 @@ class Integrations extends Component
         $command = $commandMap[$this->syncPlatform] ?? null;
 
         if (!$command) {
-            session()->flash('error', __('Unknown platform for sync.'));
+            session()->flash('error', __('pages.integrations.unknown_platform_sync'));
             $this->closePlatformSyncModal();
             return;
         }
@@ -246,7 +246,7 @@ class Integrations extends Component
         $integration = $this->findIntegrationForPlatform($this->syncPlatform);
 
         if (!$integration) {
-            session()->flash('error', __('No active integration found for this platform.'));
+            session()->flash('error', __('pages.integrations.no_active_integration'));
             $this->closePlatformSyncModal();
             return;
         }

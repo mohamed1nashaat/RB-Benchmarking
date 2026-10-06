@@ -5,7 +5,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-6">
                 <a href="/" class="flex items-center">
-                    <img src="/logo.svg" alt="RB Benchmarks" class="h-8 w-auto">
+                    <img src="/logo.svg" alt="{{ __('RB Benchmarks') }}" class="h-8 w-auto">
                 </a>
                 <a href="/login" class="text-primary-600 hover:text-primary-500 font-medium">
                     {{ __('pages.privacy_policy.back_to_app') }}

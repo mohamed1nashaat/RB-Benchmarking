@@ -2,32 +2,32 @@
     <div class="px-4 py-8 space-y-6">
 
         {{-- Header --}}
-        <div class="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="flex-1 min-w-0">
-                <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                <h2 class="section-title">
                     {{ __('pages.benchmarks.title') }}
                 </h2>
                 <p class="mt-1 text-sm text-gray-500">
                     {{ __('pages.benchmarks.description') }}
                     @if($autoRefreshEnabled)
-                        <span class="inline-flex items-center ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                            <div class="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></div>
+                        <span class="inline-flex items-center ms-2 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#EDF3EC] text-[#346538]">
+                            <div class="w-2 h-2 bg-[#346538] rounded-full me-1.5 animate-pulse"></div>
                             {{ __('pages.benchmarks.live_data') }}
                         </span>
                     @endif
                 </p>
             </div>
-            <div class="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 md:ml-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center md:ms-4">
                 {{-- Auto-refresh toggle --}}
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center gap-x-2">
                     <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" wire:model.live="autoRefreshEnabled" wire:change="toggleAutoRefresh" class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50" />
-                        <span class="ml-2 text-sm text-gray-700">{{ __('pages.benchmarks.auto_refresh') }}</span>
+                        <input type="checkbox" wire:model.live="autoRefreshEnabled" wire:change="toggleAutoRefresh" class="h-4 w-4 text-gray-900 border-gray-300 rounded" />
+                        <span class="ms-2 text-sm text-gray-700">{{ __('pages.benchmarks.auto_refresh') }}</span>
                     </label>
                 </div>
 
-                <button wire:click="refreshData" wire:loading.attr="disabled" class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
-                    <x-heroicon-o-arrow-path class="h-4 w-4 mr-2" wire:loading.class="animate-spin" wire:target="refreshData" />
+                <button wire:click="refreshData" wire:loading.attr="disabled" class="btn-primary w-full sm:w-auto">
+                    <x-heroicon-o-arrow-path class="h-4 w-4 me-2" wire:loading.class="animate-spin" wire:target="refreshData" />
                     <span class="hidden sm:inline">{{ __('pages.benchmarks.refresh') }}</span>
                     <span class="sm:hidden">{{ __('pages.benchmarks.refresh_data') }}</span>
                 </button>
@@ -40,11 +40,11 @@
         @if($loading)
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">
                 @for($i = 0; $i < 4; $i++)
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="card overflow-hidden">
                         <div class="p-5 animate-pulse">
                             <div class="flex items-center">
                                 <div class="h-12 w-12 bg-gray-200 rounded-lg"></div>
-                                <div class="ml-5 flex-1">
+                                <div class="ms-5 flex-1">
                                     <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                                     <div class="h-8 bg-gray-200 rounded w-1/2"></div>
                                 </div>
@@ -56,79 +56,145 @@
         @endif
 
         {{-- Enhanced Filters --}}
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-3 sm:space-y-0">
-                <div class="flex items-center space-x-3">
-                    <h3 class="text-lg font-medium text-gray-900">{{ __('filters.benchmark_filters') }}</h3>
+        <div class="filter-bar">
+            <div class="flex items-center justify-between mb-4 w-full">
+                <div class="flex items-center gap-x-3">
+                    <h3 class="micro-label">{{ __('filters.benchmark_filters') }}</h3>
                     @php $activeFilterCount = count($selectedPlatforms) + count($selectedIndustries) + count($selectedCountries) + count($selectedCategories) + count($selectedSubCategories) + count($selectedFunnelStages); @endphp
                     @if($activeFilterCount > 0)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
-                            {{ $activeFilterCount }} {{ __('active') }}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">
+                            {{ $activeFilterCount }} {{ __('common.active') }}
                         </span>
                     @endif
                 </div>
                 @if($activeFilterCount > 0)
-                    <button wire:click="clearFilters" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                        <x-heroicon-o-x-mark class="h-4 w-4 mr-2" />
+                    <button wire:click="clearFilters" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-900">
+                        <x-heroicon-o-x-mark class="h-4 w-4 me-2" />
                         {{ __('filters.clear_all') }}
                     </button>
                 @endif
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full">
                 {{-- Platform --}}
-                <x-select2-multi
-                    wire-model="selectedPlatforms"
-                    :options="$availablePlatforms"
-                    :label="__('labels.platform')"
-                    icon="heroicon-o-server"
-                    :placeholder="__('All Platforms')"
-                />
+                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
+                    <label class="micro-label block mb-1">
+                        <x-heroicon-o-server class="h-4 w-4 inline me-1 text-gray-400" />
+                        {{ __('labels.platform') }}
+                    </label>
+                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                        <span class="truncate">{{ empty($selectedPlatforms) ? __('filters.all_platforms') : trans_choice('common.selected_count', count($selectedPlatforms)) }}</span>
+                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                        @foreach($availablePlatforms as $value => $label)
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="{{ $value }}" wire:model.live="selectedPlatforms" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
+                                <span class="text-gray-700">{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
                 {{-- Industry --}}
-                <x-select2-multi
-                    wire-model="selectedIndustries"
-                    :options="array_merge(['' => __('All')], collect($availableIndustries)->mapWithKeys(fn($ind) => [$ind => $this->getIndustryLabel($ind)])->all())"
-                    :label="__('labels.industry')"
-                    icon="heroicon-o-building-office"
-                    :placeholder="__('All Industries')"
-                />
+                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
+                    <label class="micro-label block mb-1">
+                        <x-heroicon-o-building-office class="h-4 w-4 inline me-1 text-gray-400" />
+                        {{ __('labels.industry') }}
+                    </label>
+                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                        <span class="truncate">{{ empty($selectedIndustries) ? __('filters.all_industries') : trans_choice('common.selected_count', count($selectedIndustries)) }}</span>
+                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                        @foreach($availableIndustries as $ind)
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="{{ $ind }}" wire:model.live="selectedIndustries" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
+                                <span class="text-gray-700">{{ $this->getIndustryLabel($ind) }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
                 {{-- Country --}}
-                <x-select2-multi
-                    wire-model="selectedCountries"
-                    :options="array_merge(['' => __('All')], array_combine($availableCountries, $availableCountries))"
-                    :label="__('labels.country')"
-                    icon="heroicon-o-globe-alt"
-                    :placeholder="__('All Countries')"
-                />
+                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
+                    <label class="micro-label block mb-1">
+                        <x-heroicon-o-globe-alt class="h-4 w-4 inline me-1 text-gray-400" />
+                        {{ __('labels.country') }}
+                    </label>
+                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                        <span class="truncate">{{ empty($selectedCountries) ? __('filters.all_countries') : trans_choice('common.selected_count', count($selectedCountries)) }}</span>
+                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                        @foreach($availableCountries as $country)
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="{{ $country }}" wire:model.live="selectedCountries" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
+                                <span class="text-gray-700">{{ $country }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
                 {{-- Category --}}
-                <x-select2-multi
-                    wire-model="selectedCategories"
-                    :options="array_merge(['' => __('All')], $availableCategories)"
-                    :label="__('Category')"
-                    icon="heroicon-o-tag"
-                    :placeholder="__('All Categories')"
-                />
+                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
+                    <label class="micro-label block mb-1">
+                        <x-heroicon-o-tag class="h-4 w-4 inline me-1 text-gray-400" />
+                        {{ __('labels.category') }}
+                    </label>
+                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                        <span class="truncate">{{ empty($selectedCategories) ? __('filters.all_categories') : trans_choice('common.selected_count', count($selectedCategories)) }}</span>
+                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                        @foreach($availableCategories as $cat => $catLabel)
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="{{ $cat }}" wire:model.live="selectedCategories" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
+                                <span class="text-gray-700">{{ $catLabel }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
-                {{-- Sub-Category --}}
-                <x-select2-multi
-                    wire-model="selectedSubCategories"
-                    :options="array_merge(['' => __('All')], $availableSubCategories)"
-                    :label="__('Sub-Category')"
-                    icon="heroicon-o-tag"
-                    :placeholder="__('All Sub-Categories')"
-                />
+                {{-- Account Sub-Category --}}
+                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
+                    <label class="micro-label block mb-1">
+                        <x-heroicon-o-tag class="h-4 w-4 inline me-1 text-gray-400" />
+                        {{ __('labels.sub_category') }}
+                    </label>
+                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                        <span class="truncate">{{ empty($selectedSubCategories) ? __('filters.all_sub_industries') : trans_choice('common.selected_count', count($selectedSubCategories)) }}</span>
+                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                        @foreach($availableSubCategories as $sub => $subLabel)
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="{{ $sub }}" wire:model.live="selectedSubCategories" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
+                                <span class="text-gray-700">{{ $subLabel }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
                 {{-- Funnel Stage --}}
-                <x-select2-multi
-                    wire-model="selectedFunnelStages"
-                    :options="array_merge(['' => __('All')], collect($availableFunnelStages)->mapWithKeys(fn($s) => [$s => $s])->all())"
-                    :label="__('funnel_stages.label')"
-                    icon="heroicon-o-funnel"
-                    :placeholder="__('All Stages')"
-                />
+                <div x-data="{ open: false }" @keydown.escape.window="open = false" class="relative">
+                    <label class="micro-label block mb-1">
+                        <x-heroicon-o-funnel class="h-4 w-4 inline me-1 text-gray-400" />
+                        {{ __('funnel_stages.label') }}
+                    </label>
+                    <button @click="open = !open" type="button" class="input-field px-3 py-2 text-start flex items-center justify-between">
+                        <span class="truncate">{{ empty($selectedFunnelStages) ? __('filters.all_stages') : trans_choice('common.selected_count', count($selectedFunnelStages)) }}</span>
+                        <svg class="h-4 w-4 text-gray-400 flex-shrink-0 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute z-50 w-full mt-1 card max-h-60 overflow-y-auto p-1.5">
+                        @foreach($availableFunnelStages as $stage)
+                            <label class="flex items-center gap-x-2 text-sm px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" value="{{ $stage }}" wire:model.live="selectedFunnelStages" class="h-4 w-4 text-gray-900 border-gray-300 rounded">
+                                <span class="text-gray-700">{{ $stage }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
                 {{-- Date Range --}}
                 <x-date-range-picker
@@ -141,20 +207,20 @@
 
         {{-- Filter Status Indicator --}}
         @if(count($selectedIndustries) > 0 || count($selectedPlatforms) > 0 || count($selectedCountries) > 0)
-            <div class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p class="text-sm text-blue-700">
-                    <span class="font-semibold">{{ __('pages.benchmarks.filtered_view.label') }}</span>
+            <div class="rounded-xl border border-gray-200 bg-gray-100 px-4 py-3">
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold text-gray-900">{{ __('pages.benchmarks.filtered_view.label') }}</span>
                     {{ __('pages.benchmarks.filtered_view.showing') }} {{ $summary['total_accounts'] }}
                     {{ __('pages.benchmarks.filtered_view.of') }} {{ $unfilteredSummary['total_accounts'] }}
                     {{ __('pages.benchmarks.filtered_view.accounts') }}
                     @foreach($selectedIndustries as $ind)
-                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ $this->getIndustryLabel($ind) }}</span>
+                        <span class="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">{{ $this->getIndustryLabel($ind) }}</span>
                     @endforeach
                     @foreach($selectedPlatforms as $pl)
-                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ ucfirst($pl) }}</span>
+                        <span class="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">{{ ucfirst($pl) }}</span>
                     @endforeach
                     @foreach($selectedCountries as $ctry)
-                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ $ctry }}</span>
+                        <span class="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide bg-[#F1F1EF] text-[#6B6B66]">{{ $ctry }}</span>
                     @endforeach
                 </p>
             </div>
@@ -163,7 +229,7 @@
         {{-- Main Content --}}
         @if($loading)
             {{-- Loading Skeleton --}}
-            <div class="bg-white shadow rounded-lg mb-6">
+            <div class="card mb-6">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                     <div class="animate-pulse">
                         <div class="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
@@ -176,104 +242,104 @@
             </div>
         @else
             {{-- Your Performance Overview --}}
-            <div class="bg-white shadow rounded-lg mb-6">
+            <div class="card mb-6">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">{{ __('pages.benchmarks.your_performance_title') }}</h3>
+                    <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.your_performance_title') }}</h3>
                     <p class="mt-1 text-sm text-gray-500">{{ __('pages.benchmarks.your_performance_subtitle') }}</p>
                 </div>
                 <div class="px-4 py-5 sm:p-6">
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {{-- Industries Tracked --}}
-                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                        <div class="kpi-card">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-medium text-blue-600">{{ __('pages.benchmarks.industries_tracked') }}</p>
-                                    <p class="text-xl font-bold text-blue-900">{{ $yourOverallMetrics['industries_count'] }}</p>
+                                    <p class="kpi-label">{{ __('pages.benchmarks.industries_tracked') }}</p>
+                                    <p class="kpi-value">{{ $yourOverallMetrics['industries_count'] }}</p>
                                 </div>
-                                <div class="p-2 bg-blue-200 rounded-full"><x-heroicon-o-chart-bar class="h-5 w-5 text-blue-600" /></div>
+                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-chart-bar class="h-5 w-5" /></div>
                             </div>
                         </div>
 
                         {{-- Total Accounts --}}
-                        <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
+                        <div class="kpi-card">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-medium text-purple-600">{{ __('pages.benchmarks.total_accounts') }}</p>
-                                    <p class="text-xl font-bold text-purple-900">{{ $yourOverallMetrics['accounts_count'] }}</p>
+                                    <p class="kpi-label">{{ __('pages.benchmarks.total_accounts') }}</p>
+                                    <p class="kpi-value">{{ $yourOverallMetrics['accounts_count'] }}</p>
                                 </div>
-                                <div class="p-2 bg-purple-200 rounded-full"><x-heroicon-o-building-office class="h-5 w-5 text-purple-600" /></div>
+                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-building-office class="h-5 w-5" /></div>
                             </div>
-                            <p class="text-xs text-purple-600 mt-1">{{ $yourOverallMetrics['campaigns_count'] }} {{ __('pages.benchmarks.campaigns') }}</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ $yourOverallMetrics['campaigns_count'] }} {{ __('pages.benchmarks.campaigns') }}</p>
                         </div>
 
                         {{-- Total Spend --}}
-                        <div class="bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg p-4">
+                        <div class="kpi-card">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-medium text-primary-600">{{ __('pages.benchmarks.total_spend') }}</p>
-                                    <p class="text-xl font-bold text-primary-900">{{ $this->formatCurrency($yourOverallMetrics['total_spend']) }}</p>
+                                    <p class="kpi-label">{{ __('pages.benchmarks.total_spend') }}</p>
+                                    <p class="kpi-value">{{ $this->formatCurrency($yourOverallMetrics['total_spend']) }}</p>
                                 </div>
-                                <div class="p-2 bg-primary-200 rounded-full"><x-heroicon-o-currency-dollar class="h-5 w-5 text-primary-600" /></div>
+                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-currency-dollar class="h-5 w-5" /></div>
                             </div>
                         </div>
 
                         {{-- Total Impressions --}}
-                        <div class="bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg p-4">
+                        <div class="kpi-card">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-medium text-cyan-600">{{ __('pages.benchmarks.total_impressions') }}</p>
-                                    <p class="text-xl font-bold text-cyan-900">{{ $this->formatNumber($yourOverallMetrics['total_impressions']) }}</p>
+                                    <p class="kpi-label">{{ __('pages.benchmarks.total_impressions') }}</p>
+                                    <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_impressions']) }}</p>
                                 </div>
-                                <div class="p-2 bg-cyan-200 rounded-full"><x-heroicon-o-eye class="h-5 w-5 text-cyan-600" /></div>
+                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-eye class="h-5 w-5" /></div>
                             </div>
                         </div>
 
                         {{-- Total Clicks --}}
-                        <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
+                        <div class="kpi-card">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-medium text-green-600">{{ __('pages.benchmarks.total_clicks') }}</p>
-                                    <p class="text-xl font-bold text-green-900">{{ $this->formatNumber($yourOverallMetrics['total_clicks']) }}</p>
+                                    <p class="kpi-label">{{ __('pages.benchmarks.total_clicks') }}</p>
+                                    <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_clicks']) }}</p>
                                 </div>
-                                <div class="p-2 bg-green-200 rounded-full"><x-heroicon-o-cursor-arrow-rays class="h-5 w-5 text-green-600" /></div>
+                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-cursor-arrow-rays class="h-5 w-5" /></div>
                             </div>
-                            <p class="text-xs text-green-600 mt-1">CTR: {{ number_format($yourPerformanceIndicators['ctr'], 2) }}%</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ __('kpis.ctr') }}: {{ number_format($yourPerformanceIndicators['ctr'], 2) }}%</p>
                         </div>
 
                         {{-- Total Conversions --}}
-                        <div class="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-4">
+                        <div class="kpi-card">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-xs font-medium text-amber-600">{{ __('pages.benchmarks.total_conversions') }}</p>
-                                    <p class="text-xl font-bold text-amber-900">{{ $this->formatNumber($yourOverallMetrics['total_conversions']) }}</p>
+                                    <p class="kpi-label">{{ __('pages.benchmarks.total_conversions') }}</p>
+                                    <p class="kpi-value">{{ $this->formatNumber($yourOverallMetrics['total_conversions']) }}</p>
                                 </div>
-                                <div class="p-2 bg-amber-200 rounded-full"><x-heroicon-o-check-circle class="h-5 w-5 text-amber-600" /></div>
+                                <div class="p-2 bg-gray-100 rounded-full text-gray-400"><x-heroicon-o-check-circle class="h-5 w-5" /></div>
                             </div>
-                            <p class="text-xs text-amber-600 mt-1">CVR: {{ number_format($yourPerformanceIndicators['cvr'], 2) }}%</p>
+                            <p class="text-xs text-gray-500 mt-1">{{ __('kpis.cvr') }}: {{ number_format($yourPerformanceIndicators['cvr'], 2) }}%</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             {{-- Industry Benchmarks Container --}}
-            <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <div class="card overflow-hidden">
                 <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">{{ __('pages.benchmarks.performance.comparison_title') }}</h3>
+                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.performance.comparison_title') }}</h3>
                             <p class="mt-1 text-sm text-gray-500">{{ __('pages.benchmarks.performance.comparison_description') }}</p>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm text-gray-700">{{ __('pages.benchmarks.performance.sort_by') }}</span>
+                        <div class="flex items-center gap-x-2">
+                            <span class="micro-label">{{ __('pages.benchmarks.performance.sort_by') }}</span>
                             <div class="w-48">
-                                <x-select2
-                                    wire-model="sortField"
-                                    :options="['name' => __('pages.benchmarks.performance.sort_industry_name'), 'accounts_count' => __('pages.benchmarks.performance.sort_accounts'), 'total_spend' => __('pages.benchmarks.performance.sort_spend'), 'total_leads' => __('pages.benchmarks.performance.sort_leads')]"
-                                    :allow-clear="false"
-                                    :searchable="false"
-                                />
+                                <select wire:model="sortField" class="input-field">
+                                    <option value="name">{{ __('pages.benchmarks.performance.sort_industry_name') }}</option>
+                                    <option value="accounts_count">{{ __('pages.benchmarks.performance.sort_accounts') }}</option>
+                                    <option value="total_spend">{{ __('pages.benchmarks.performance.sort_spend') }}</option>
+                                    <option value="total_leads">{{ __('pages.benchmarks.performance.sort_leads') }}</option>
+                                </select>
                             </div>
-                            <button wire:click="toggleSortDirection" class="p-1 hover:bg-gray-100 rounded transition-colors duration-150">
+                            <button wire:click="toggleSortDirection" class="p-1.5 text-gray-400 hover:text-gray-900 rounded hover:bg-gray-100 transition">
                                 @if($sortDirection === 'asc')
                                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
                                 @else
@@ -286,27 +352,27 @@
 
                 {{-- View Mode Toggle --}}
                 <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-sm font-medium text-gray-700 mr-2">{{ __('View') }}:</span>
-                        <button wire:click="$set('viewMode', 'card')" class="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'card' ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            <x-heroicon-o-squares-2x2 class="h-5 w-5 mr-1.5" />
-                            {{ __('Cards') }}
+                    <div class="flex items-center gap-x-2">
+                        <span class="text-sm text-gray-500 me-2">{{ __('common.view') }}:</span>
+                        <button wire:click="$set('viewMode', 'card')" class="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'card' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            <x-heroicon-o-squares-2x2 class="h-5 w-5 me-1.5" />
+                            {{ __('common.cards') }}
                         </button>
-                        <button wire:click="$set('viewMode', 'table')" class="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'table' ? 'bg-primary-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            <x-heroicon-o-table-cells class="h-5 w-5 mr-1.5" />
-                            {{ __('Table') }}
+                        <button wire:click="$set('viewMode', 'table')" class="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors {{ $viewMode === 'table' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            <x-heroicon-o-table-cells class="h-5 w-5 me-1.5" />
+                            {{ __('common.table') }}
                         </button>
                     </div>
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center gap-x-3">
                         {{-- Search --}}
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                                 <x-heroicon-o-magnifying-glass class="h-4 w-4 text-gray-400" />
                             </div>
-                            <input wire:model.live.debounce.300ms="searchQuery" type="text" placeholder="{{ __('pages.benchmarks.search_placeholder') }}" class="block w-full md:w-64 pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
+                            <input wire:model.live.debounce.300ms="searchQuery" type="text" placeholder="{{ __('pages.benchmarks.search_placeholder') }}" class="input-field ps-9 md:w-64" />
                         </div>
                         <span class="text-sm text-gray-500 whitespace-nowrap">
-                            {{ count($filteredIndustries) }} {{ $tableGroupBy === 'client' ? __('clients') : __('industries') }}
+                            {{ count($filteredIndustries) }} {{ $tableGroupBy === 'client' ? __('common.clients') : __('common.industries') }}
                         </span>
                     </div>
                 </div>
@@ -315,23 +381,23 @@
                 @if($viewMode === 'card')
                     <div class="p-4">
                         @if(count($filteredIndustries) === 0)
-                            <div class="text-center py-8">
-                                <p class="text-gray-500">{{ __('pages.benchmarks.performance.no_industries') }}</p>
+                            <div class="empty-state">
+                                <p class="empty-title">{{ __('pages.benchmarks.performance.no_industries') }}</p>
                             </div>
                         @else
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 @foreach($filteredIndustries as $industryKey => $industry)
-                                    <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-150">
-                                        <button wire:click="showIndustryAccounts('{{ $industry['industry_slug'] ?? $industryKey }}')" class="text-base font-medium text-gray-900 mb-1 hover:text-primary-600 hover:underline cursor-pointer text-left">
+                                    <div class="card p-4">
+                                        <button wire:click="showIndustryAccounts('{{ $industry['industry_slug'] ?? $industryKey }}')" class="text-base font-semibold tracking-tight text-gray-900 mb-1 hover:underline cursor-pointer text-start">
                                             {{ $industry['industry'] ?? $this->getIndustryLabel($industryKey) }}
                                         </button>
 
                                         {{-- Industry Summary --}}
                                         <div class="flex items-center justify-between text-xs text-gray-500 mb-3 pb-2 border-b border-gray-100">
                                             <button wire:click="showIndustryAccounts('{{ $industry['industry_slug'] ?? $industryKey }}')"
-                                                class="inline-flex items-center text-primary-600 hover:text-primary-800 hover:underline">
-                                                <x-heroicon-o-eye class="h-3 w-3 mr-1" />
-                                                {{ $industry['accounts_count'] ?? 0 }} {{ ($industry['accounts_count'] ?? 0) === 1 ? __('benchmarks.account') : __('benchmarks.accounts') }}
+                                                class="inline-flex items-center text-gray-500 hover:text-gray-900 hover:underline">
+                                                <x-heroicon-o-eye class="h-3 w-3 me-1" />
+                                                {{ trans_choice('common.accounts', $industry['accounts_count'] ?? 0) }}
                                             </button>
                                             <span class="font-medium">{{ $this->formatCurrency($industry['total_spend'] ?? 0) }}</span>
                                         </div>
@@ -344,7 +410,7 @@
                                                     <div>
                                                         <div class="flex items-center justify-between text-sm">
                                                             <span class="text-gray-600">{{ $this->getMetricLabel($metricKey) }}:</span>
-                                                            <div class="flex items-center space-x-2">
+                                                            <div class="flex items-center gap-x-2">
                                                                 <span class="font-medium text-gray-900">{{ $this->formatMetricValue($metricKey, $metric['actual'] ?? null) }}</span>
                                                                 @if(isset($metric['status']))
                                                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $this->getStatusBadgeClass($metric['status']) }}">
@@ -355,7 +421,7 @@
                                                         </div>
                                                         @if(isset($metric['benchmark']))
                                                             <div class="flex items-center justify-end text-xs text-gray-500 mt-0.5">
-                                                                <span>Benchmark: <span class="font-medium">{{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}</span></span>
+                                                                <span>{{ __('common.benchmark') }}: <span class="font-medium">{{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}</span></span>
                                                             </div>
                                                         @endif
                                                     </div>
@@ -372,63 +438,55 @@
                 {{-- Table View --}}
                 @if($viewMode === 'table')
                     <div x-data="resizableTable" x-init="loadWidths()" @mousemove.window="onResize($event)" @mouseup.window="stopResize()">
-                    <div x-data="benchmarkTable({
-                        rows: @js($tableData),
-                        filterOptions: @js($columnFilterOptions),
-                        initialFilters: @js($columnFilters),
-                        initialSort: { field: '{{ $tableSortField }}', dir: '{{ $tableSortDirection }}' },
-                        initialVisibleColumns: @js($visibleColumns),
-                        showAllSpend: {{ $showAllSpend ? 'true' : 'false' }},
-                    })">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex-1">
-                                <h2 class="text-base font-medium text-gray-900">
+                                <h2 class="text-base font-semibold tracking-tight text-gray-900">
                                     {{ $tableGroupBy === 'industry' ? __('pages.benchmarks.industry_performance') : __('Client Performance') }}
                                 </h2>
                                 <p class="text-sm text-gray-600 mt-1">{{ __('pages.benchmarks.hierarchical_breakdown') }}</p>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center gap-x-3">
                                 {{-- Group By Toggle --}}
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-sm text-gray-700">{{ __('Group by') }}:</span>
-                                    <button wire:click="$set('tableGroupBy', 'industry')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'industry' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        {{ __('Industry') }}
+                                <div class="flex items-center gap-x-2">
+                                    <span class="text-sm text-gray-700">{{ __('labels.group_by') }}:</span>
+                                    <button wire:click="$set('tableGroupBy', 'industry')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'industry' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                        {{ __('labels.industry') }}
                                     </button>
-                                    <button wire:click="$set('tableGroupBy', 'client')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'client' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                                        {{ __('Client') }}
+                                    <button wire:click="$set('tableGroupBy', 'client')" class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tableGroupBy === 'client' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                        {{ __('labels.client') }}
                                     </button>
                                 </div>
 
                                 {{-- Column Selector --}}
                                 <div class="relative" x-data="{ open: false }">
-                                    <button @click="open = !open" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                                    <button @click="open = !open" class="btn-secondary">
+                                        <svg class="h-4 w-4 me-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
                                         {{ __('pages.benchmarks.columns_button') }}
                                     </button>
 
-                                    <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                    <div x-show="open" @click.outside="open = false" x-transition class="absolute end-0 mt-2 w-72 card z-50">
                                         <div class="p-3 border-b border-gray-200">
-                                            <h4 class="text-sm font-semibold text-gray-900">{{ __('pages.benchmarks.select_columns') }}</h4>
+                                            <h4 class="text-sm font-semibold tracking-tight text-gray-900">{{ __('pages.benchmarks.select_columns') }}</h4>
                                         </div>
                                         <div class="max-h-80 overflow-y-auto p-2">
-                                            @foreach(['account' => __('pages.benchmarks.column_groups.ad_account_level'), 'campaign' => __('pages.benchmarks.column_groups.campaign_level'), 'volume' => __('pages.benchmarks.column_groups.volume_metrics'), 'efficiency' => __('pages.benchmarks.column_groups.efficiency_metrics')] as $group => $groupLabel)
+                                            @foreach(['account' => __('pages.benchmarks.column_groups.ad_account_level'), 'campaign' => __('pages.benchmarks.column_groups.campaign_level'), 'volume' => __('pages.benchmarks.column_groups.volume_metrics'), 'efficiency' => __('pages.benchmarks.column_groups.efficiency_metrics'), 'global' => __('pages.benchmarks.column_groups.global_benchmarks')] as $group => $groupLabel)
                                                 <div class="mb-3">
                                                     <div class="flex items-center justify-between px-2 py-1">
-                                                        <span class="text-xs font-semibold text-gray-700 uppercase">{{ $groupLabel }}</span>
-                                                        <div class="flex space-x-1">
-                                                            <button @click="toggleGroupColumns('{{ $group }}', true)" class="text-xs text-blue-600 hover:underline">{{ __('All') }}</button>
+                                                        <span class="micro-label">{{ $groupLabel }}</span>
+                                                        <div class="flex gap-x-1">
+                                                            <button wire:click="toggleGroupColumns('{{ $group }}', true)" class="text-xs text-gray-500 hover:text-gray-900 hover:underline">{{ __('filters.all') }}</button>
                                                             <span class="text-gray-300">|</span>
-                                                            <button @click="toggleGroupColumns('{{ $group }}', false)" class="text-xs text-blue-600 hover:underline">{{ __('None') }}</button>
+                                                            <button wire:click="toggleGroupColumns('{{ $group }}', false)" class="text-xs text-gray-500 hover:text-gray-900 hover:underline">{{ __('common.none') }}</button>
                                                         </div>
                                                     </div>
                                                     <div class="space-y-1">
                                                         @foreach(collect($columnConfig)->where('group', $group) as $col)
                                                             <label class="flex items-center px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer {{ ($col['locked'] ?? false) ? 'opacity-50' : '' }}">
-                                                                <input type="checkbox" @click.prevent="toggleColumn('{{ $col['key'] }}')" :checked="isColumnVisible('{{ $col['key'] }}')" {{ ($col['locked'] ?? false) ? 'disabled' : '' }} class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
-                                                                <span class="ml-2 text-sm text-gray-700">{{ $col['label'] }}</span>
+                                                                <input type="checkbox" wire:click.prevent="toggleColumn('{{ $col['key'] }}')" @checked($col['key'] === 'industry' || ($visibleColumns[$col['key']] ?? false)) {{ ($col['locked'] ?? false) ? 'disabled' : '' }} class="h-4 w-4 text-gray-900 border-gray-300 rounded" />
+                                                                <span class="ms-2 text-sm text-gray-700">{{ $col['label'] }}</span>
                                                                 @if($col['locked'] ?? false)
-                                                                    <span class="ml-auto text-xs text-gray-400">({{ __('required') }})</span>
+                                                                    <span class="ms-auto text-xs text-gray-400">({{ __('common.required') }})</span>
                                                                 @endif
                                                             </label>
                                                         @endforeach
@@ -436,8 +494,8 @@
                                                 </div>
                                             @endforeach
                                         </div>
-                                        <div class="p-2 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-                                            <button @click="open = false" class="w-full px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                        <div class="p-2 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                                            <button @click="open = false" class="btn-secondary w-full justify-center">
                                                 {{ __('pages.benchmarks.column_actions.done') }}
                                             </button>
                                         </div>
@@ -445,33 +503,32 @@
                                 </div>
 
                                 {{-- Clear Filters --}}
-                                <template x-if="hasActiveFilters">
-                                    <button @click="clearFilters()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        {{ __('Clear filters') }}
+                                @if($this->hasActiveColumnFilters)
+                                    <button wire:click="clearColumnFilters" class="btn-secondary">
+                                        <svg class="h-4 w-4 me-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        {{ __('filters.clear_filters') }}
                                     </button>
-                                </template>
+                                @endif
 
                                 {{-- Toggle Spend Visibility --}}
-                                <button @click="showAllSpend = !showAllSpend" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                    <template x-if="showAllSpend">
+                                <button wire:click="$toggle('showAllSpend')" class="btn-secondary">
+                                    @if($showAllSpend)
                                         <span class="inline-flex items-center">
-                                            <x-heroicon-o-eye-slash class="h-4 w-4 mr-2 text-gray-500" />
-                                            {{ __('Hide spend') }}
+                                            <x-heroicon-o-eye-slash class="h-4 w-4 me-2 text-gray-500" />
+                                            {{ __('common.hide_spend') }}
                                         </span>
-                                    </template>
-                                    <template x-if="!showAllSpend">
+                                    @else
                                         <span class="inline-flex items-center">
-                                            <x-heroicon-o-eye class="h-4 w-4 mr-2 text-gray-500" />
-                                            {{ __('Show spend') }}
+                                            <x-heroicon-o-eye class="h-4 w-4 me-2 text-gray-500" />
+                                            {{ __('common.show_spend') }}
                                         </span>
-                                    </template>
+                                    @endif
                                 </button>
 
                                 {{-- Reset Column Widths --}}
-                                <button @click="resetWidths()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                    <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                                    {{ __('Reset widths') }}
+                                <button @click="resetWidths()" class="btn-secondary">
+                                    <svg class="h-4 w-4 me-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                                    {{ __('common.reset_widths') }}
                                 </button>
                             </div>
                         </div>
@@ -479,159 +536,212 @@
 
                     {{-- Hierarchical Table --}}
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <table class="data-table">
                             <thead class="bg-gray-50 sticky top-0 z-10">
-                                <tr class="border-b-2 border-gray-300">
-                                    <th x-show="getVisibleColumnCount('account') > 0" :colspan="getVisibleColumnCount('account')" class="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase bg-blue-50 border-r border-gray-300">{{ __('pages.benchmarks.column_groups.ad_account_level') }}</th>
-                                    <th x-show="getVisibleColumnCount('campaign') > 0" :colspan="getVisibleColumnCount('campaign')" class="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase bg-green-50 border-r border-gray-300">{{ __('pages.benchmarks.column_groups.campaign_level') }}</th>
-                                    <th x-show="getVisibleColumnCount('volume') > 0" :colspan="getVisibleColumnCount('volume')" class="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase bg-purple-50 border-r border-gray-300">{{ __('pages.benchmarks.column_groups.volume_metrics') }}</th>
-                                    <th x-show="getVisibleColumnCount('efficiency') > 0" :colspan="getVisibleColumnCount('efficiency')" class="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase bg-amber-50">{{ __('pages.benchmarks.column_groups.efficiency_metrics') }}</th>
+                                <tr class="border-b-2 border-gray-200">
+                                    @if(($visibleGroupCounts['account'] ?? 0) > 0)
+                                        <th colspan="{{ $visibleGroupCounts['account'] }}" class="text-center border-e border-gray-200">{{ __('pages.benchmarks.column_groups.ad_account_level') }}</th>
+                                    @endif
+                                    @if(($visibleGroupCounts['campaign'] ?? 0) > 0)
+                                        <th colspan="{{ $visibleGroupCounts['campaign'] }}" class="text-center border-e border-gray-200">{{ __('pages.benchmarks.column_groups.campaign_level') }}</th>
+                                    @endif
+                                    @if(($visibleGroupCounts['volume'] ?? 0) > 0)
+                                        <th colspan="{{ $visibleGroupCounts['volume'] }}" class="text-center border-e border-gray-200">{{ __('pages.benchmarks.column_groups.volume_metrics') }}</th>
+                                    @endif
+                                    @if(($visibleGroupCounts['efficiency'] ?? 0) > 0)
+                                        <th colspan="{{ $visibleGroupCounts['efficiency'] }}" class="text-center border-e border-gray-200">{{ __('pages.benchmarks.column_groups.efficiency_metrics') }}</th>
+                                    @endif
+                                    @if(($visibleGroupCounts['global'] ?? 0) > 0)
+                                        <th colspan="{{ $visibleGroupCounts['global'] }}" class="text-center">{{ __('pages.benchmarks.column_groups.global_benchmarks') }}</th>
+                                    @endif
                                 </tr>
                                 <tr>
                                     @foreach($columnConfig as $col)
                                         @php
                                             $key = $col['key'];
+                                            $isVisible = $key === 'industry' || ($visibleColumns[$key] ?? false);
                                             $bgClass = match($col['group']) {
                                                 'account' => 'bg-blue-50',
                                                 'campaign' => 'bg-green-50',
                                                 'volume' => 'bg-purple-50',
                                                 'efficiency' => 'bg-amber-50',
+                                                'global' => 'bg-teal-50',
                                                 default => 'bg-gray-50',
                                             };
-                                            $borderClass = in_array($key, ['subCategory', 'funnelStage', 'conversions']) ? 'border-r border-gray-300' : '';
-                                            $alignClass = in_array($col['group'], ['volume', 'efficiency']) ? 'text-right' : 'text-left';
+                                            $borderClass = in_array($key, ['subCategory', 'funnelStage', 'conversions', 'cpi']) ? 'border-e border-gray-300' : '';
+                                            $alignClass = in_array($col['group'], ['volume', 'efficiency']) ? 'text-end' : 'text-start';
                                         @endphp
-                                        <th x-show="isColumnVisible('{{ $key }}')" class="px-2 py-2 {{ $alignClass }} text-xs font-medium text-gray-600 uppercase {{ $bgClass }} {{ $borderClass }} relative" :style="colStyle('{{ $key }}', '{{ $col['width'] ?? 'auto' }}')">
-                                            @if($col['sortable'] ?? false)
-                                                <button @click="sortBy('{{ $key }}')" class="inline-flex items-center gap-1 hover:text-gray-900">
+                                        @if($isVisible)
+                                            <th class="{{ $alignClass }} {{ $bgClass }} {{ $borderClass }} relative" :style="colStyle('{{ $key }}', '{{ $col['width'] ?? 'auto' }}')">
+                                                @if($col['sortable'] ?? false)
+                                                    <button wire:click="sortBy('{{ $key }}')" class="inline-flex items-center gap-1 hover:text-gray-900">
+                                                        <span>{{ $col['label'] }}</span>
+                                                        @if($tableSortField === $key)
+                                                            @if($tableSortDirection === 'asc')
+                                                                <svg class="h-3 w-3 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                                                            @else
+                                                                <svg class="h-3 w-3 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                            @endif
+                                                        @else
+                                                            <svg class="h-3 w-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                                                        @endif
+                                                    </button>
+                                                @else
                                                     <span>{{ $col['label'] }}</span>
-                                                    <template x-if="isSorted('{{ $key }}')">
-                                                        <span>
-                                                            <svg x-show="isSortAsc()" class="h-3 w-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-                                                            <svg x-show="!isSortAsc()" class="h-3 w-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                                        </span>
-                                                    </template>
-                                                    <template x-if="!isSorted('{{ $key }}')">
-                                                        <svg class="h-3 w-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
-                                                    </template>
-                                                </button>
-                                            @else
-                                                <span>{{ $col['label'] }}</span>
-                                            @endif
-                                            <div @mousedown.prevent="startResize($event, '{{ $key }}')" class="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group" title="Drag to resize">
-                                                <div class="absolute right-1 top-1 bottom-1 w-px bg-gray-300 group-hover:bg-primary-500 transition-colors"></div>
-                                            </div>
-                                        </th>
+                                                @endif
+                                                <div @mousedown.prevent="startResize($event, '{{ $key }}')" class="absolute end-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group" title="{{ __('common.drag_to_resize') }}">
+                                                    <div class="absolute end-1 top-1 bottom-1 w-px bg-gray-300 group-hover:bg-gray-500 transition-colors"></div>
+                                                </div>
+                                            </th>
+                                        @endif
                                     @endforeach
                                 </tr>
                                 <tr class="border-b border-gray-200">
                                     @foreach($columnConfig as $col)
                                         @php
                                             $key = $col['key'];
+                                            $isVisible = $key === 'industry' || ($visibleColumns[$key] ?? false);
                                             $bgClass = match($col['group']) {
                                                 'account' => 'bg-blue-50',
                                                 'campaign' => 'bg-green-50',
                                                 'volume' => 'bg-purple-50',
                                                 'efficiency' => 'bg-amber-50',
+                                                'global' => 'bg-teal-50',
                                                 default => 'bg-gray-50',
                                             };
                                         @endphp
-                                        <th x-show="isColumnVisible('{{ $key }}')" class="px-2 py-1 {{ $bgClass }}">
-                                            @if(in_array($key, ['industry', 'country', 'category', 'subCategory', 'funnelStage', 'campaignObjective']))
-                                                <div class="filter-select2-wrap">
+                                        @if($isVisible)
+                                            <th class="{{ $bgClass }}">
+                                                @php
+                                                    $opts = $columnFilterOptions[$key] ?? [];
+                                                    $selectOptions = array_combine($opts, $opts);
+                                                @endphp
+                                                <div class="select2-compact">
                                                     <x-select2
-                                                        alpineKey="{{ $key }}"
-                                                        :options="array_merge(['' => __('All')], array_combine($columnFilterOptions[$key] ?? [], $columnFilterOptions[$key] ?? []))"
-                                                        :allowClear="false"
+                                                        wireModel="columnFilters.{{ $key }}"
+                                                        uid="col-filter-{{ $key }}-{{ count($opts) }}-{{ md5(json_encode($opts)) }}"
+                                                        placeholder="{{ __('filters.all') }}"
+                                                        :options="$selectOptions"
+                                                        :allowClear="true"
                                                         :searchable="true"
                                                     />
                                                 </div>
-                                            @elseif($key !== 'spend')
-                                                <input
-                                                    type="text"
-                                                    x-model.debounce.300ms="columnFilters.{{ $key }}"
-                                                    placeholder="{{ __('Filter') }}"
-                                                    class="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 bg-white placeholder-gray-300"
-                                                />
-                                            @else
-                                                <div class="h-7"></div>
-                                            @endif
-                                        </th>
+                                            </th>
+                                        @endif
                                     @endforeach
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
-                                <template x-for="row in sortedRows" :key="row._id">
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                        <td x-show="isColumnVisible('industry')" class="px-3 py-2 text-gray-700 font-medium truncate max-w-[150px]" :title="row.industry">
-                                            <button @click="$wire.showIndustryAccounts(row.industry_key)" class="text-primary-600 hover:text-primary-800 hover:underline cursor-pointer text-left font-medium" x-text="row.industry"></button>
-                                        </td>
-                                        <td x-show="isColumnVisible('country')" class="px-3 py-2 text-gray-700" x-text="row.country"></td>
-                                        <td x-show="isColumnVisible('category')" class="px-3 py-2 text-gray-700" x-text="row.category"></td>
-                                        <td x-show="isColumnVisible('subCategory')" class="px-3 py-2 text-gray-600" x-text="row.sub_category"></td>
-                                        <td x-show="isColumnVisible('funnelStage')" class="px-3 py-2 whitespace-nowrap">
-                                            <span :class="getFunnelBadgeClass(row.funnel_stage)" x-text="row.funnel_stage"></span>
-                                        </td>
-                                        <td x-show="isColumnVisible('campaignObjective')" class="px-3 py-2 text-gray-600 capitalize" x-text="row.campaignObjective"></td>
-                                        <td x-show="isColumnVisible('spend')" class="px-3 py-2 text-right text-gray-900 font-medium whitespace-nowrap">
-                                            <template x-if="showAllSpend">
-                                                <span x-text="row.total_spend_display"></span>
-                                            </template>
-                                            <template x-if="!showAllSpend">
-                                                <span class="relative cursor-help inline-block group">
-                                                    <span class="text-gray-400">***</span>
-                                                    <span class="hidden group-hover:block absolute bottom-full right-0 mb-1 px-2 py-1 text-xs bg-gray-800 text-white rounded shadow-lg whitespace-nowrap z-50" x-text="row.total_spend_display"></span>
-                                                </span>
-                                            </template>
-                                        </td>
-                                        <td x-show="isColumnVisible('impressions')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.total_impressions_display"></td>
-                                        <td x-show="isColumnVisible('clicks')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.total_clicks_display"></td>
-                                        <td x-show="isColumnVisible('leads')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.total_leads_display"></td>
-                                        <td x-show="isColumnVisible('installs')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.total_installs_display"></td>
-                                        <td x-show="isColumnVisible('conversions')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.total_conversions_display"></td>
-                                        <td x-show="isColumnVisible('cpm')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.cpm_display"></td>
-                                        <td x-show="isColumnVisible('cpc')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.cpc_display"></td>
-                                        <td x-show="isColumnVisible('ctr')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.ctr_display"></td>
-                                        <td x-show="isColumnVisible('cpl')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.cpl_display"></td>
-                                        <td x-show="isColumnVisible('cpa')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.cpa_display"></td>
-                                        <td x-show="isColumnVisible('cpi')" class="px-3 py-2 text-right text-gray-700 whitespace-nowrap" x-text="row.cpi_display"></td>
-                                        <td x-show="isColumnVisible('actions')" class="px-3 py-2 whitespace-nowrap">
-                                            <button @click="$wire.showIndustryAccounts(row.industry_key)"
-                                                class="inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 bg-primary-50 rounded hover:bg-primary-100 transition-colors">
-                                                <x-heroicon-o-eye class="h-3 w-3 mr-1" />
-                                                {{ __('View Accounts') }}
-                                            </button>
-                                        </td>
+                            <tbody class="bg-white">
+                                @forelse($filteredTableData as $row)
+                                    <tr wire:key="row-{{ $row['_id'] }}">
+                                        @if($visibleColumns['industry'] ?? true)
+                                            <td class="text-gray-700 font-medium truncate max-w-[150px]" title="{{ $row['industry'] }}">
+                                                <button wire:click="showIndustryAccounts('{{ $row['industry_key'] }}')" class="text-gray-900 hover:underline cursor-pointer text-start font-medium">{{ $row['industry'] }}</button>
+                                            </td>
+                                        @endif
+                                        @if($visibleColumns['country'] ?? false)
+                                            <td class="text-gray-700">{{ $row['country'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['category'] ?? false)
+                                            <td class="text-gray-700">{{ $row['category'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['subCategory'] ?? false)
+                                            <td class="text-gray-600">{{ $row['sub_category'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['funnelStage'] ?? false)
+                                            <td class="whitespace-nowrap">
+                                                <span class="{{ $this->getFunnelBadgeClass($row['funnel_stage']) }}">{{ $row['funnel_stage'] }}</span>
+                                            </td>
+                                        @endif
+                                        @if($visibleColumns['campaignObjective'] ?? false)
+                                            <td class="text-gray-600 capitalize">{{ $row['campaignObjective'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['spend'] ?? false)
+                                            <td class="text-end text-gray-900 font-medium whitespace-nowrap">
+                                                @if($showAllSpend)
+                                                    {{ $row['total_spend_display'] }}
+                                                @else
+                                                    <span class="relative cursor-help inline-block group">
+                                                        <span class="text-gray-400">***</span>
+                                                        <span class="hidden group-hover:block absolute bottom-full end-0 mb-1 px-2 py-1 text-xs bg-gray-800 text-white rounded shadow-lg whitespace-nowrap z-50">{{ $row['total_spend_display'] }}</span>
+                                                    </span>
+                                                @endif
+                                            </td>
+                                        @endif
+                                        @if($visibleColumns['impressions'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['total_impressions_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['clicks'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['total_clicks_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['leads'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['total_leads_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['installs'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['total_installs_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['conversions'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['total_conversions_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['cpm'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['cpm_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['cpc'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['cpc_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['ctr'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['ctr_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['cpl'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['cpl_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['cpa'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['cpa_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['cpi'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['cpi_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['global_cpm'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['global_cpm_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['global_cpc'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['global_cpc_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['global_ctr'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['global_ctr_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['global_cpl'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['global_cpl_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['global_cpa'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['global_cpa_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['global_cpi'] ?? false)
+                                            <td class="text-end text-gray-700 whitespace-nowrap">{{ $row['global_cpi_display'] }}</td>
+                                        @endif
+                                        @if($visibleColumns['actions'] ?? false)
+                                            <td class="whitespace-nowrap">
+                                                <button wire:click="showIndustryAccounts('{{ $row['industry_key'] }}')"
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+                                                    <x-heroicon-o-eye class="h-3 w-3 me-1" />
+                                                    {{ __('common.view_accounts') }}
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
-                                </template>
-                                <template x-if="sortedRows.length === 0">
+                                @empty
                                     <tr>
-                                        <td colspan="20" class="px-6 py-12 text-center text-gray-500">
-                                            {{ __('pages.benchmarks.performance.no_industries') }}
+                                        <td colspan="20" class="px-6 py-12">
+                                            <div class="empty-state">
+                                                <p class="empty-title">{{ __('pages.benchmarks.performance.no_industries') }}</p>
+                                            </div>
                                         </td>
                                     </tr>
-                                </template>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    <style>
-                        .filter-select2-wrap .select2-container .select2-selection--single {
-                            height: 26px !important;
-                            font-size: 12px;
-                            border-color: #e5e7eb;
-                        }
-                        .filter-select2-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
-                            line-height: 24px;
-                            padding-left: 6px;
-                            padding-right: 20px;
-                        }
-                        .filter-select2-wrap .select2-container--default .select2-selection--single .select2-selection__arrow {
-                            height: 24px;
-                            width: 20px;
-                        }
-                    </style>
-                </div>
                 </div>
                 @endif
             </div>
@@ -640,7 +750,7 @@
 
     {{-- Accounts Modal — proven pattern: @if conditional, backdrop on container, simple centered panel --}}
     @if($showAccountsModal)
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 overflow-y-auto h-full w-full z-50"
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
          x-data="{
              liveSpend: {},
              loadingSpend: false,
@@ -686,20 +796,20 @@
              }
          }"
          x-on:keydown.escape.window="$wire.closeAccountsModal()">
-        <div class="relative top-10 mx-auto border shadow-2xl rounded-xl bg-white max-w-7xl w-[98%] sm:w-[95%] my-8 overflow-hidden">
+        <div class="relative top-10 mx-auto card max-w-7xl w-[98%] sm:w-[95%] my-8 overflow-hidden">
             {{-- Header --}}
-            <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5 sm:px-8">
+            <div class="px-6 py-5 sm:px-8 border-b border-gray-200">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                            <x-heroicon-o-building-office-2 class="h-6 w-6 text-white" />
+                    <div class="flex items-center gap-x-3">
+                        <div class="p-2 bg-gray-100 rounded-lg text-gray-400">
+                            <x-heroicon-o-building-office-2 class="h-6 w-6 text-gray-500" />
                         </div>
                         <div>
-                            <h3 class="text-lg leading-6 font-semibold text-white">{{ $modalIndustry }}</h3>
-                            <p class="mt-0.5 text-sm text-primary-100">{{ count($modalAccounts) }} {{ count($modalAccounts) === 1 ? __('account') : __('accounts') }}</p>
+                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ $modalIndustry }}</h3>
+                            <p class="mt-0.5 text-sm text-gray-500">{{ trans_choice('common.accounts', count($modalAccounts)) }}</p>
                         </div>
                     </div>
-                    <button @click="$wire.closeAccountsModal()" class="text-primary-200 hover:text-white transition-colors">
+                    <button @click="$wire.closeAccountsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                         <x-heroicon-o-x-mark class="h-6 w-6" />
                     </button>
                 </div>
@@ -739,30 +849,30 @@
                     @if($loop->first)
                         <div class="px-6 py-3 bg-gray-50 border-b border-gray-200">
                             <p class="text-sm text-gray-600">
-                                <span class="font-medium text-gray-900">{{ __('Industry') }}:</span> {{ $modalIndustry }}
+                                <span class="font-medium text-gray-900">{{ __('labels.industry') }}:</span> {{ $modalIndustry }}
                             </p>
                         </div>
                         <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                        <table class="data-table">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr class="border-b border-gray-200">
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">{{ __('Plat') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">{{ __('Industry') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[180px]">{{ __('Account') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">{{ __('Category') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[100px]">{{ __('External ID') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">{{ __('Status') }}</th>
-                                    <th class="px-3 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">{{ __('Camp') }}</th>
-                                    <th class="px-3 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">{{ __('Spend') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">{{ __('Sync') }}</th>
-                                    <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">{{ __('Act') }}</th>
+                                    <th class="w-10">{{ __('labels.platform_short') }}</th>
+                                    <th class="w-28">{{ __('labels.industry') }}</th>
+                                    <th class="min-w-[180px]">{{ __('labels.account') }}</th>
+                                    <th class="w-28">{{ __('labels.category') }}</th>
+                                    <th class="min-w-[100px]">{{ __('labels.external_id') }}</th>
+                                    <th class="w-20">{{ __('labels.status') }}</th>
+                                    <th class="w-16 text-end">{{ __('labels.campaigns_short') }}</th>
+                                    <th class="w-24 text-end">{{ __('kpis.spend') }}</th>
+                                    <th class="w-24">{{ __('common.sync') }}</th>
+                                    <th class="w-16">{{ __('labels.actions_short') }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody>
                     @endif
-                                <tr class="hover:bg-gray-50 transition-colors duration-100 even:bg-gray-50/50">
+                                <tr>
                                     {{-- Platform --}}
-                                    <td class="px-3 py-2.5">
+                                    <td>
                                         <div class="flex items-center justify-center w-8 h-8 rounded bg-gray-50 border border-gray-100">
                                             @if(isset($platformSvgs[$account['platform']]))
                                                 <span class="{{ $platformColors[$account['platform']] }}">
@@ -775,29 +885,29 @@
                                     </td>
 
                                     {{-- Industry --}}
-                                    <td class="px-3 py-2.5 group">
+                                    <td class="group">
                                         @if($editingAccountId === $account['id'] && $editingField === 'industry')
                                             <select wire:model="editValue"
                                                     wire:change="saveEdit"
                                                     x-init="$nextTick(() => $el.focus())"
                                                     @blur="$wire.cancelEdit()"
-                                                    class="text-xs border border-gray-300 rounded px-2 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 bg-white max-w-[120px]">
+                                                    class="input-field text-xs py-1 max-w-[120px]">
                                                 @foreach($availableIndustries as $indSlug)
                                                     <option value="{{ $indSlug }}">{{ $this->getIndustryLabel($indSlug) }}</option>
                                                 @endforeach
                                             </select>
                                         @else
                                             <button wire:click="startEdit({{ $account['id'] }}, 'industry', '{{ $account['industry'] }}')"
-                                                    class="inline-flex items-center text-xs text-gray-500 hover:text-primary-600 transition-colors truncate max-w-[120px]"
-                                                    title="{{ __('Edit industry') }}">
+                                                    class="inline-flex items-center text-xs text-gray-500 hover:text-gray-900 transition-colors truncate max-w-[120px]"
+                                                    title="{{ __('common.edit_industry') }}">
                                                 <span class="truncate max-w-[110px] inline-block">{{ $account['industry'] ?? '-' }}</span>
-                                                <x-heroicon-o-pencil class="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100" />
+                                                <x-heroicon-o-pencil class="h-3 w-3 ms-1 opacity-0 group-hover:opacity-100" />
                                             </button>
                                         @endif
                                     </td>
 
                                     {{-- Account Name --}}
-                                    <td class="px-3 py-2.5 group">
+                                    <td class="group">
                                         @if($editingAccountId === $account['id'] && $editingField === 'name')
                                             <input type="text"
                                                    wire:model="editValue"
@@ -805,42 +915,42 @@
                                                    wire:keydown.escape="cancelEdit"
                                                    x-init="$nextTick(() => $el.focus())"
                                                    @blur="$wire.saveEdit()"
-                                                   class="text-sm font-medium text-gray-900 border border-primary-300 rounded px-2 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 w-full max-w-[220px]"
+                                                   class="input-field text-sm max-w-[220px]"
                                             />
                                         @else
-                                            <div class="flex items-center space-x-1.5">
+                                            <div class="flex items-center gap-x-1.5">
                                                 <button @click="expandedAccounts[{{ $account['id'] }}] = !expandedAccounts[{{ $account['id'] }}]"
-                                                        class="text-gray-400 hover:text-primary-500 transition-colors flex-shrink-0"
-                                                        title="{{ __('Toggle campaigns') }}">
+                                                        class="text-gray-400 hover:text-gray-900 transition-colors flex-shrink-0"
+                                                        title="{{ __('common.toggle_campaigns') }}">
                                                     <x-heroicon-o-chevron-down class="h-4 w-4 transition-transform duration-200"
                                                         x-bind:class="expandedAccounts[{{ $account['id'] }}] ? 'rotate-180' : ''" />
                                                 </button>
-                                                <a href="{{ route('ad-account-detail', ['id' => $account['id']]) }}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-gray-900 hover:text-primary-600 truncate max-w-[200px] inline-block" title="{{ $account['name'] }}">
+                                                <a href="{{ route('ad-account-detail', ['id' => $account['id']]) }}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-gray-900 hover:text-gray-600 truncate max-w-[200px] inline-block" title="{{ $account['name'] }}">
                                                     {{ $account['name'] }}
                                                 </a>
                                                 <button wire:click="startEdit({{ $account['id'] }}, 'name', '{{ addslashes($account['name']) }}')"
-                                                        class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-primary-500 transition-opacity flex-shrink-0"
-                                                        title="{{ __('Edit name') }}">
+                                                        class="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-900 transition-opacity flex-shrink-0"
+                                                        title="{{ __('common.edit_name') }}">
                                                     <x-heroicon-o-pencil class="h-3 w-3" />
                                                 </button>
                                             </div>
                                         @endif
                                         @if($account['integration_status'] === 'needs_reauth')
-                                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200">
-                                                <x-heroicon-o-exclamation-triangle class="h-3 w-3 mr-0.5" />
-                                                {{ __('Re-auth') }}
+                                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FBF3DB] text-[#956400] border border-gray-200">
+                                                <x-heroicon-o-exclamation-triangle class="h-3 w-3 me-0.5" />
+                                                {{ __('common.reauth') }}
                                             </span>
                                         @endif
                                     </td>
 
                                     {{-- Category --}}
-                                    <td class="px-3 py-2.5 group">
+                                    <td class="group">
                                         @if($editingAccountId === $account['id'] && $editingField === 'category')
                                             <select wire:model="editValue"
                                                     wire:change="saveEdit"
                                                     x-init="$nextTick(() => $el.focus())"
                                                     @blur="$wire.cancelEdit()"
-                                                    class="text-xs border border-gray-300 rounded px-2 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 bg-white max-w-[140px]">
+                                                    class="input-field text-xs py-1 max-w-[140px]">
                                                 <option value="">{{ __('-') }}</option>
                                                 @php
                                                     $categories = App\Models\AdAccount::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category')->toArray();
@@ -851,80 +961,78 @@
                                             </select>
                                         @else
                                             <button wire:click="startEdit({{ $account['id'] }}, 'category', '{{ addslashes($account['category'] ?? '') }}')"
-                                                    class="inline-flex items-center text-xs text-gray-500 hover:text-primary-600 transition-colors"
-                                                    title="{{ __('Edit category') }}">
+                                                    class="inline-flex items-center text-xs text-gray-500 hover:text-gray-900 transition-colors"
+                                                    title="{{ __('common.edit_category') }}">
                                                 <span class="truncate max-w-[130px] inline-block">{{ $account['category'] ?? '-' }}</span>
-                                                <x-heroicon-o-pencil class="h-3 w-3 ml-1 opacity-0 group-hover:opacity-100" />
+                                                <x-heroicon-o-pencil class="h-3 w-3 ms-1 opacity-0 group-hover:opacity-100" />
                                             </button>
                                         @endif
                                     </td>
 
                                     {{-- External ID --}}
-                                    <td class="px-3 py-2.5">
+                                    <td>
                                         <span class="text-xs text-gray-400 font-mono">{{ $account['external_account_id'] ?? '-' }}</span>
                                     </td>
 
                                     {{-- Status --}}
-                                    <td class="px-3 py-2.5">
+                                    <td>
                                         @if($editingAccountId === $account['id'] && $editingField === 'status')
                                             <select wire:model="editValue"
                                                     wire:change="saveEdit"
                                                     x-init="$nextTick(() => $el.focus())"
                                                     @blur="$wire.cancelEdit()"
-                                                    class="text-xs font-medium border border-gray-300 rounded-full px-2 py-0.5 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 bg-white">
-                                                <option value="active">{{ __('Active') }}</option>
-                                                <option value="inactive">{{ __('Inactive') }}</option>
-                                                <option value="permission_denied">{{ __('Access Denied') }}</option>
+                                                    class="input-field text-xs py-1 max-w-[140px]">
+                                                <option value="active">{{ __('status.active') }}</option>
+                                                <option value="inactive">{{ __('status.inactive') }}</option>
+                                                <option value="permission_denied">{{ __('status.access_denied') }}</option>
                                             </select>
                                         @else
                                             <button wire:click="startEdit({{ $account['id'] }}, 'status', '{{ $account['status'] }}')"
-                                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer
-                                                        {{ $account['status'] === 'active' ? 'bg-green-100 text-green-700' : ($account['status'] === 'permission_denied' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600') }}">
-                                                <span class="w-1.5 h-1.5 rounded-full mr-1.5
-                                                    {{ $account['status'] === 'active' ? 'bg-green-500' : ($account['status'] === 'permission_denied' ? 'bg-amber-500' : 'bg-gray-400') }}"></span>
+                                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer {{ $account['status'] === 'active' ? 'bg-green-100 text-green-700' : ($account['status'] === 'permission_denied' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600') }}">
+                                                <span class="w-1.5 h-1.5 rounded-full me-1.5 {{ $account['status'] === 'active' ? 'bg-green-500' : ($account['status'] === 'permission_denied' ? 'bg-amber-500' : 'bg-gray-400') }}"></span>
                                                 {{ $account['status'] === 'permission_denied' ? __('Access Denied') : ucfirst($account['status']) }}
                                             </button>
                                         @endif
                                     </td>
 
                                     {{-- Campaigns --}}
-                                    <td class="px-3 py-2.5 text-right text-gray-700">
+                                    <td class="text-end text-gray-700">
                                         {{ $account['campaigns_count'] }}
                                     </td>
 
                                     {{-- Spend --}}
-                                    <td class="px-3 py-2.5 text-right">
-                                        <div class="flex items-center justify-end space-x-1">
-                                            <span class="text-sm font-bold text-gray-900"
+                                    <td class="text-end">
+                                        <div class="flex items-center justify-end gap-x-1">
+                                            <span class="text-sm font-semibold text-gray-900"
                                                   x-text="liveSpend[{{ $account['id'] }}] ? formatCurrency(liveSpend[{{ $account['id'] }}].spend) : '{{ $account['total_spend_display'] }}'">
                                             </span>
                                             <template x-if="loadingSpend && !liveSpend[{{ $account['id'] }}]">
-                                                <span class="inline-block w-3 h-3 border-2 border-gray-200 border-t-primary-500 rounded-full animate-spin"></span>
+                                                <span class="inline-block w-3 h-3 border-2 border-gray-200 border-t-gray-600 rounded-full animate-spin"></span>
                                             </template>
                                             <template x-if="liveSpend[{{ $account['id'] }}]?.source === 'api'">
-                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500" title="{{ __('Live API data') }}"></span>
+                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500" title="{{ __('common.live_api_data') }}"></span>
                                             </template>
                                             <template x-if="liveSpend[{{ $account['id'] }}]?.source === 'db'">
-                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-gray-300" title="{{ __('Cached DB data') }}"></span>
+                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-gray-300" title="{{ __('common.cached_db_data') }}"></span>
                                             </template>
                                         </div>
                                     </td>
 
                                     {{-- Last Sync --}}
-                                    <td class="px-3 py-2.5">
+                                    <td>
                                         <span class="text-xs text-gray-400 flex items-center">
-                                            <x-heroicon-o-clock class="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            <x-heroicon-o-clock class="h-3.5 w-3.5 me-1 flex-shrink-0" />
                                             {{ $account['last_sync_at'] }}
                                         </span>
                                     </td>
 
                                     {{-- Actions --}}
-                                    <td class="px-3 py-2.5">
+                                    <td>
                                         <a href="{{ $account['link'] }}" target="_blank" rel="noopener noreferrer"
-                                           class="inline-flex items-center text-xs text-primary-600 hover:text-primary-800 transition-colors"
-                                           title="{{ __('View account') }}">
-                                            <x-heroicon-o-arrow-top-right-on-square class="h-3.5 w-3.5 mr-1" />
-                                            {{ __('View') }}
+                                           class="inline-flex items-center text-xs text-gray-500 hover:text-gray-900 transition-colors"
+                                           title="{{ __('common.view_account') }}">
+                                            <x-heroicon-o-arrow-top-right-on-square class="h-3.5 w-3.5 me-1" />
+                                            {{ __('common.view') }}
                                         </a>
                                     </td>
                                 </tr>
@@ -932,25 +1040,24 @@
                                 <tr x-show="expandedAccounts[{{ $account['id'] }}]" x-cloak class="bg-gray-50/50">
                                     <td colspan="10" class="px-0 py-0">
                                         <div class="px-8 py-3">
-                                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                                {{ __('Campaigns') }} ({{ count($account['campaigns']) }})
+                                            <h4 class="micro-label mb-2">
+                                                {{ __('labels.campaigns') }} ({{ count($account['campaigns']) }})
                                             </h4>
                                             @if(empty($account['campaigns']))
-                                                <p class="text-sm text-gray-400 italic">{{ __('No campaigns') }}</p>
+                                                <p class="text-sm text-gray-400 italic">{{ __('common.no_campaigns') }}</p>
                                             @else
                                                 <div class="space-y-1">
                                                     @foreach($account['campaigns'] as $campaign)
-                                                        <div class="flex items-center justify-between py-1.5 px-3 bg-white rounded border border-gray-100 text-sm">
+                                                        <div class="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg border border-gray-100 text-sm">
                                                             <span class="text-gray-700 truncate max-w-[300px]">{{ $campaign['name'] }}</span>
-                                                            <div class="flex items-center space-x-3 flex-shrink-0">
+                                                            <div class="flex items-center gap-x-3 flex-shrink-0">
                                                                 @if($campaign['objective'])
                                                                     <span class="text-xs text-gray-400 capitalize">{{ $campaign['objective'] }}</span>
                                                                 @endif
                                                                 @if($campaign['funnel_stage'])
-                                                                    <span class="text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600">{{ $campaign['funnel_stage'] }}</span>
+                                                                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#F1F1EF] text-[#6B6B66]">{{ $campaign['funnel_stage'] }}</span>
                                                                 @endif
-                                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium
-                                                                    {{ ($campaign['status'] ?? '') === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
+                                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {{ ($campaign['status'] ?? '') === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
                                                                     {{ ucfirst($campaign['status'] ?? 'unknown') }}
                                                                 </span>
                                                             </div>
@@ -967,11 +1074,11 @@
                         </div>
                     @endif
                 @empty
-                    <div class="text-center py-12 px-6">
+                    <div class="empty-state">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                            <x-heroicon-o-building-office-2 class="h-8 w-8 text-gray-400" />
+                            <x-heroicon-o-building-office-2 class="h-8 w-8 text-gray-300" />
                         </div>
-                        <p class="text-gray-500 font-medium">{{ __('No accounts found for this industry.') }}</p>
+                        <p class="empty-title">{{ __('pages.benchmarks.no_accounts_for_industry') }}</p>
                     </div>
                 @endforelse
             </div>
@@ -980,10 +1087,10 @@
             <div class="bg-gray-50 px-6 py-4 sm:px-8 flex items-center justify-between">
                 <p class="text-xs text-gray-500">
                     @php $totalSpend = array_sum(array_column($modalAccounts, 'total_spend')); @endphp
-                    {{ __('Combined Spend') }}: <span class="font-semibold text-gray-700">{{ $this->formatCurrency($totalSpend) }}</span>
+                    {{ __('pages.benchmarks.combined_spend') }}: <span class="font-semibold text-gray-700">{{ $this->formatCurrency($totalSpend) }}</span>
                 </p>
-                <button @click="$wire.closeAccountsModal()" type="button" class="inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors">
-                    {{ __('Close') }}
+                <button @click="$wire.closeAccountsModal()" type="button" class="btn-secondary">
+                    {{ __('common.close') }}
                 </button>
             </div>
         </div>

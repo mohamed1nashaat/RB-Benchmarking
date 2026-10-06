@@ -2,16 +2,15 @@
 
 @php
     $classes = match($status) {
-        'active', 'connected' => 'bg-green-100 text-green-800',
-        'inactive' => 'bg-gray-100 text-gray-800',
-        'suspended' => 'bg-red-100 text-red-800',
-        'completed' => 'bg-blue-100 text-blue-800',
-        'failed' => 'bg-red-100 text-red-800',
-        'generating' => 'bg-yellow-100 text-yellow-800',
-        default => 'bg-gray-100 text-gray-800',
+        'active', 'connected' => 'bg-[#EDF3EC] text-[#346538]',
+        'inactive' => 'bg-[#F1F1EF] text-[#6B6B66]',
+        'suspended', 'failed', 'error', 'disconnected' => 'bg-[#FDEBEC] text-[#9F2F2D]',
+        'completed', 'verified' => 'bg-[#E1F3FE] text-[#1F6C9F]',
+        'generating', 'pending', 'needs_reauth' => 'bg-[#FBF3DB] text-[#956400]',
+        default => 'bg-[#F1F1EF] text-[#6B6B66]',
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium $classes"]) }}>
+<span {{ $attributes->merge(['class' => "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide $classes"]) }}>
     {{ __("status.$status") }}
 </span>

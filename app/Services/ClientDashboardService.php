@@ -214,7 +214,7 @@ class ClientDashboardService
         if (!empty($accountIds)) {
             $allCampaigns = DB::table('ad_campaigns')
                 ->whereIn('ad_account_id', $accountIds)
-                ->select('id', 'ad_account_id', 'name', 'status', 'objective', 'funnel_stage')
+                ->select('id', 'ad_account_id', 'name', 'status', 'objective', 'funnel_stage', 'sub_industry')
                 ->orderBy('name')
                 ->get()
                 ->groupBy('ad_account_id');
@@ -265,6 +265,7 @@ class ClientDashboardService
                     'status' => $c->status,
                     'objective' => $c->objective,
                     'funnel_stage' => $c->funnel_stage,
+                    'sub_industry' => $c->sub_industry ?? null,
                     'spend' => $this->currencyService->convertToSAR((float) $rawSpend, $currency),
                 ];
             })->toArray();
@@ -274,6 +275,9 @@ class ClientDashboardService
                 'name' => $account->account_name,
                 'platform' => $account->integration->platform ?? 'Unknown',
                 'status' => $account->status,
+                'industry' => $account->industry,
+                'category' => $account->category,
+                'sub_industry' => $account->sub_industry,
                 'currency' => $currency,
                 'total_spend' => $totalSpendSAR,
                 'recent_spend' => $recentSpendSAR,
