@@ -92,6 +92,11 @@ class ClientDashboard extends Component
         $this->clientId = $id;
         $this->fetchDashboard();
 
+        // Auto-select Reports tab when ?reports is in the URL
+        if (request()->has('reports') || request()->query('tab') === 'reports') {
+            $this->activeTabIndex = 2;
+        }
+
         // Auto-select SEO tab when ?seo or ?tab=seo is in the URL
         if (request()->has('seo') || request()->query('tab') === 'seo') {
             $this->activeTabIndex = 1;
