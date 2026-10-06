@@ -86,10 +86,10 @@
         x-transition:leave-end="opacity-0 translate-y-4 scale-95"
         x-cloak
         class="w-80 sm:w-96 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-        style="height: 480px; background: #111318; border: 1px solid rgba(255,255,255,0.08);"
+        style="height: 480px; background: var(--ai-chat-bg, #111318); border: 1px solid rgba(255,255,255,0.08);"
     >
         {{-- Header --}}
-        <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color: rgba(255,255,255,0.08); background: #0d0f16;">
+        <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color: rgba(255,255,255,0.08); background: var(--ai-chat-header-bg, #0d0f16);">
             <div class="flex items-center gap-2.5">
                 <div class="h-7 w-7 rounded-lg flex items-center justify-center" style="background: rgba(239,68,68,0.2);">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#EF4444">

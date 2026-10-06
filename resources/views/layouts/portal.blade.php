@@ -16,7 +16,7 @@
     @livewireStyles
 </head>
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-[#F7F6F3] flex flex-col">
+    <div class="min-h-screen bg-white flex flex-col">
 
         {{-- Portal Nav --}}
         <header class="bg-white border-b border-neutral-200 sticky top-0 z-50">
@@ -65,7 +65,7 @@
         </main>
 
         {{-- Footer --}}
-        <footer class="border-t border-neutral-200 bg-[#F7F6F3] py-4">
+        <footer class="border-t border-neutral-200 bg-white py-4">
             <p class="text-center text-xs text-neutral-400">{{ __('portal.powered_by') }}</p>
         </footer>
     </div>

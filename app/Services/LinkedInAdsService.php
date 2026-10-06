@@ -775,11 +775,15 @@ class LinkedInAdsService
             ])->get($url);
 
             if (!$response->successful()) {
+                $status = $response->status();
                 Log::error('LinkedIn metrics fetch failed', [
                     'campaign_id' => $campaign->external_campaign_id,
-                    'status' => $response->status(),
+                    'status' => $status,
                     'body' => $response->body()
                 ]);
+                if ($status === 401 || $status === 403) {
+                    throw new \Exception("LinkedIn auth error ({$status}) for campaign {$campaign->external_campaign_id} — token may be expired");
+                }
                 return [];
             }
 

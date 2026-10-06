@@ -187,6 +187,8 @@ class BackfillGoogleAdsMetrics extends Command
 
                 $this->newLine();
             }
+
+            $integration->update(['last_sync_at' => now()]);
         }
 
         // Summary

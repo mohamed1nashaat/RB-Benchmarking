@@ -117,6 +117,11 @@ class SyncLinkedInCampaigns extends Command
                                     'error' => $e->getMessage()
                                 ]);
                                 $totalErrors++;
+                                // Auth errors — rethrow so the outer handler marks needs_reauth
+                                $msg = $e->getMessage();
+                                if (str_contains($msg, '401') || str_contains($msg, '403') || str_contains($msg, 'auth error')) {
+                                    throw $e;
+                                }
                             }
                         }
                     }
@@ -126,11 +131,13 @@ class SyncLinkedInCampaigns extends Command
                     $this->reportStep("Account {$account->account_name} complete", 'success');
                 }
 
-                // Detect zero metrics across all campaigns — possible token/data issue
+                // Detect zero metrics across all campaigns — LinkedIn silently returns 200 with
+                // empty data when the token is expired instead of returning 401
                 if ($totalSynced === 0 && count($accounts) > 0) {
-                    $this->warn("Zero metrics synced across all LinkedIn campaigns — possible token or data issue");
-                    $this->monitoringService->recordFailure('linkedin', $integration->id, "Zero metrics across all campaigns — possible token expiration");
-                    $this->failSyncProgress('Zero metrics synced');
+                    $this->warn("Zero metrics synced across all LinkedIn campaigns — marking as needs_reauth (LinkedIn silent token expiry)");
+                    $integration->update(['status' => 'needs_reauth']);
+                    $this->monitoringService->recordFailure('linkedin', $integration->id, "Zero metrics across all campaigns — token silently expired, needs re-authorization");
+                    $this->failSyncProgress('Zero metrics synced — needs_reauth');
                     continue;
                 }
 
