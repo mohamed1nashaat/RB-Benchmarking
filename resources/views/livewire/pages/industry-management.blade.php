@@ -320,7 +320,7 @@
     @if($showIndustryModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeIndustryModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeIndustryModal"></div>
                 <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingIndustryId ? __('pages.industry_management.edit_industry') : __('pages.industry_management.add_industry') }}
@@ -370,7 +370,7 @@
     @if($showCategoryModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeCategoryModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeCategoryModal"></div>
                 <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingCategoryId ? __('pages.industry_management.edit_category') : __('pages.industry_management.add_category') }}
@@ -420,7 +420,7 @@
     @if($showAccountCategoryModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeAccountCategoryModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeAccountCategoryModal"></div>
                 <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingAccountCategoryId ? __('pages.industry_management.edit_account_category') : __('pages.industry_management.add_account_category') }}
@@ -478,7 +478,7 @@
     @if($showAccountSubCategoryModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeAccountSubCategoryModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeAccountSubCategoryModal"></div>
                 <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingAccountSubCategoryId ? __('pages.industry_management.edit_account_sub_category') : __('pages.industry_management.add_account_sub_category') }}
@@ -536,7 +536,7 @@
     @if($showDeleteModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeDeleteModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeDeleteModal"></div>
                 <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="flex-shrink-0 bg-red-500/15 rounded-full p-3">

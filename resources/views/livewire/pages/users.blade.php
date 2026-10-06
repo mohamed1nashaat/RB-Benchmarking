@@ -493,7 +493,7 @@
         @if($showInviteModal)
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
                 <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeInviteModal"></div>
+                    <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeInviteModal"></div>
                     <div class="relative bg-gray-900 border border-white/10 rounded-xl max-w-md w-full mx-auto p-6 text-start">
                         <h3 class="text-lg font-semibold tracking-tight text-white">
                             {{ __('pages.users.invite_user') }}
@@ -587,7 +587,7 @@
         @if($showRemoveDialog)
             <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
                 <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeRemoveDialog"></div>
+                    <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeRemoveDialog"></div>
                     <div class="relative bg-gray-900 border border-white/10 rounded-xl max-w-md w-full mx-auto p-6">
                         <div class="flex items-center gap-4 mb-4">
                             <div class="flex-shrink-0 bg-red-500/15 rounded-full p-3">

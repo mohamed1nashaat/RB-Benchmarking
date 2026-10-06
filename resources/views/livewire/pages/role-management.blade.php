@@ -118,7 +118,7 @@
     @if($showFormModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeFormModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeFormModal"></div>
                 <div class="relative card max-w-2xl w-full mx-auto p-6 text-start">
                     <h3 class="text-lg font-semibold tracking-tight text-white">
                         {{ $editingRoleId ? __('pages.roles.edit_role') : __('pages.roles.create_role') }}
@@ -263,7 +263,7 @@
     @if($showDeleteDialog)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeDeleteDialog"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeDeleteDialog"></div>
                 <div class="relative card max-w-md w-full mx-auto p-6">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="flex-shrink-0 bg-red-500/15 rounded-full p-3">

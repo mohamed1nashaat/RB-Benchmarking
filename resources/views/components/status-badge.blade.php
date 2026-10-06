@@ -2,12 +2,12 @@
 
 @php
     $classes = match($status) {
-        'active', 'connected' => 'bg-[#EDF3EC] text-[#346538]',
-        'inactive' => 'bg-[#F1F1EF] text-[#6B6B66]',
-        'suspended', 'failed', 'error', 'disconnected' => 'bg-[#FDEBEC] text-[#9F2F2D]',
-        'completed', 'verified' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-        'generating', 'pending', 'needs_reauth' => 'bg-[#FBF3DB] text-[#956400]',
-        default => 'bg-[#F1F1EF] text-[#6B6B66]',
+        'active', 'connected'                        => 'bg-green-500/15 text-green-400',
+        'inactive'                                   => 'bg-white/8 text-gray-400',
+        'suspended', 'failed', 'error', 'disconnected' => 'bg-red-500/15 text-red-400',
+        'completed', 'verified'                      => 'bg-brand-500/15 text-brand-400',
+        'generating', 'pending', 'needs_reauth'      => 'bg-amber-500/15 text-amber-400',
+        default                                      => 'bg-white/8 text-gray-400',
     };
 @endphp
 

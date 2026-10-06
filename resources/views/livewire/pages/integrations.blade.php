@@ -361,7 +361,7 @@
     @if($showPlatformSyncModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-init="$el.focus()" @keydown.escape.window="$wire.closePlatformSyncModal()">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closePlatformSyncModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closePlatformSyncModal"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
                 <div class="inline-block align-bottom bg-gray-900 rounded-xl border border-white/10 px-4 pt-5 pb-4 text-start sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
 
