@@ -49,7 +49,7 @@
 
     {{-- ───── STEP 1: Campaign Setup ───── --}}
     @if($step === 1)
-    <div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-5">
+    <div class="bg-gray-900 border border-neutral-200 rounded-xl p-6 space-y-5">
         <h2 class="text-base font-semibold text-neutral-900">{{ __('media_planner.step1_heading') }}</h2>
 
         {{-- Name --}}
@@ -136,7 +136,7 @@
 
     {{-- ───── STEP 2: Platform Selection ───── --}}
     @if($step === 2)
-    <div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-5">
+    <div class="bg-gray-900 border border-neutral-200 rounded-xl p-6 space-y-5">
         <div>
             <h2 class="text-base font-semibold text-neutral-900">{{ __('media_planner.step2_heading') }}</h2>
             <p class="mt-1 text-sm text-neutral-500">{{ __('media_planner.step2_hint') }}</p>
@@ -147,7 +147,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             @foreach($this->availablePlatforms as $key => $platform)
                 <label class="relative flex items-center gap-x-3 p-4 rounded-xl border-2 cursor-pointer transition-colors
-                    {{ in_array($key, $selectedPlatforms) ? 'border-primary-500 bg-primary-50' : 'border-neutral-200 bg-white hover:border-neutral-300' }}">
+                    {{ in_array($key, $selectedPlatforms) ? 'border-primary-500 bg-primary-50' : 'border-neutral-200 bg-gray-900 hover:border-neutral-300' }}">
                     <input type="checkbox" wire:model="selectedPlatforms" value="{{ $key }}" class="sr-only">
                     <span class="text-2xl">{{ $platform['icon'] }}</span>
                     <div>
@@ -197,7 +197,7 @@
 
         {{-- Allocating spinner --}}
         @if($allocating)
-        <div class="bg-white border border-neutral-200 rounded-xl p-12 text-center">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl p-12 text-center">
             <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary-50 mb-4">
                 <div class="h-6 w-6 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
             </div>
@@ -221,7 +221,7 @@
         @endif
 
         {{-- 3 Scenarios --}}
-        <div class="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl overflow-hidden">
             <div class="px-6 py-4 border-b border-neutral-100">
                 <h2 class="text-base font-semibold text-neutral-900">3-Scenario Comparison</h2>
                 <p class="text-sm text-neutral-500 mt-0.5">Select the budget scenario that fits your goals</p>
@@ -278,7 +278,7 @@
             $activeAllocations = $activeScenario['allocations'] ?? [];
             $maxBudget = $activeAllocations ? max(array_column($activeAllocations, 'budget')) : 1;
         @endphp
-        <div class="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl overflow-hidden">
             <div class="px-6 py-4 border-b border-neutral-100">
                 <h2 class="text-base font-semibold text-neutral-900">Platform Allocation</h2>
                 <p class="text-xs text-neutral-500 mt-0.5 capitalize">{{ $selectedScenario }} scenario · {{ number_format($activeScenario['budget'] ?? 0, 0) }} {{ $plan->currency }}</p>
@@ -314,7 +314,7 @@
 
         {{-- Funnel Split --}}
         @if($plan->funnel_split)
-        <div class="bg-white border border-neutral-200 rounded-xl p-6">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl p-6">
             <h2 class="text-base font-semibold text-neutral-900 mb-4">Funnel Allocation</h2>
             <div class="grid grid-cols-3 gap-4">
                 @php $funnel = $plan->funnel_split; @endphp
@@ -336,7 +336,7 @@
 
         {{-- Monthly Calendar / Gantt --}}
         @if($plan->calendar)
-        <div class="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl overflow-hidden">
             <div class="px-6 py-4 border-b border-neutral-100">
                 <h2 class="text-base font-semibold text-neutral-900">Monthly Budget Calendar</h2>
                 <p class="text-xs text-neutral-500 mt-0.5">{{ $plan->periodLabel() }} · {{ count($plan->calendar) }} months</p>
@@ -379,7 +379,7 @@
 
         {{-- Approve / Action bar --}}
         @if(!$plan->isApproved())
-        <div class="flex items-center justify-between bg-white border border-neutral-200 rounded-xl px-6 py-4">
+        <div class="flex items-center justify-between bg-gray-900 border border-neutral-200 rounded-xl px-6 py-4">
             <div>
                 <p class="text-sm font-medium text-neutral-800">Ready to finalize?</p>
                 <p class="text-xs text-neutral-500">Approve the plan to lock the allocation and share with your client</p>

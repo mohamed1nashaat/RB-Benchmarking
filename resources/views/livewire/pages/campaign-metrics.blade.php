@@ -21,7 +21,7 @@
     @if($loading)
         <div class="flex justify-center items-center py-12">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <span class="ms-3 text-gray-600">{{ __('pages.campaign_metrics.loading_metrics') }}</span>
+            <span class="ms-3 text-gray-300">{{ __('pages.campaign_metrics.loading_metrics') }}</span>
         </div>
     @elseif($error)
         {{-- Error State --}}
@@ -31,7 +31,7 @@
                 <div class="ms-3">
                     <h3 class="text-sm font-semibold text-[#9F2F2D]">{{ __('pages.campaign_metrics.error_loading_metrics') }}</h3>
                     <p class="mt-1 text-sm text-[#9F2F2D]/80">{{ $error }}</p>
-                    <button wire:click="loadMetrics" class="mt-2 inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white/70 text-[#9F2F2D] hover:bg-white">
+                    <button wire:click="loadMetrics" class="mt-2 inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-gray-900/70 text-[#9F2F2D] hover:bg-gray-900">
                         {{ __('common.try_again') }}
                     </button>
                 </div>
@@ -225,23 +225,23 @@
             <h3 class="section-title mb-4">{{ __('pages.campaign_metrics.performance_metrics') }}</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @if(($metrics['cpc'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="bg-gray-950 rounded-xl p-4">
                         <p class="text-sm text-gray-500">{{ __('kpis.cpc') }}</p>
-                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">SR {{ number_format($metrics['cpc'] ?? 0, 2) }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-white">SR {{ number_format($metrics['cpc'] ?? 0, 2) }}</p>
                     </div>
                 @endif
 
                 @if(($metrics['cpm'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="bg-gray-950 rounded-xl p-4">
                         <p class="text-sm text-gray-500">{{ __('kpis.cpm') }}</p>
-                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">SR {{ number_format($metrics['cpm'] ?? 0, 2) }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-white">SR {{ number_format($metrics['cpm'] ?? 0, 2) }}</p>
                     </div>
                 @endif
 
                 @if(($metrics['reach'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="bg-gray-950 rounded-xl p-4">
                         <p class="text-sm text-gray-500">{{ __('kpis.reach') }}</p>
-                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-white">
                             @php
                                 $reach = $metrics['reach'] ?? 0;
                                 if ($reach >= 1000000) {
@@ -257,35 +257,35 @@
                     </div>
                 @endif
 
-                <div class="bg-gray-50 rounded-xl p-4">
+                <div class="bg-gray-950 rounded-xl p-4">
                     <p class="text-sm text-gray-500">{{ __('alerts.metrics.conversions') }}</p>
-                    <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['conversions'] ?? 0) }}</p>
+                    <p class="text-xl font-semibold tracking-tight tabular-nums text-white">{{ number_format($metrics['conversions'] ?? 0) }}</p>
                 </div>
 
                 @if(($metrics['roas'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="bg-gray-950 rounded-xl p-4">
                         <p class="text-sm text-gray-500">{{ __('kpis.roas') }}</p>
-                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['roas'] ?? 0, 2) }}x</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-white">{{ number_format($metrics['roas'] ?? 0, 2) }}x</p>
                     </div>
                 @endif
 
                 @if(($metrics['cvr'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="bg-gray-950 rounded-xl p-4">
                         <p class="text-sm text-gray-500">{{ __('kpis.cvr') }}</p>
-                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['cvr'] ?? 0, 2) }}%</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-white">{{ number_format($metrics['cvr'] ?? 0, 2) }}%</p>
                     </div>
                 @endif
 
                 @if(($metrics['frequency'] ?? 0) > 0)
-                    <div class="bg-gray-50 rounded-xl p-4">
+                    <div class="bg-gray-950 rounded-xl p-4">
                         <p class="text-sm text-gray-500">{{ __('kpis.frequency') }}</p>
-                        <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900">{{ number_format($metrics['frequency'] ?? 0, 1) }}</p>
+                        <p class="text-xl font-semibold tracking-tight tabular-nums text-white">{{ number_format($metrics['frequency'] ?? 0, 1) }}</p>
                     </div>
                 @endif
 
-                <div class="bg-gray-50 rounded-xl p-4">
+                <div class="bg-gray-950 rounded-xl p-4">
                     <p class="text-sm text-gray-500">{{ __('labels.objective') }}</p>
-                    <p class="text-xl font-semibold tracking-tight tabular-nums text-gray-900 capitalize">{{ str_replace('_', ' ', $campaign['objective'] ?? __('status.na')) }}</p>
+                    <p class="text-xl font-semibold tracking-tight tabular-nums text-white capitalize">{{ str_replace('_', ' ', $campaign['objective'] ?? __('status.na')) }}</p>
                 </div>
             </div>
         </div>
@@ -313,7 +313,7 @@
                 {{-- Objective --}}
                 <div>
                     <label class="micro-label block mb-1">{{ __('labels.objective') }}</label>
-                    <p class="text-sm text-gray-900 py-2 capitalize">
+                    <p class="text-sm text-white py-2 capitalize">
                         {{ $campaign['objective'] ? str_replace('_', ' ', $campaign['objective']) : __('common.not_set') }}
                     </p>
                 </div>
@@ -321,7 +321,7 @@
                 {{-- Funnel Stage --}}
                 <div>
                     <label class="micro-label block mb-1">{{ __('labels.funnel_stage') }}</label>
-                    <p class="text-sm text-gray-900 py-2">
+                    <p class="text-sm text-white py-2">
                         @if(!empty($campaign['funnel_stage']))
                             <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#E1F3FE] text-[#1F6C9F]">
                                 {{ $campaign['funnel_stage'] }}
@@ -335,7 +335,7 @@
                 {{-- Platform --}}
                 <div>
                     <label class="micro-label block mb-1">{{ __('labels.platform') }}</label>
-                    <p class="text-sm text-gray-900 py-2 capitalize">{{ $adAccount['platform'] ?? __('common.unknown') }}</p>
+                    <p class="text-sm text-white py-2 capitalize">{{ $adAccount['platform'] ?? __('common.unknown') }}</p>
                 </div>
 
                 {{-- Status --}}
@@ -351,7 +351,7 @@
                 {{-- Created --}}
                 <div>
                     <label class="micro-label block mb-1">{{ __('labels.created') }}</label>
-                    <p class="text-sm text-gray-900 py-2">
+                    <p class="text-sm text-white py-2">
                         @if(!empty($campaign['created_at']))
                             {{ \Carbon\Carbon::parse($campaign['created_at'])->format('M d, Y') }}
                         @else

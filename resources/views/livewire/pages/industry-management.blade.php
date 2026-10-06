@@ -122,16 +122,16 @@
     {{-- Unified Hierarchy Tree --}}
     @if($this->hierarchyTree->count() > 0)
         <div class="card overflow-hidden mb-6">
-            <div class="divide-y divide-gray-200">
+            <div class="divide-y divide-white/10">
                 @foreach($this->hierarchyTree as $node)
                     @php
                         $industry = $node['industry'];
                         $accountCategories = $node['accountCategories'];
                     @endphp
-                    <div class="bg-white" wire:key="hier-ind-{{ $industry->id }}">
+                    <div class="bg-gray-900" wire:key="hier-ind-{{ $industry->id }}">
                         {{-- Level 1: Industry --}}
                         <div
-                            class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-gray-50 bg-gray-50"
+                            class="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-gray-950 bg-gray-950"
                             @click="collapsedIndustries.has({{ $industry->id }}) ? collapsedIndustries.delete({{ $industry->id }}) : collapsedIndustries.add({{ $industry->id }}); collapsedIndustries = new Set(collapsedIndustries)"
                         >
                             <div class="flex items-center gap-4">
@@ -144,11 +144,11 @@
                                 >
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
-                                <div class="flex-shrink-0 bg-gray-100 rounded-lg p-2.5">
+                                <div class="flex-shrink-0 bg-white/5 rounded-lg p-2.5">
                                     <x-heroicon-o-building-office class="h-5 w-5 text-gray-500" />
                                 </div>
                                 <div>
-                                    <h3 class="text-sm font-semibold tracking-tight text-gray-900">{{ $industry->display_name }}</h3>
+                                    <h3 class="text-sm font-semibold tracking-tight text-white">{{ $industry->display_name }}</h3>
                                     <p class="text-xs text-gray-500">{{ $industry->name }}</p>
                                 </div>
                             </div>
@@ -170,7 +170,7 @@
                                     </button>
                                     <button
                                         wire:click="editIndustry({{ $industry->id }})"
-                                        class="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md"
+                                        class="p-2 text-gray-400 hover:text-gray-200 hover:bg-white/5 rounded-md"
                                         title="{{ __('pages.industry_management.edit') }}"
                                     >
                                         <x-heroicon-o-pencil-square class="w-4 h-4" />
@@ -197,10 +197,10 @@
                             x-transition:leave-end="opacity-0"
                         >
                             @forelse($accountCategories as $accountCategory)
-                                <div class="border-t border-gray-100" wire:key="hier-cat-{{ $industry->id }}-{{ $accountCategory->id }}">
+                                <div class="border-t border-white/8" wire:key="hier-cat-{{ $industry->id }}-{{ $accountCategory->id }}">
                                     {{-- Level 2: Account Category --}}
                                     <div
-                                        class="flex items-center justify-between ps-14 pe-6 py-3 cursor-pointer hover:bg-gray-50 bg-white"
+                                        class="flex items-center justify-between ps-14 pe-6 py-3 cursor-pointer hover:bg-gray-950 bg-gray-900"
                                         @click="collapsedCategories.has({{ $accountCategory->id }}) ? collapsedCategories.delete({{ $accountCategory->id }}) : collapsedCategories.add({{ $accountCategory->id }}); collapsedCategories = new Set(collapsedCategories)"
                                     >
                                         <div class="flex items-center gap-3">
@@ -213,11 +213,11 @@
                                             >
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                             </svg>
-                                            <div class="flex-shrink-0 bg-gray-100 rounded p-1.5">
+                                            <div class="flex-shrink-0 bg-white/5 rounded p-1.5">
                                                 <x-heroicon-o-folder class="h-4 w-4 text-gray-500" />
                                             </div>
                                             <div>
-                                                <h4 class="text-sm font-semibold tracking-tight text-gray-800">{{ $accountCategory->display_name }}</h4>
+                                                <h4 class="text-sm font-semibold tracking-tight text-gray-100">{{ $accountCategory->display_name }}</h4>
                                                 <p class="text-xs text-gray-400">{{ $accountCategory->name }}</p>
                                             </div>
                                         </div>
@@ -228,7 +228,7 @@
                                             <div class="flex items-center gap-1">
                                                 <button
                                                     wire:click="editAccountCategory({{ $accountCategory->id }})"
-                                                    class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded"
+                                                    class="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-white/5 rounded"
                                                     title="{{ __('pages.industry_management.edit') }}"
                                                 >
                                                     <x-heroicon-o-pencil-square class="w-3.5 h-3.5" />
@@ -254,25 +254,25 @@
                                         x-transition:leave-start="opacity-100"
                                         x-transition:leave-end="opacity-0"
                                     >
-                                        <div class="ps-24 pe-6 py-2 bg-gray-50/50 border-t border-gray-100">
+                                        <div class="ps-24 pe-6 py-2 bg-gray-950/50 border-t border-white/8">
                                             <div class="flex items-center justify-between mb-2">
                                                 <span class="micro-label">{{ __('pages.industry_management.sub_categories') }}</span>
                                                 <button
                                                     wire:click="openAddAccountSubCategoryModal({{ $accountCategory->id }})"
-                                                    class="text-xs font-semibold text-gray-600 hover:text-gray-900"
+                                                    class="text-xs font-semibold text-gray-300 hover:text-white"
                                                 >
                                                     + {{ __('pages.industry_management.add') }}
                                                 </button>
                                             </div>
                                             <div class="flex flex-wrap gap-2">
                                                 @forelse($accountCategory->subCategories as $sub)
-                                                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:border-gray-300 hover:bg-gray-50 group" wire:key="hier-sub-{{ $accountCategory->id }}-{{ $sub->id }}">
+                                                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-white/10 rounded-full hover:border-white/15 hover:bg-gray-950 group" wire:key="hier-sub-{{ $accountCategory->id }}-{{ $sub->id }}">
                                                         <span class="flex items-center justify-center w-5 h-5 rounded-full bg-[#F1F1EF] text-[#6B6B66] text-[11px] font-semibold">
                                                             {{ substr($sub->display_name, 0, 1) }}
                                                         </span>
-                                                        <span class="text-sm text-gray-700">{{ $sub->display_name }}</span>
+                                                        <span class="text-sm text-gray-200">{{ $sub->display_name }}</span>
                                                         <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <button wire:click="editAccountSubCategory({{ $sub->id }})" class="p-0.5 text-gray-400 hover:text-gray-700 rounded">
+                                                            <button wire:click="editAccountSubCategory({{ $sub->id }})" class="p-0.5 text-gray-400 hover:text-gray-200 rounded">
                                                                 <x-heroicon-o-pencil-square class="w-3 h-3" />
                                                             </button>
                                                             <button wire:click="confirmDeleteAccountSubCategory({{ $sub->id }})" class="p-0.5 text-gray-400 hover:text-red-600 rounded">
@@ -288,7 +288,7 @@
                                     </div>
                                 </div>
                             @empty
-                                <div class="ps-14 pe-6 py-4 border-t border-gray-100 bg-white">
+                                <div class="ps-14 pe-6 py-4 border-t border-white/8 bg-gray-900">
                                     <p class="text-sm text-gray-400 italic">{{ __('pages.industry_management.no_account_categories') }}</p>
                                 </div>
                             @endforelse
@@ -321,8 +321,8 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeIndustryModal"></div>
-                <div class="relative bg-white rounded-xl border border-gray-200 max-w-md w-full mx-auto p-6">
-                    <h3 class="text-lg font-semibold tracking-tight text-gray-900 mb-4">
+                <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
+                    <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingIndustryId ? __('pages.industry_management.edit_industry') : __('pages.industry_management.add_industry') }}
                     </h3>
                     <div class="space-y-4">
@@ -371,8 +371,8 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeCategoryModal"></div>
-                <div class="relative bg-white rounded-xl border border-gray-200 max-w-md w-full mx-auto p-6">
-                    <h3 class="text-lg font-semibold tracking-tight text-gray-900 mb-4">
+                <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
+                    <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingCategoryId ? __('pages.industry_management.edit_category') : __('pages.industry_management.add_category') }}
                     </h3>
                     <div class="space-y-4">
@@ -421,8 +421,8 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeAccountCategoryModal"></div>
-                <div class="relative bg-white rounded-xl border border-gray-200 max-w-md w-full mx-auto p-6">
-                    <h3 class="text-lg font-semibold tracking-tight text-gray-900 mb-4">
+                <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
+                    <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingAccountCategoryId ? __('pages.industry_management.edit_account_category') : __('pages.industry_management.add_account_category') }}
                     </h3>
                     <div class="space-y-4">
@@ -479,8 +479,8 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeAccountSubCategoryModal"></div>
-                <div class="relative bg-white rounded-xl border border-gray-200 max-w-md w-full mx-auto p-6">
-                    <h3 class="text-lg font-semibold tracking-tight text-gray-900 mb-4">
+                <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
+                    <h3 class="text-lg font-semibold tracking-tight text-white mb-4">
                         {{ $editingAccountSubCategoryId ? __('pages.industry_management.edit_account_sub_category') : __('pages.industry_management.add_account_sub_category') }}
                     </h3>
                     <div class="space-y-4">
@@ -537,13 +537,13 @@
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-trap.noscroll="true">
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeDeleteModal"></div>
-                <div class="relative bg-white rounded-xl border border-gray-200 max-w-md w-full mx-auto p-6">
+                <div class="relative bg-gray-900 rounded-xl border border-white/10 max-w-md w-full mx-auto p-6">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="flex-shrink-0 bg-red-50 rounded-full p-3">
                             <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
                         </div>
                         <div class="text-start">
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">
+                            <h3 class="text-lg font-semibold tracking-tight text-white">
                                 @if(in_array($deleteType, ['account_category', 'account_sub_category']))
                                     {{ $deleteType === 'account_category' ? __('pages.industry_management.delete_account_category') : __('pages.industry_management.delete_account_sub_category') }}
                                 @else

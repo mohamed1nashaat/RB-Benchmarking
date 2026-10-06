@@ -26,15 +26,15 @@
 
     {{-- Stats --}}
     <div class="grid grid-cols-3 gap-4">
-        <div class="bg-white border border-neutral-200 rounded-xl p-4">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl p-4">
             <p class="text-xs text-neutral-500 font-medium uppercase tracking-wide">{{ __('media_planner.stat_total') }}</p>
             <p class="mt-1 text-2xl font-semibold text-neutral-900 font-mono">{{ $totalCount }}</p>
         </div>
-        <div class="bg-white border border-neutral-200 rounded-xl p-4">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl p-4">
             <p class="text-xs text-green-600 font-medium uppercase tracking-wide">{{ __('media_planner.stat_approved') }}</p>
             <p class="mt-1 text-2xl font-semibold text-neutral-900 font-mono">{{ $approvedCount }}</p>
         </div>
-        <div class="bg-white border border-neutral-200 rounded-xl p-4">
+        <div class="bg-gray-900 border border-neutral-200 rounded-xl p-4">
             <p class="text-xs text-amber-600 font-medium uppercase tracking-wide">{{ __('media_planner.stat_draft') }}</p>
             <p class="mt-1 text-2xl font-semibold text-neutral-900 font-mono">{{ $draftCount }}</p>
         </div>
@@ -48,10 +48,10 @@
             </svg>
             <input type="text" wire:model.live.debounce.300ms="search"
                    placeholder="{{ __('common.search') }}..."
-                   class="w-full pl-9 pr-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400">
+                   class="w-full pl-9 pr-3 py-2 text-sm border border-neutral-200 rounded-lg bg-gray-900 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400">
         </div>
         <select wire:model.live="statusFilter"
-                class="px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-white text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400">
+                class="px-3 py-2 text-sm border border-neutral-200 rounded-lg bg-gray-900 text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400">
             <option value="">{{ __('common.all_statuses') }}</option>
             <option value="draft">Draft</option>
             <option value="approved">Approved</option>
@@ -60,7 +60,7 @@
     </div>
 
     {{-- Table --}}
-    <div class="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+    <div class="bg-gray-900 border border-neutral-200 rounded-xl overflow-hidden">
         @if($plans->isEmpty())
             <div class="py-16 text-center">
                 <svg class="mx-auto h-10 w-10 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">

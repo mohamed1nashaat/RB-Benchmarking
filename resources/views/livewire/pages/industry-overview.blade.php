@@ -6,7 +6,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex-1">
                     <h1 class="section-title">{{ __('pages.industry_overview.title') }}</h1>
-                    <p class="mt-1 text-sm text-gray-600">{{ __('pages.industry_overview.description') }}</p>
+                    <p class="mt-1 text-sm text-gray-300">{{ __('pages.industry_overview.description') }}</p>
                 </div>
                 <div class="mt-4 md:mt-0 flex gap-x-3">
                     <button class="btn-secondary">
@@ -24,7 +24,7 @@
         {{-- Filters --}}
         <div class="card p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-gray-900">{{ __('common.filters') }}</h3>
+                <h3 class="text-sm font-semibold text-white">{{ __('common.filters') }}</h3>
                 @if($platform || !empty($selectedIndustries) || $preset !== '30d')
                     <button wire:click="resetFilters" class="btn-ghost">
                         {{ __('filters.clear_filters') }}
@@ -39,7 +39,7 @@
                     @foreach($datePresets as $dp)
                         <button
                             wire:click="applyDatePreset('{{ $dp['value'] }}')"
-                            class="px-3 py-1.5 text-xs font-semibold rounded-full transition-colors {{ $preset === $dp['value'] ? 'bg-brand-600 text-white' : 'bg-[#F1F1EF] text-[#6B6B66] hover:bg-gray-200' }}"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-full transition-colors {{ $preset === $dp['value'] ? 'bg-brand-600 text-white' : 'bg-[#F1F1EF] text-[#6B6B66] hover:bg-white/8' }}"
                         >
                             {{ $dp['label'] }}
                         </button>
@@ -100,10 +100,10 @@
                 @for($i = 0; $i < 6; $i++)
                     <div class="card p-4 animate-pulse">
                         <div class="flex items-center gap-x-3">
-                            <div class="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                            <div class="w-12 h-12 bg-white/8 rounded-lg"></div>
                             <div class="flex-1">
-                                <div class="h-3 bg-gray-200 rounded w-16 mb-2"></div>
-                                <div class="h-6 bg-gray-200 rounded w-20"></div>
+                                <div class="h-3 bg-white/8 rounded w-16 mb-2"></div>
+                                <div class="h-6 bg-white/8 rounded w-20"></div>
                             </div>
                         </div>
                     </div>
@@ -210,10 +210,10 @@
                     {{-- Top Industries by Metric --}}
                     <div class="card p-6">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-semibold text-gray-900">{{ __('pages.industry_overview.top_industries_by', ['metric' => __(('kpis.' . $currentMetric))]) }}</h3>
+                            <h3 class="text-sm font-semibold text-white">{{ __('pages.industry_overview.top_industries_by', ['metric' => __(('kpis.' . $currentMetric))]) }}</h3>
                             <div class="flex flex-wrap gap-1">
                                 @foreach(['spend' => __('kpis.spend'), 'clicks' => __('alerts.metrics.clicks'), 'impressions' => __('alerts.metrics.impressions'), 'leads' => __('alerts.metrics.leads')] as $key => $label)
-                                    <button wire:click="$set('currentMetric', '{{ $key }}')" class="px-2.5 py-1 text-xs font-semibold rounded-full transition-colors {{ $currentMetric === $key ? 'bg-brand-600 text-white' : 'bg-[#F1F1EF] text-[#6B6B66] hover:bg-gray-200' }}">
+                                    <button wire:click="$set('currentMetric', '{{ $key }}')" class="px-2.5 py-1 text-xs font-semibold rounded-full transition-colors {{ $currentMetric === $key ? 'bg-brand-600 text-white' : 'bg-[#F1F1EF] text-[#6B6B66] hover:bg-white/8' }}">
                                         {{ $label }}
                                     </button>
                                 @endforeach
@@ -228,7 +228,7 @@
 
                     {{-- Monthly Spend Trend --}}
                     <div class="card p-6">
-                        <h3 class="text-sm font-semibold text-gray-900 mb-4">{{ __('pages.industry_overview.monthly_spend_trend') }}</h3>
+                        <h3 class="text-sm font-semibold text-white mb-4">{{ __('pages.industry_overview.monthly_spend_trend') }}</h3>
                         @if(count($monthlyTrend) > 0)
                             <div style="height: 400px;"
                                  wire:key="trend-{{ md5(json_encode($monthlyTrendChartConfig)) }}"
@@ -244,7 +244,7 @@
 
                     {{-- Industry Efficiency Comparison --}}
                     <div class="card p-6">
-                        <h3 class="text-sm font-semibold text-gray-900 mb-4">{{ __('pages.industry_overview.industry_efficiency_comparison') }}</h3>
+                        <h3 class="text-sm font-semibold text-white mb-4">{{ __('pages.industry_overview.industry_efficiency_comparison') }}</h3>
                         @if(count($industryEfficiency) > 0)
                             <div style="height: 400px;"
                                  wire:key="efficiency-{{ md5(json_encode($efficiencyChartConfig)) }}"
@@ -260,7 +260,7 @@
 
                     {{-- Platform Distribution --}}
                     <div class="card p-6">
-                        <h3 class="text-sm font-semibold text-gray-900 mb-4">{{ __('pages.industry_overview.accounts_by_platform') }}</h3>
+                        <h3 class="text-sm font-semibold text-white mb-4">{{ __('pages.industry_overview.accounts_by_platform') }}</h3>
                         <div style="height: 400px;"
                              wire:key="doughnut-{{ md5(json_encode($platformChartConfig)) }}"
                              x-data x-init="new Chart($refs.doughnutCanvas, @js($platformChartConfig))">
@@ -271,17 +271,17 @@
             {{-- Industry Performance Table --}}
                 <div class="card">
                     {{-- Table Header --}}
-                    <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="px-6 py-4 border-b border-white/10">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div class="flex-1">
-                                <h2 class="text-sm font-semibold text-gray-900">{{ __('pages.industry_overview.industry_performance') }}</h2>
-                                <p class="text-sm text-gray-600 mt-1">{{ __('pages.industry_overview.click_to_expand') }}</p>
+                                <h2 class="text-sm font-semibold text-white">{{ __('pages.industry_overview.industry_performance') }}</h2>
+                                <p class="text-sm text-gray-300 mt-1">{{ __('pages.industry_overview.click_to_expand') }}</p>
                             </div>
                             <div class="flex items-center gap-x-3">
                                 {{-- Column group toggle --}}
                                 <div class="flex">
                                     @foreach(['all' => __('filters.all'), 'efficiency' => __('common.efficiency'), 'conversions' => __('common.conversions')] as $key => $label)
-                                        <button wire:click="$set('tableMetric', '{{ $key }}')" class="px-3 py-1.5 text-xs font-semibold {{ $tableMetric === $key ? 'bg-brand-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} {{ $loop->first ? 'rounded-s-md' : '' }} {{ $loop->last ? 'rounded-e-md' : '' }} border border-gray-200 {{ !$loop->first ? '-ms-px' : '' }}">
+                                        <button wire:click="$set('tableMetric', '{{ $key }}')" class="px-3 py-1.5 text-xs font-semibold {{ $tableMetric === $key ? 'bg-brand-600 text-white' : 'bg-gray-900 text-gray-200 hover:bg-gray-950' }} {{ $loop->first ? 'rounded-s-md' : '' }} {{ $loop->last ? 'rounded-e-md' : '' }} border border-white/10 {{ !$loop->first ? '-ms-px' : '' }}">
                                             {{ $label }}
                                         </button>
                                     @endforeach
@@ -295,7 +295,7 @@
                                     <input wire:model.live.debounce.300ms="searchQuery" type="text" placeholder="{{ __('placeholders.search_industries') }}" class="input-field w-full md:w-56 ps-9 pe-9" />
                                     @if($searchQuery)
                                         <div class="absolute inset-y-0 end-0 pe-3 flex items-center">
-                                            <button wire:click="$set('searchQuery', '')" class="text-gray-400 hover:text-gray-600">
+                                            <button wire:click="$set('searchQuery', '')" class="text-gray-400 hover:text-gray-300">
                                                 <x-heroicon-s-x-circle class="h-4 w-4" />
                                             </button>
                                         </div>
@@ -335,12 +335,12 @@
                                                 @if(($col['sortable'] ?? true))
                                                     wire:click="handleSort('{{ $col['key'] }}')"
                                                 @endif
-                                                class="whitespace-nowrap {{ ($col['sortable'] ?? true) ? 'cursor-pointer hover:bg-gray-100' : '' }}"
+                                                class="whitespace-nowrap {{ ($col['sortable'] ?? true) ? 'cursor-pointer hover:bg-white/5' : '' }}"
                                             >
                                                 <div class="flex items-center gap-x-1">
                                                     <span>{{ $col['label'] }}</span>
                                                     @if($sortBy === $col['key'])
-                                                        <x-heroicon-s-chevron-down class="w-3.5 h-3.5 text-gray-900 transition-transform {{ $sortOrder === 'asc' ? 'rotate-180' : '' }}" />
+                                                        <x-heroicon-s-chevron-down class="w-3.5 h-3.5 text-white transition-transform {{ $sortOrder === 'asc' ? 'rotate-180' : '' }}" />
                                                     @endif
                                                 </div>
                                             </th>
@@ -360,7 +360,7 @@
                                                 @else
                                                     <x-heroicon-o-chevron-right class="w-4 h-4 text-gray-400 me-2 flex-shrink-0" />
                                                 @endif
-                                                <span class="font-medium text-gray-900">{{ $item['industry_display'] }}</span>
+                                                <span class="font-medium text-white">{{ $item['industry_display'] }}</span>
                                             </div>
                                         </td>
 
@@ -463,44 +463,44 @@
                                     {{-- Expanded Category Sub-Rows --}}
                                     @if(in_array($item['industry'], $expandedIndustries) && !empty($item['categories']))
                                         @foreach($item['categories'] as $category)
-                                            <tr class="bg-gray-50/70">
+                                            <tr class="bg-gray-950/70">
                                                 {{-- Category Name --}}
                                                 <td>
                                                     <div class="flex items-center ps-10">
                                                         <div class="w-1.5 h-1.5 bg-gray-400 rounded-full me-2"></div>
-                                                        <span class="text-gray-700">{{ $category['category_display'] }}</span>
+                                                        <span class="text-gray-200">{{ $category['category_display'] }}</span>
                                                     </div>
                                                 </td>
 
                                                 {{-- Accounts --}}
-                                                <td class="text-gray-600">{{ number_format($category['accounts_count']) }}</td>
+                                                <td class="text-gray-300">{{ number_format($category['accounts_count']) }}</td>
 
                                                 {{-- Platforms (empty for sub-rows) --}}
                                                 <td class="text-gray-400">&mdash;</td>
 
                                                 {{-- Impressions --}}
-                                                <td class="text-gray-600">{{ formatNumber($category['total_impressions']) }}</td>
+                                                <td class="text-gray-300">{{ formatNumber($category['total_impressions']) }}</td>
 
                                                 {{-- Clicks --}}
-                                                <td class="text-gray-600">{{ formatNumber($category['total_clicks']) }}</td>
+                                                <td class="text-gray-300">{{ formatNumber($category['total_clicks']) }}</td>
 
                                                 {{-- Spend --}}
-                                                <td class="text-gray-600">
+                                                <td class="text-gray-300">
                                                     <span class="text-xs text-gray-400">SAR</span> {{ number_format($category['total_spend'], 2) }}
                                                 </td>
 
                                                 {{-- Efficiency columns --}}
                                                 @if($tableMetric === 'all' || $tableMetric === 'efficiency')
-                                                    <td class="text-gray-600">{{ number_format($category['ctr'], 2) }}%</td>
-                                                    <td class="text-gray-600"><span class="text-xs text-gray-400">SAR</span> {{ number_format($category['cpc'], 2) }}</td>
-                                                    <td class="text-gray-600"><span class="text-xs text-gray-400">SAR</span> {{ number_format($category['cpm'], 2) }}</td>
+                                                    <td class="text-gray-300">{{ number_format($category['ctr'], 2) }}%</td>
+                                                    <td class="text-gray-300"><span class="text-xs text-gray-400">SAR</span> {{ number_format($category['cpc'], 2) }}</td>
+                                                    <td class="text-gray-300"><span class="text-xs text-gray-400">SAR</span> {{ number_format($category['cpm'], 2) }}</td>
                                                 @endif
 
                                                 {{-- Conversion columns --}}
                                                 @if($tableMetric === 'all' || $tableMetric === 'conversions')
-                                                    <td class="text-gray-600">{{ formatNumber($category['total_leads']) }}</td>
-                                                    <td class="text-gray-600">{{ number_format($category['cvr'], 2) }}%</td>
-                                                    <td class="text-gray-600"><span class="text-xs text-gray-400">SAR</span> {{ number_format($category['cpl'], 2) }}</td>
+                                                    <td class="text-gray-300">{{ formatNumber($category['total_leads']) }}</td>
+                                                    <td class="text-gray-300">{{ number_format($category['cvr'], 2) }}%</td>
+                                                    <td class="text-gray-300"><span class="text-xs text-gray-400">SAR</span> {{ number_format($category['cpl'], 2) }}</td>
                                                 @endif
                                             </tr>
                                         @endforeach
@@ -511,7 +511,7 @@
                     </div>
 
                     {{-- Benchmark Legend --}}
-                    <div class="px-6 py-3 border-t border-gray-200">
+                    <div class="px-6 py-3 border-t border-white/10">
                         <div class="flex items-center gap-x-4 text-xs text-gray-500">
                             <span class="font-medium">{{ __('common.performance') }}:</span>
                             <span class="flex items-center"><span class="inline-block w-2 h-2 rounded-full bg-green-500 me-1"></span> {{ __('common.excellent') }}</span>
@@ -538,7 +538,7 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <h3 class="mt-2 text-sm font-semibold text-gray-900">{{ __('pages.industry_overview.loading') }}</h3>
+                <h3 class="mt-2 text-sm font-semibold text-white">{{ __('pages.industry_overview.loading') }}</h3>
             </div>
         @endif
     </div>

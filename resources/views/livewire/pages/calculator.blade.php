@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50"
+<div class="min-h-screen bg-gray-950"
      x-data="{
          budget: @entangle('monthlyBudget'),
          init() {
@@ -10,19 +10,19 @@
         {{-- Page Header + Mode Toggle --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h1 class="text-xl font-semibold tracking-tight text-gray-900">{{ __('pages.calculator.hero_title') }}</h1>
+                <h1 class="text-xl font-semibold tracking-tight text-white">{{ __('pages.calculator.hero_title') }}</h1>
                 <p class="mt-0.5 text-sm text-gray-500">{{ __('pages.calculator.hero_description') }}</p>
             </div>
             {{-- Simple / Advanced toggle --}}
-            <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-auto">
+            <div class="flex items-center gap-1 bg-white/5 rounded-lg p-1 self-start sm:self-auto">
                 <button type="button"
                         wire:click="$set('viewMode', 'simple')"
-                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'simple' ? 'bg-white text-gray-900 border border-gray-200' : 'text-gray-500 hover:text-gray-700' }}">
+                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'simple' ? 'bg-gray-900 text-white border border-white/10' : 'text-gray-500 hover:text-gray-200' }}">
                     {{ __('pages.calculator.mode_simple') }}
                 </button>
                 <button type="button"
                         wire:click="$set('viewMode', 'advanced')"
-                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'advanced' ? 'bg-white text-gray-900 border border-gray-200' : 'text-gray-500 hover:text-gray-700' }}">
+                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'advanced' ? 'bg-gray-900 text-white border border-white/10' : 'text-gray-500 hover:text-gray-200' }}">
                     {{ __('pages.calculator.mode_advanced') }}
                 </button>
             </div>
@@ -37,8 +37,8 @@
                 {{-- Input Card --}}
                 <div class="lg:col-span-4">
                     <div class="card">
-                        <div class="px-5 pt-5 pb-4 border-b border-gray-200">
-                            <h3 class="text-base font-semibold text-gray-900">{{ __('pages.calculator.inputs_title') }}</h3>
+                        <div class="px-5 pt-5 pb-4 border-b border-white/10">
+                            <h3 class="text-base font-semibold text-white">{{ __('pages.calculator.inputs_title') }}</h3>
                         </div>
                         <div class="px-5 py-5">
                             <form wire:submit="calculate" class="space-y-5">
@@ -73,7 +73,7 @@
                                             <button type="button"
                                                     wire:click="$set('calculationMode', '{{ $mode }}')"
                                                     class="flex-1 px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:ring-gray-900/10
-                                                           {{ $calculationMode === $mode ? 'bg-gray-900 border-gray-900 text-white font-semibold' : 'bg-white border-gray-200 text-gray-700 font-medium hover:bg-gray-50' }}
+                                                           {{ $calculationMode === $mode ? 'bg-gray-900 border-gray-900 text-white font-semibold' : 'bg-gray-900 border-white/10 text-gray-200 font-medium hover:bg-gray-950' }}
                                                            {{ $loop->first ? 'rounded-s-md' : '' }}
                                                            {{ $loop->last ? 'rounded-e-md' : '' }}
                                                            {{ !$loop->first ? '-ms-px' : '' }}">
@@ -106,7 +106,7 @@
                                         <div class="mt-3">
                                             <input type="range" min="1000" max="1000000" step="1000"
                                                    x-model.number="budget"
-                                                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-600">
+                                                   class="w-full h-2 bg-white/8 rounded-lg appearance-none cursor-pointer accent-brand-600">
                                             <div class="flex justify-between text-xs text-gray-400 mt-1">
                                                 <span>1K</span><span>250K</span><span>500K</span><span>1M</span>
                                             </div>
@@ -165,9 +165,9 @@
                             <div class="card p-6 mb-4">
                                 <p class="text-sm text-gray-500 mb-1">{{ __('pages.calculator.estimated_budget') }}</p>
                                 <div class="flex items-center gap-3 flex-wrap">
-                                    <span class="text-2xl font-bold text-gray-900">{{ $this->formatCurrency($result['budget']['poor'] ?? 0) }}</span>
+                                    <span class="text-2xl font-bold text-white">{{ $this->formatCurrency($result['budget']['poor'] ?? 0) }}</span>
                                     <span class="text-gray-400 text-xl">→</span>
-                                    <span class="text-2xl font-bold text-gray-900">{{ $this->formatCurrency($result['budget']['excellent'] ?? 0) }}</span>
+                                    <span class="text-2xl font-bold text-white">{{ $this->formatCurrency($result['budget']['excellent'] ?? 0) }}</span>
                                 </div>
                                 <p class="text-xs text-gray-400 mt-2">{{ __('pages.calculator.budget_range') }} ({{ __('pages.calculator.scenarios.poor') }} → {{ __('pages.calculator.scenarios.excellent') }})</p>
                             </div>
@@ -181,17 +181,17 @@
                                 <div class="flex items-center justify-between gap-4">
                                     <div class="text-center">
                                         <p class="text-xs text-red-500 font-medium mb-1">{{ __('pages.calculator.scenarios.poor') }}</p>
-                                        <p class="text-2xl font-bold text-gray-900">{{ $this->formatNumber($poorPrediction['primary_result']['value'] ?? 0) }}</p>
+                                        <p class="text-2xl font-bold text-white">{{ $this->formatNumber($poorPrediction['primary_result']['value'] ?? 0) }}</p>
                                     </div>
                                     <div class="flex-1 h-2 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-full"></div>
                                     <div class="text-center">
                                         <p class="text-xs text-amber-500 font-medium mb-1">{{ __('pages.calculator.scenarios.average') }}</p>
-                                        <p class="text-2xl font-bold text-gray-900">{{ $this->formatNumber($averagePrediction['primary_result']['value'] ?? 0) }}</p>
+                                        <p class="text-2xl font-bold text-white">{{ $this->formatNumber($averagePrediction['primary_result']['value'] ?? 0) }}</p>
                                     </div>
                                     <div class="flex-1 h-2 bg-gradient-to-r from-yellow-200 to-green-200 rounded-full"></div>
                                     <div class="text-center">
                                         <p class="text-xs text-green-600 font-medium mb-1">{{ __('pages.calculator.scenarios.excellent') }}</p>
-                                        <p class="text-2xl font-bold text-gray-900">{{ $this->formatNumber($excellentPrediction['primary_result']['value'] ?? 0) }}</p>
+                                        <p class="text-2xl font-bold text-white">{{ $this->formatNumber($excellentPrediction['primary_result']['value'] ?? 0) }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -201,7 +201,7 @@
                                 <p class="text-xs text-gray-500 mb-1">{{ __('kpis.impressions') }}</p>
                                 <p class="text-sm font-semibold text-gray-500">{{ $this->formatNumber($poorPrediction['impressions']['value'] ?? 0) }}</p>
                                 <p class="text-xs text-gray-400">→</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $this->formatNumber($excellentPrediction['impressions']['value'] ?? 0) }}</p>
+                                <p class="text-lg font-bold text-white">{{ $this->formatNumber($excellentPrediction['impressions']['value'] ?? 0) }}</p>
                             </div>
 
                             {{-- Clicks --}}
@@ -209,7 +209,7 @@
                                 <p class="text-xs text-gray-500 mb-1">{{ __('kpis.clicks') }}</p>
                                 <p class="text-sm font-semibold text-gray-500">{{ $this->formatNumber($poorPrediction['clicks']['value'] ?? 0) }}</p>
                                 <p class="text-xs text-gray-400">→</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $this->formatNumber($excellentPrediction['clicks']['value'] ?? 0) }}</p>
+                                <p class="text-lg font-bold text-white">{{ $this->formatNumber($excellentPrediction['clicks']['value'] ?? 0) }}</p>
                             </div>
 
                             {{-- Cost per result --}}
@@ -217,7 +217,7 @@
                                 <p class="text-xs text-gray-500 mb-1">{{ __('pages.calculator.cost_per_result') }}</p>
                                 <p class="text-sm font-semibold text-gray-500">{{ $excellentPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
                                 <p class="text-xs text-gray-400">→</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $poorPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
+                                <p class="text-lg font-bold text-white">{{ $poorPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
                             </div>
                         </div>
 
@@ -229,8 +229,8 @@
                     @else
                         <div class="card">
                             <div class="empty-state">
-                                <div class="mx-auto h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
-                                    <x-heroicon-o-calculator class="h-6 w-6 text-gray-600" />
+                                <div class="mx-auto h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center mb-4">
+                                    <x-heroicon-o-calculator class="h-6 w-6 text-gray-300" />
                                 </div>
                                 <h3 class="empty-title">{{ __('pages.calculator.empty_title') }}</h3>
                                 <p class="empty-message">{{ __('pages.calculator.empty_description') }}</p>
@@ -249,8 +249,8 @@
                 {{-- Input Panel --}}
                 <div class="xl:col-span-4">
                     <div class="card">
-                        <div class="px-5 pt-5 pb-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">
+                        <div class="px-5 pt-5 pb-4 border-b border-white/10">
+                            <h3 class="text-lg font-semibold tracking-tight text-white">
                                 {{ __('pages.calculator.inputs_title') }}
                             </h3>
                             <p class="mt-1 text-sm text-gray-500">
@@ -271,7 +271,7 @@
                                             <button type="button"
                                                     wire:click="$set('calculationMode', '{{ $mode }}')"
                                                     class="flex-1 px-4 py-2 text-sm border focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:z-10
-                                                           {{ $calculationMode === $mode ? 'bg-gray-900 border-gray-900 text-white font-semibold' : 'bg-white border-gray-200 text-gray-700 font-medium hover:bg-gray-50' }}
+                                                           {{ $calculationMode === $mode ? 'bg-gray-900 border-gray-900 text-white font-semibold' : 'bg-gray-900 border-white/10 text-gray-200 font-medium hover:bg-gray-950' }}
                                                            {{ $loop->first ? 'rounded-s-md' : '' }}
                                                            {{ $loop->last ? 'rounded-e-md' : '' }}
                                                            {{ !$loop->first ? '-ms-px' : '' }}">
@@ -378,7 +378,7 @@
                                             <div class="mt-4">
                                                 <input type="range" min="1000" max="1000000" step="1000"
                                                        x-model.number="budget"
-                                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-600">
+                                                       class="w-full h-2 bg-white/8 rounded-lg appearance-none cursor-pointer accent-brand-600">
                                                 <div class="flex justify-between text-xs text-gray-500 mt-1.5">
                                                     <span>1K</span><span>250K</span><span>500K</span><span>750K</span><span>1M</span>
                                                 </div>
@@ -414,10 +414,10 @@
                                     <div class="card">
                                         <div class="p-5 animate-pulse">
                                             <div class="flex items-center">
-                                                <div class="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                                                <div class="h-12 w-12 bg-white/8 rounded-lg"></div>
                                                 <div class="ms-5 flex-1 space-y-2">
-                                                    <div class="h-3 bg-gray-200 rounded w-20"></div>
-                                                    <div class="h-6 bg-gray-200 rounded w-24"></div>
+                                                    <div class="h-3 bg-white/8 rounded w-20"></div>
+                                                    <div class="h-6 bg-white/8 rounded w-24"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -510,8 +510,8 @@
                         @if(!empty($result['budget']))
                             <div class="kpi-card">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                        <x-heroicon-o-currency-dollar class="h-6 w-6 text-gray-600" />
+                                    <div class="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                                        <x-heroicon-o-currency-dollar class="h-6 w-6 text-gray-300" />
                                     </div>
                                     <div class="w-0 flex-1 min-w-0">
                                         <p class="kpi-label truncate">{{ __('pages.calculator.estimated_budget') }}</p>
@@ -520,9 +520,9 @@
                                 </div>
                                 <div class="mt-4 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
                                     <span>{{ __('pages.calculator.budget_range') }}:</span>
-                                    <span class="font-medium text-gray-900">{{ $this->formatCurrency($result['budget']['poor'] ?? 0) }}</span>
+                                    <span class="font-medium text-white">{{ $this->formatCurrency($result['budget']['poor'] ?? 0) }}</span>
                                     <span>&rarr;</span>
-                                    <span class="font-medium text-gray-900">{{ $this->formatCurrency($result['budget']['excellent'] ?? 0) }}</span>
+                                    <span class="font-medium text-white">{{ $this->formatCurrency($result['budget']['excellent'] ?? 0) }}</span>
                                 </div>
                             </div>
                         @endif
@@ -562,11 +562,11 @@
                             @foreach($kpis as $index => $kpi)
                                 <div class="kpi-card">
                                     <div class="flex items-center gap-4">
-                                        <div class="h-11 w-11 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                            @if($kpi['icon'] === 'eye') <x-heroicon-o-eye class="h-6 w-6 text-gray-600" />
-                                            @elseif($kpi['icon'] === 'cursor-arrow-rays') <x-heroicon-o-cursor-arrow-rays class="h-6 w-6 text-gray-600" />
-                                            @elseif($kpi['icon'] === 'check-circle') <x-heroicon-o-check-circle class="h-6 w-6 text-gray-600" />
-                                            @else <x-heroicon-o-banknotes class="h-6 w-6 text-gray-600" />
+                                        <div class="h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                                            @if($kpi['icon'] === 'eye') <x-heroicon-o-eye class="h-6 w-6 text-gray-300" />
+                                            @elseif($kpi['icon'] === 'cursor-arrow-rays') <x-heroicon-o-cursor-arrow-rays class="h-6 w-6 text-gray-300" />
+                                            @elseif($kpi['icon'] === 'check-circle') <x-heroicon-o-check-circle class="h-6 w-6 text-gray-300" />
+                                            @else <x-heroicon-o-banknotes class="h-6 w-6 text-gray-300" />
                                             @endif
                                         </div>
                                         <div class="w-0 flex-1 min-w-0">
@@ -611,8 +611,8 @@
                                      destroy() { if (this.chart) { this.chart.destroy(); this.chart = null; } }
                                  }"
                                  x-init="init()">
-                                <div class="px-5 py-4 border-b border-gray-200">
-                                    <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.calculator.scenario_comparison') }}</h3>
+                                <div class="px-5 py-4 border-b border-white/10">
+                                    <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.calculator.scenario_comparison') }}</h3>
                                 </div>
                                 <div class="p-5">
                                     <div class="relative h-80">
@@ -624,7 +624,7 @@
 
                         {{-- Scenario Cards --}}
                         <div>
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900 mb-4">{{ __('pages.calculator.scenario_forecasts') }}</h3>
+                            <h3 class="text-lg font-semibold tracking-tight text-white mb-4">{{ __('pages.calculator.scenario_forecasts') }}</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                                 @php
                                     $scenarioConfig = [
@@ -638,15 +638,15 @@
                                     @php $config = $scenarioConfig[$scenario] ?? ['label' => ucfirst($scenario), 'icon' => 'chart-bar']; @endphp
                                     <div class="card cursor-pointer {{ $selectedScenario === $scenario ? 'ring-2 ring-gray-900' : '' }}"
                                          wire:click="$set('selectedScenario', '{{ $scenario }}')">
-                                        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                        <div class="px-4 py-3 bg-gray-950 border-b border-white/10 flex items-center justify-between">
                                             <div class="flex items-center gap-2">
-                                                @if($config['icon'] === 'arrow-trending-down') <x-heroicon-o-arrow-trending-down class="h-5 w-5 text-gray-600" />
-                                                @elseif($config['icon'] === 'minus') <x-heroicon-o-minus class="h-5 w-5 text-gray-600" />
-                                                @elseif($config['icon'] === 'arrow-trending-up') <x-heroicon-o-arrow-trending-up class="h-5 w-5 text-gray-600" />
-                                                @elseif($config['icon'] === 'rocket-launch') <x-heroicon-o-rocket-launch class="h-5 w-5 text-gray-600" />
-                                                @else <x-heroicon-o-chart-bar class="h-5 w-5 text-gray-600" />
+                                                @if($config['icon'] === 'arrow-trending-down') <x-heroicon-o-arrow-trending-down class="h-5 w-5 text-gray-300" />
+                                                @elseif($config['icon'] === 'minus') <x-heroicon-o-minus class="h-5 w-5 text-gray-300" />
+                                                @elseif($config['icon'] === 'arrow-trending-up') <x-heroicon-o-arrow-trending-up class="h-5 w-5 text-gray-300" />
+                                                @elseif($config['icon'] === 'rocket-launch') <x-heroicon-o-rocket-launch class="h-5 w-5 text-gray-300" />
+                                                @else <x-heroicon-o-chart-bar class="h-5 w-5 text-gray-300" />
                                                 @endif
-                                                <span class="font-semibold text-sm text-gray-900">{{ $config['label'] }}</span>
+                                                <span class="font-semibold text-sm text-white">{{ $config['label'] }}</span>
                                             </div>
                                             @if($selectedScenario === $scenario)
                                                 <span class="inline-flex items-center rounded-full bg-[#F1F1EF] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6B6B66]">{{ __('pages.calculator.selected') }}</span>
@@ -658,34 +658,34 @@
                                                 <p class="stat-num">{{ $this->formatNumber($prediction['primary_result']['value'] ?? 0) }}</p>
                                             </div>
                                             <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div class="bg-gray-50 rounded-lg p-2">
+                                                <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">{{ __('kpis.impressions') }}</p>
-                                                    <p class="font-semibold text-gray-900">{{ $this->formatNumber($prediction['impressions']['value'] ?? 0) }}</p>
+                                                    <p class="font-semibold text-white">{{ $this->formatNumber($prediction['impressions']['value'] ?? 0) }}</p>
                                                 </div>
-                                                <div class="bg-gray-50 rounded-lg p-2">
+                                                <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">{{ __('kpis.clicks') }}</p>
-                                                    <p class="font-semibold text-gray-900">{{ $this->formatNumber($prediction['clicks']['value'] ?? 0) }}</p>
+                                                    <p class="font-semibold text-white">{{ $this->formatNumber($prediction['clicks']['value'] ?? 0) }}</p>
                                                 </div>
-                                                <div class="bg-gray-50 rounded-lg p-2">
+                                                <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">CTR</p>
-                                                    <p class="font-semibold text-gray-900">{{ $prediction['metrics']['ctr'] ?? '-' }}</p>
+                                                    <p class="font-semibold text-white">{{ $prediction['metrics']['ctr'] ?? '-' }}</p>
                                                 </div>
-                                                <div class="bg-gray-50 rounded-lg p-2">
+                                                <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">CPC</p>
-                                                    <p class="font-semibold text-gray-900">{{ $prediction['metrics']['cpc'] ?? '-' }}</p>
+                                                    <p class="font-semibold text-white">{{ $prediction['metrics']['cpc'] ?? '-' }}</p>
                                                 </div>
-                                                <div class="bg-gray-50 rounded-lg p-2">
+                                                <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">CPM</p>
-                                                    <p class="font-semibold text-gray-900">{{ $prediction['metrics']['cpm'] ?? '-' }}</p>
+                                                    <p class="font-semibold text-white">{{ $prediction['metrics']['cpm'] ?? '-' }}</p>
                                                 </div>
-                                                <div class="bg-gray-50 rounded-lg p-2">
+                                                <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">CVR</p>
-                                                    <p class="font-semibold text-gray-900">{{ $prediction['metrics']['cvr'] ?? '-' }}</p>
+                                                    <p class="font-semibold text-white">{{ $prediction['metrics']['cvr'] ?? '-' }}</p>
                                                 </div>
                                             </div>
-                                            <div class="pt-3 border-t border-gray-200">
+                                            <div class="pt-3 border-t border-white/10">
                                                 <p class="text-xs text-gray-500">{{ __('pages.calculator.cost_per_result') }}</p>
-                                                <p class="text-lg font-semibold text-gray-900">{{ $prediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
+                                                <p class="text-lg font-semibold text-white">{{ $prediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -700,9 +700,9 @@
                                 $globalAverage = $result['global_predictions']['average'] ?? [];
                             @endphp
                             <div class="card">
-                                <div class="px-5 py-4 border-b border-gray-200">
-                                    <h3 class="text-base font-semibold tracking-tight text-gray-900 flex items-center gap-2">
-                                        <x-heroicon-o-globe-alt class="h-5 w-5 text-gray-600" />
+                                <div class="px-5 py-4 border-b border-white/10">
+                                    <h3 class="text-base font-semibold tracking-tight text-white flex items-center gap-2">
+                                        <x-heroicon-o-globe-alt class="h-5 w-5 text-gray-300" />
                                         {{ __('pages.calculator.global_comparison') }}
                                     </h3>
                                 </div>
@@ -717,9 +717,9 @@
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td class="font-medium text-gray-900">{{ $primaryLabel }}</td>
-                                                <td class="font-semibold text-gray-900">{{ $this->formatNumber($rbAverage['primary_result']['value'] ?? 0) }}</td>
-                                                <td class="font-semibold text-gray-900">{{ $this->formatNumber($globalAverage['primary_result']['value'] ?? 0) }}</td>
+                                                <td class="font-medium text-white">{{ $primaryLabel }}</td>
+                                                <td class="font-semibold text-white">{{ $this->formatNumber($rbAverage['primary_result']['value'] ?? 0) }}</td>
+                                                <td class="font-semibold text-white">{{ $this->formatNumber($globalAverage['primary_result']['value'] ?? 0) }}</td>
                                             </tr>
                                             <tr>
                                                 <td>{{ __('kpis.impressions') }}</td>
@@ -749,9 +749,9 @@
                         {{-- Media Plan --}}
                         @if(!empty($result['media_plan']))
                             <div class="card">
-                                <div class="px-5 py-4 border-b border-gray-200">
-                                    <h3 class="text-base font-semibold tracking-tight text-gray-900 flex items-center gap-2">
-                                        <x-heroicon-o-table-cells class="h-5 w-5 text-gray-600" />
+                                <div class="px-5 py-4 border-b border-white/10">
+                                    <h3 class="text-base font-semibold tracking-tight text-white flex items-center gap-2">
+                                        <x-heroicon-o-table-cells class="h-5 w-5 text-gray-300" />
                                         {{ __('pages.calculator.media_plan') }}
                                     </h3>
                                     <p class="mt-1 text-sm text-gray-500">{{ __('pages.calculator.media_plan_description') }}</p>
@@ -772,9 +772,9 @@
                                         <tbody>
                                             @foreach($result['media_plan'] as $row)
                                                 <tr>
-                                                    <td class="font-medium text-gray-900">{{ $availableFunnelStages[$row['stage']] ?? $row['stage'] }}</td>
+                                                    <td class="font-medium text-white">{{ $availableFunnelStages[$row['stage']] ?? $row['stage'] }}</td>
                                                     <td>{{ $row['percentage'] }}%</td>
-                                                    <td class="text-gray-900">{{ $this->formatCurrency($row['budget']) }}</td>
+                                                    <td class="text-white">{{ $this->formatCurrency($row['budget']) }}</td>
                                                     <td>{{ $this->formatNumber($row['impressions']) }}</td>
                                                     <td>{{ $this->formatNumber($row['clicks']) }}</td>
                                                     <td>{{ $this->formatNumber($row['primary_result']) }} {{ $row['primary_label'] }}</td>
@@ -790,32 +790,32 @@
                         {{-- Benchmark Transparency --}}
                         @if(!empty($result['benchmark_info']))
                             <div class="card" x-data="{ open: false }">
-                                <button @click="open = !open" class="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 focus:outline-none">
+                                <button @click="open = !open" class="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-950 focus:outline-none">
                                     <div class="flex items-center gap-3">
-                                        <x-heroicon-o-information-circle class="h-5 w-5 text-gray-600" />
-                                        <span class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.calculator.how_calculated') }}</span>
+                                        <x-heroicon-o-information-circle class="h-5 w-5 text-gray-300" />
+                                        <span class="text-base font-semibold tracking-tight text-white">{{ __('pages.calculator.how_calculated') }}</span>
                                     </div>
                                     <x-heroicon-o-chevron-down class="h-5 w-5 text-gray-400 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
                                 </button>
-                                <div x-show="open" x-transition class="border-t border-gray-200">
+                                <div x-show="open" x-transition class="border-t border-white/10">
                                     <div class="px-5 py-5 grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div class="space-y-3">
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
+                                            <div class="flex items-center justify-between py-2 border-b border-white/10">
                                                 <span class="text-sm text-gray-500">{{ __('pages.calculator.data_points') }}</span>
-                                                <span class="font-medium text-gray-900">{{ $result['benchmark_info']['data_points'] ?? 0 }}</span>
+                                                <span class="font-medium text-white">{{ $result['benchmark_info']['data_points'] ?? 0 }}</span>
                                             </div>
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
+                                            <div class="flex items-center justify-between py-2 border-b border-white/10">
                                                 <span class="text-sm text-gray-500">{{ __('pages.calculator.date_range') }}</span>
-                                                <span class="font-medium text-gray-900">{{ $result['benchmark_info']['date_range']['from'] ?? '-' }} &rarr; {{ $result['benchmark_info']['date_range']['to'] ?? '-' }}</span>
+                                                <span class="font-medium text-white">{{ $result['benchmark_info']['date_range']['from'] ?? '-' }} &rarr; {{ $result['benchmark_info']['date_range']['to'] ?? '-' }}</span>
                                             </div>
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-200">
+                                            <div class="flex items-center justify-between py-2 border-b border-white/10">
                                                 <span class="text-sm text-gray-500">{{ __('pages.calculator.method') }}</span>
-                                                <span class="font-medium text-gray-900 capitalize">{{ $result['benchmark_info']['calculation_method'] ?? '-' }}</span>
+                                                <span class="font-medium text-white capitalize">{{ $result['benchmark_info']['calculation_method'] ?? '-' }}</span>
                                             </div>
                                         </div>
-                                        <div class="bg-gray-50 rounded-xl p-4">
-                                            <h4 class="text-sm font-semibold text-gray-900 mb-2">{{ __('pages.calculator.objective_explanation') }}</h4>
-                                            <p class="text-sm text-gray-600">{{ $this->getObjectiveDescription($result['input']['objective'] ?? $objective) }}</p>
+                                        <div class="bg-gray-950 rounded-xl p-4">
+                                            <h4 class="text-sm font-semibold text-white mb-2">{{ __('pages.calculator.objective_explanation') }}</h4>
+                                            <p class="text-sm text-gray-300">{{ $this->getObjectiveDescription($result['input']['objective'] ?? $objective) }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -824,10 +824,10 @@
 
                         {{-- Disclaimers --}}
                         @if(!empty($result['disclaimers']))
-                            <div class="rounded-lg bg-gray-50 border border-gray-200 p-4">
+                            <div class="rounded-lg bg-gray-950 border border-white/10 p-4">
                                 <div class="flex">
-                                    <x-heroicon-o-information-circle class="h-5 w-5 text-gray-600 flex-shrink-0" />
-                                    <ul class="ms-3 list-disc list-inside text-sm text-gray-700 space-y-1">
+                                    <x-heroicon-o-information-circle class="h-5 w-5 text-gray-300 flex-shrink-0" />
+                                    <ul class="ms-3 list-disc list-inside text-sm text-gray-200 space-y-1">
                                         @foreach($result['disclaimers'] as $disclaimer)
                                             <li>{{ $disclaimer }}</li>
                                         @endforeach
@@ -840,29 +840,29 @@
                     @if(!$hasResult && !$error && !$loading)
                         <div class="card">
                             <div class="empty-state">
-                                <div class="mx-auto h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
-                                    <x-heroicon-o-calculator class="h-6 w-6 text-gray-600" />
+                                <div class="mx-auto h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center mb-4">
+                                    <x-heroicon-o-calculator class="h-6 w-6 text-gray-300" />
                                 </div>
                                 <h3 class="empty-title">{{ __('pages.calculator.empty_title') }}</h3>
                                 <p class="empty-message mb-8">{{ __('pages.calculator.empty_description') }}</p>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-2xl mx-auto">
-                                    <div class="bg-gray-50 rounded-xl p-4">
-                                        <div class="h-8 w-8 bg-white border border-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <span class="text-gray-900 font-semibold text-sm">1</span>
+                                    <div class="bg-gray-950 rounded-xl p-4">
+                                        <div class="h-8 w-8 bg-gray-900 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <span class="text-white font-semibold text-sm">1</span>
                                         </div>
-                                        <p class="text-sm font-medium text-gray-900">{{ __('pages.calculator.step_1') }}</p>
+                                        <p class="text-sm font-medium text-white">{{ __('pages.calculator.step_1') }}</p>
                                     </div>
-                                    <div class="bg-gray-50 rounded-xl p-4">
-                                        <div class="h-8 w-8 bg-white border border-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <span class="text-gray-900 font-semibold text-sm">2</span>
+                                    <div class="bg-gray-950 rounded-xl p-4">
+                                        <div class="h-8 w-8 bg-gray-900 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <span class="text-white font-semibold text-sm">2</span>
                                         </div>
-                                        <p class="text-sm font-medium text-gray-900">{{ __('pages.calculator.step_2') }}</p>
+                                        <p class="text-sm font-medium text-white">{{ __('pages.calculator.step_2') }}</p>
                                     </div>
-                                    <div class="bg-gray-50 rounded-xl p-4">
-                                        <div class="h-8 w-8 bg-white border border-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <span class="text-gray-900 font-semibold text-sm">3</span>
+                                    <div class="bg-gray-950 rounded-xl p-4">
+                                        <div class="h-8 w-8 bg-gray-900 border border-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <span class="text-white font-semibold text-sm">3</span>
                                         </div>
-                                        <p class="text-sm font-medium text-gray-900">{{ __('pages.calculator.step_3') }}</p>
+                                        <p class="text-sm font-medium text-white">{{ __('pages.calculator.step_3') }}</p>
                                     </div>
                                 </div>
                             </div>

@@ -2,7 +2,7 @@
     {{-- Header --}}
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h1 class="text-xl font-semibold tracking-tight text-gray-900">
+            <h1 class="text-xl font-semibold tracking-tight text-white">
                 {{ __('pages.settings.title') }}
             </h1>
             <p class="mt-1 text-sm text-gray-500">
@@ -24,11 +24,11 @@
         </div>
         {{-- Desktop tabs --}}
         <div class="hidden sm:block">
-            <div class="border-b border-gray-200">
+            <div class="border-b border-white/10">
                 <nav class="-mb-px flex gap-x-8 px-4" aria-label="Tabs">
                     <button
                         wire:click="$set('activeTab', 'general')"
-                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'general' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'general' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15' }}"
                     >
                         {{ __('pages.settings.tabs.general') }}
                     </button>
@@ -42,9 +42,9 @@
         @if($activeTab === 'general')
             <div class="space-y-6">
                 {{-- Profile Settings --}}
-                <div class="card p-0 divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-white/10">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.profile.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.settings.profile.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.profile.description') }}</p>
                     </div>
 
@@ -62,8 +62,8 @@
                                         />
                                     </div>
                                 @else
-                                    <div class="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center ring-2 ring-gray-200">
-                                        <span class="text-2xl font-semibold text-gray-600">{{ $this->userInitials }}</span>
+                                    <div class="w-20 h-20 bg-white/8 rounded-full flex items-center justify-center ring-2 ring-gray-200">
+                                        <span class="text-2xl font-semibold text-gray-300">{{ $this->userInitials }}</span>
                                     </div>
                                 @endif
 
@@ -88,10 +88,10 @@
                             </div>
 
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">{{ $this->user->name }}</p>
+                                <p class="text-sm font-medium text-white">{{ $this->user->name }}</p>
                                 <p class="text-sm text-gray-500">{{ $this->user->email }}</p>
                                 <div class="mt-2 flex items-center gap-x-3">
-                                    <label class="text-sm text-gray-900 hover:text-gray-600 cursor-pointer font-medium">
+                                    <label class="text-sm text-white hover:text-gray-300 cursor-pointer font-medium">
                                         {{ __('pages.settings.profile.change_photo') }}
                                         <input
                                             type="file"
@@ -175,9 +175,9 @@
                 </div>
 
                 {{-- Change Password --}}
-                <div class="card p-0 divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-white/10">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.password.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.settings.password.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.password.description') }}</p>
                     </div>
 
@@ -231,9 +231,9 @@
                 </div>
 
                 {{-- Notification Settings --}}
-                <div class="card p-0 divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-white/10">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.notifications.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.settings.notifications.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.notifications.description') }}</p>
                     </div>
 
@@ -241,18 +241,18 @@
                         {{-- Email Alerts --}}
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">{{ __('pages.settings.notifications.email_alerts') }}</p>
+                                <p class="text-sm font-medium text-white">{{ __('pages.settings.notifications.email_alerts') }}</p>
                                 <p class="text-sm text-gray-500">{{ __('pages.settings.notifications.email_alerts_desc') }}</p>
                             </div>
                             <button
                                 type="button"
                                 wire:click="$toggle('emailAlerts')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $emailAlerts ? 'bg-gray-900' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $emailAlerts ? 'bg-gray-900' : 'bg-white/8' }}"
                                 role="switch"
                                 aria-checked="{{ $emailAlerts ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $emailAlerts ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-gray-900 ring-0 transition duration-200 ease-in-out {{ $emailAlerts ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -260,18 +260,18 @@
                         {{-- In-App Notifications --}}
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">{{ __('pages.settings.notifications.in_app') }}</p>
+                                <p class="text-sm font-medium text-white">{{ __('pages.settings.notifications.in_app') }}</p>
                                 <p class="text-sm text-gray-500">{{ __('pages.settings.notifications.in_app_desc') }}</p>
                             </div>
                             <button
                                 type="button"
                                 wire:click="$toggle('inAppNotifications')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $inAppNotifications ? 'bg-gray-900' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $inAppNotifications ? 'bg-gray-900' : 'bg-white/8' }}"
                                 role="switch"
                                 aria-checked="{{ $inAppNotifications ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $inAppNotifications ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-gray-900 ring-0 transition duration-200 ease-in-out {{ $inAppNotifications ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -279,18 +279,18 @@
                         {{-- Weekly Summary --}}
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">{{ __('pages.settings.notifications.weekly_summary') }}</p>
+                                <p class="text-sm font-medium text-white">{{ __('pages.settings.notifications.weekly_summary') }}</p>
                                 <p class="text-sm text-gray-500">{{ __('pages.settings.notifications.weekly_summary_desc') }}</p>
                             </div>
                             <button
                                 type="button"
                                 wire:click="$toggle('weeklySummary')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $weeklySummary ? 'bg-gray-900' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $weeklySummary ? 'bg-gray-900' : 'bg-white/8' }}"
                                 role="switch"
                                 aria-checked="{{ $weeklySummary ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $weeklySummary ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-gray-900 ring-0 transition duration-200 ease-in-out {{ $weeklySummary ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -298,9 +298,9 @@
                 </div>
 
                 {{-- Display Preferences --}}
-                <div class="card p-0 divide-y divide-gray-200">
+                <div class="card p-0 divide-y divide-white/10">
                     <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.settings.display.title') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.settings.display.title') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.settings.display.description') }}</p>
                     </div>
 
@@ -319,8 +319,8 @@
                         {{-- Currency Display (read-only info) --}}
                         <div>
                             <label class="micro-label block">{{ __('pages.settings.display.currency') }}</label>
-                            <div class="mt-1 flex items-center text-sm text-gray-600">
-                                <span class="bg-gray-100 px-3 py-2 rounded-md font-medium">SAR ({{ __('pages.settings.display.saudi_riyal') }})</span>
+                            <div class="mt-1 flex items-center text-sm text-gray-300">
+                                <span class="bg-white/5 px-3 py-2 rounded-md font-medium">SAR ({{ __('pages.settings.display.saudi_riyal') }})</span>
                                 <span class="ms-2 text-xs text-gray-500">{{ __('pages.settings.display.currency_hint') }}</span>
                             </div>
                         </div>
@@ -342,9 +342,9 @@
             </div>
 
             {{-- ── REPORT BRANDING ── --}}
-            <div class="card p-0 divide-y divide-gray-200 mt-6">
+            <div class="card p-0 divide-y divide-white/10 mt-6">
                 <div class="px-4 py-5 sm:px-6">
-                    <h3 class="text-base font-semibold tracking-tight text-gray-900">Report Branding</h3>
+                    <h3 class="text-base font-semibold tracking-tight text-white">Report Branding</h3>
                     <p class="mt-1 text-sm text-gray-500">Customize how your agency appears on exported PDF reports.</p>
                 </div>
 

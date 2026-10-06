@@ -35,7 +35,7 @@
     @endif
 
     {{-- Current Plan Status --}}
-    <div class="bg-white border border-neutral-200 rounded-xl p-5 flex items-center justify-between gap-x-4 flex-wrap gap-y-3">
+    <div class="bg-gray-900 border border-neutral-200 rounded-xl p-5 flex items-center justify-between gap-x-4 flex-wrap gap-y-3">
         <div class="flex items-center gap-x-3">
             <div class="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
                 <svg class="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -76,8 +76,8 @@
                 @php
                     $subStatus = $this->activePlan->stripe_status ?? 'active';
                     $badgeClass = match($subStatus) {
-                        'active'   => 'border-green-200 bg-green-50 text-green-700',
-                        'past_due' => 'border-amber-200 bg-amber-50 text-amber-700',
+                        'active'   => 'border-green-200 bg-green-500/10 text-green-400',
+                        'past_due' => 'border-amber-200 bg-amber-500/10 text-amber-400',
                         'canceled', 'cancelled' => 'border-red-200 bg-red-50 text-red-600',
                         default    => 'border-neutral-200 bg-neutral-50 text-neutral-500',
                     };
@@ -104,11 +104,11 @@
         <span class="text-sm font-medium {{ $billingInterval === 'monthly' ? 'text-neutral-900' : 'text-neutral-400' }}">Monthly</span>
         <button wire:click="$set('billingInterval', $billingInterval === 'monthly' ? 'annual' : 'monthly')"
                 class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {{ $billingInterval === 'annual' ? 'bg-primary-600' : 'bg-neutral-200' }}">
-            <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {{ $billingInterval === 'annual' ? 'translate-x-6' : 'translate-x-1' }}"></span>
+            <span class="inline-block h-4 w-4 transform rounded-full bg-gray-900 transition-transform {{ $billingInterval === 'annual' ? 'translate-x-6' : 'translate-x-1' }}"></span>
         </button>
         <span class="text-sm font-medium {{ $billingInterval === 'annual' ? 'text-neutral-900' : 'text-neutral-400' }}">
             Annual
-            <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-xs rounded-full bg-green-100 text-green-700 font-medium">Save 20%</span>
+            <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 text-xs rounded-full bg-green-500/15 text-green-400 font-medium">Save 20%</span>
         </span>
     </div>
 
@@ -122,7 +122,7 @@
             $displayPrice = $billingInterval === 'annual' ? $annualPrice / 12 : $plan->price_sar;
             $displayUsd   = $billingInterval === 'annual' ? round($plan->price_usd * 0.8, 0) : $plan->price_usd;
         @endphp
-        <div class="relative bg-white rounded-xl border-2 transition-all
+        <div class="relative bg-gray-900 rounded-xl border-2 transition-all
             {{ $isRecommended ? 'border-primary-500' : ($isSelected ? 'border-primary-400' : 'border-neutral-200') }}
             {{ $isSelected ? 'ring-4 ring-primary-100' : '' }}">
 
@@ -188,7 +188,7 @@
                     @elseif($isRecommended)
                         bg-primary-50 border-primary-500 text-primary-700 hover:bg-primary-100
                     @else
-                        bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50
+                        bg-gray-900 border-neutral-200 text-neutral-700 hover:bg-neutral-50
                     @endif">
                     {{ $isSelected ? '✓ ' . __('billing.current') : __('billing.select_plan') }}
                 </button>
@@ -199,7 +199,7 @@
 
     {{-- Subscribe CTA (shown when plan selected) --}}
     @if($selectedPlan)
-    <div class="bg-white border border-neutral-200 rounded-xl px-6 py-5 flex items-center justify-between gap-x-4">
+    <div class="bg-gray-900 border border-neutral-200 rounded-xl px-6 py-5 flex items-center justify-between gap-x-4">
         <div>
             <p class="text-sm font-medium text-neutral-900">
                 Subscribe to

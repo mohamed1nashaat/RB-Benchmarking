@@ -21,8 +21,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="font-sans antialiased">
-    <div class="min-h-screen bg-[#F7F6F3] flex flex-col">
+<body class="font-sans antialiased bg-gray-950 text-white">
+    <div class="min-h-screen flex flex-col" style="background-color: #0d0f16;">
         <!-- Header -->
         <x-header />
 

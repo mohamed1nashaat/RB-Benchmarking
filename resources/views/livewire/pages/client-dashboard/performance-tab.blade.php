@@ -14,22 +14,22 @@
                 <div class="flex flex-wrap items-center gap-4">
                     <div class="flex items-center gap-2">
                         <span class="micro-label">{{ __('Period') }}:</span>
-                        <div class="inline-flex rounded-lg bg-gray-100 p-1">
+                        <div class="inline-flex rounded-lg bg-white/5 p-1">
                             @foreach([7, 30, 90, 365, 0] as $period)
-                                <button wire:click="$set('selectedPeriod', {{ $period }})" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 {{ $selectedPeriod === $period ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900' }}">
+                                <button wire:click="$set('selectedPeriod', {{ $period }})" class="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 {{ $selectedPeriod === $period ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-300 hover:text-white' }}">
                                     {{ $period === 0 ? __('filters.all') : ($period === 365 ? __('filters.1y') : $period . __('filters.days_suffix')) }}
                                 </button>
                             @endforeach
                         </div>
                     </div>
-                    <div class="hidden md:block h-8 w-px bg-gray-200"></div>
+                    <div class="hidden md:block h-8 w-px bg-white/8"></div>
                     <div class="flex items-center gap-2">
                         <span class="micro-label">{{ __('Custom') }}:</span>
                         <input wire:model.live="dateFrom" type="date" class="input-field" />
                         <span class="text-gray-400">-</span>
                         <input wire:model.live="dateTo" type="date" class="input-field" />
                     </div>
-                    <div class="hidden md:block h-8 w-px bg-gray-200"></div>
+                    <div class="hidden md:block h-8 w-px bg-white/8"></div>
                     <div class="flex items-center gap-2">
                         <span class="micro-label">{{ __('Platform') }}:</span>
                         <select wire:model.live="selectedPlatform" class="input-field">
@@ -131,7 +131,7 @@
                 @if($dashboardData['is_ecommerce'])
                     {{-- E-Commerce Funnel --}}
                     <div class="card p-5">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('E-Commerce Funnel') }}</h3>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-4">{{ __('E-Commerce Funnel') }}</h3>
                         <div class="h-64" x-data="{ chart: null }" x-init="chart = new Chart($refs.funnelCanvas, @js($ecommerceFunnelChartConfig))" wire:ignore>
                             <canvas x-ref="funnelCanvas"></canvas>
                         </div>
@@ -139,8 +139,8 @@
                             <div class="mt-4 space-y-2 text-xs">
                                 @foreach($dashboardData['funnel_data']['stages'] as $stage)
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">{{ $stage['name'] }}</span>
-                                        <span class="font-semibold text-gray-900">{{ number_format($stage['value']) }} ({{ $stage['pct'] }}%)</span>
+                                        <span class="text-gray-300">{{ $stage['name'] }}</span>
+                                        <span class="font-semibold text-white">{{ number_format($stage['value']) }} ({{ $stage['pct'] }}%)</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -149,7 +149,7 @@
 
                     {{-- Revenue VS ROAS --}}
                     <div class="card p-5">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('Revenue VS ROAS') }}</h3>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-4">{{ __('Revenue VS ROAS') }}</h3>
                         <div class="h-64" x-data="{ chart: null }" x-init="chart = new Chart($refs.revenueRoasCanvas, @js($revenueVsRoasChartConfig))" wire:ignore>
                             <canvas x-ref="revenueRoasCanvas"></canvas>
                         </div>
@@ -157,7 +157,7 @@
 
                     {{-- Conversions VS CPA --}}
                     <div class="card p-5">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('Conversions VS CPA') }}</h3>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-4">{{ __('Conversions VS CPA') }}</h3>
                         <div class="h-64" x-data="{ chart: null }" x-init="chart = new Chart($refs.conversionsCpaCanvas, @js($conversionsVsCpaChartConfig))" wire:ignore>
                             <canvas x-ref="conversionsCpaCanvas"></canvas>
                         </div>
@@ -165,7 +165,7 @@
                 @else
                     {{-- Conversion Funnel --}}
                     <div class="card p-5">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('Conversion funnel') }}</h3>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-4">{{ __('Conversion funnel') }}</h3>
                         <div class="h-64" x-data="{ chart: null }" x-init="chart = new Chart($refs.funnelCanvas, @js($funnelChartConfig))" wire:ignore>
                             <canvas x-ref="funnelCanvas"></canvas>
                         </div>
@@ -173,8 +173,8 @@
                             <div class="mt-4 space-y-2 text-xs">
                                 @foreach($dashboardData['funnel_data']['stages'] as $stage)
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">{{ $stage['name'] }}</span>
-                                        <span class="font-semibold text-gray-900">{{ number_format($stage['value']) }} ({{ $stage['pct'] }}%)</span>
+                                        <span class="text-gray-300">{{ $stage['name'] }}</span>
+                                        <span class="font-semibold text-white">{{ number_format($stage['value']) }} ({{ $stage['pct'] }}%)</span>
                                     </div>
                                 @endforeach
                             </div>
@@ -183,7 +183,7 @@
 
                     {{-- Lead VS CPL --}}
                     <div class="card p-5">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('Lead VS CPL') }}</h3>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-4">{{ __('Lead VS CPL') }}</h3>
                         <div class="h-64" x-data="{ chart: null }" x-init="chart = new Chart($refs.leadCplCanvas, @js($leadVsCplChartConfig))" wire:ignore>
                             <canvas x-ref="leadCplCanvas"></canvas>
                         </div>
@@ -191,7 +191,7 @@
 
                     {{-- Lead VS Spent --}}
                     <div class="card p-5">
-                        <h3 class="text-sm font-semibold text-gray-800 mb-4">{{ __('Lead VS Spent') }}</h3>
+                        <h3 class="text-sm font-semibold text-gray-100 mb-4">{{ __('Lead VS Spent') }}</h3>
                         <div class="h-64" x-data="{ chart: null }" x-init="chart = new Chart($refs.leadSpentCanvas, @js($leadVsSpentChartConfig))" wire:ignore>
                             <canvas x-ref="leadSpentCanvas"></canvas>
                         </div>
@@ -241,9 +241,9 @@
                         @foreach($accounts as $account)
                             <div class="card overflow-hidden" x-data="{ open: false }">
                                 {{-- Account Header --}}
-                                <div class="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                                <div class="flex items-center px-4 py-3 cursor-pointer hover:bg-gray-950 transition-colors"
                                      @click="open = !open">
-                                    <div class="flex items-center justify-center w-8 h-8 rounded bg-gray-50 border border-gray-100 me-3">
+                                    <div class="flex items-center justify-center w-8 h-8 rounded bg-gray-950 border border-white/8 me-3">
                                         @php
                                             /** @var array<string,string> Hardcoded SVG map — safe for {!! !!} output */
                                             $platformSvgs = [
@@ -255,7 +255,7 @@
                                             ];
                                             $platformColors = [
                                                 'facebook' => 'text-blue-600',
-                                                'google' => 'text-gray-700',
+                                                'google' => 'text-gray-200',
                                                 'tiktok' => 'text-black',
                                                 'snapchat' => 'text-yellow-500',
                                                 'linkedin' => 'text-blue-700',
@@ -270,7 +270,7 @@
                                         @endif
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-semibold text-gray-900 truncate">{{ $account['name'] }}</p>
+                                        <p class="text-sm font-semibold text-white truncate">{{ $account['name'] }}</p>
                                         <p class="text-xs text-gray-500">{{ ucfirst($account['platform']) }} · {{ count($account['campaigns'] ?? []) }} {{ __('campaigns') }}</p>
                                         @if($editingAccountId !== $account['id'])
                                             <p class="text-[10px] text-gray-400 mt-0.5">
@@ -304,24 +304,24 @@
                                                 <button wire:click="saveAccountEdit" class="text-[#346538] hover:text-[#2C5330] p-1" title="{{ __('common.save') }}">
                                                     <x-heroicon-o-check class="h-4 w-4" />
                                                 </button>
-                                                <button wire:click="cancelAccountEdit" class="text-gray-400 hover:text-gray-600 p-1" title="{{ __('common.cancel') }}">
+                                                <button wire:click="cancelAccountEdit" class="text-gray-400 hover:text-gray-300 p-1" title="{{ __('common.cancel') }}">
                                                     <x-heroicon-o-x-mark class="h-4 w-4" />
                                                 </button>
                                             </div>
                                         @else
-                                            <button wire:click="startEditAccount({{ $account['id'] }})" class="text-gray-400 hover:text-gray-700 p-1" title="{{ __('common.edit_account') }}">
+                                            <button wire:click="startEditAccount({{ $account['id'] }})" class="text-gray-400 hover:text-gray-200 p-1" title="{{ __('common.edit_account') }}">
                                                 <x-heroicon-o-pencil class="h-4 w-4" />
                                             </button>
                                         @endif
                                         <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $account['status'] === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
                                             {{ __('status.' . $account['status']) }}
                                         </span>
-                                        <span class="text-sm font-semibold text-gray-900">{{ fmtCurrency($account['total_spend'] ?? 0) }}</span>
+                                        <span class="text-sm font-semibold text-white">{{ fmtCurrency($account['total_spend'] ?? 0) }}</span>
                                         <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-400 transition-transform duration-200" x-bind:class="open ? 'rotate-180' : ''" />
                                     </div>
                                 </div>
                                 {{-- Campaigns List --}}
-                                <div x-show="open" x-cloak class="border-t border-gray-100">
+                                <div x-show="open" x-cloak class="border-t border-white/8">
                                     @if(empty($account['campaigns']))
                                         <div class="empty-state">
                                             <div class="empty-message">{{ __('No campaigns') }}</div>
@@ -342,7 +342,7 @@
                                                 <tbody>
                                                     @foreach($account['campaigns'] as $campaign)
                                                         <tr>
-                                                            <td class="text-gray-700 truncate max-w-[200px]">{{ $campaign['name'] }}</td>
+                                                            <td class="text-gray-200 truncate max-w-[200px]">{{ $campaign['name'] }}</td>
                                                             <td>
                                                                 <select wire:change="updateCampaign({{ $campaign['id'] }}, 'objective', $event.target.value)"
                                                                     class="input-field">
@@ -375,7 +375,7 @@
                                                                     @endforeach
                                                                 </select>
                                                             </td>
-                                                            <td class="text-end text-gray-700 font-medium">{{ fmtCurrency($campaign['spend'] ?? 0) }}</td>
+                                                            <td class="text-end text-gray-200 font-medium">{{ fmtCurrency($campaign['spend'] ?? 0) }}</td>
                                                             <td class="text-end">
                                                                 <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ ($campaign['status'] ?? '') === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
                                                                     {{ $campaign['status'] ? __('status.' . $campaign['status']) : __('common.unknown') }}
@@ -408,7 +408,7 @@
                             {{ $platformLogo }}
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900 capitalize">{{ $platform['platform'] }}</h3>
+                            <h3 class="text-lg font-semibold tracking-tight text-white capitalize">{{ $platform['platform'] }}</h3>
                             <p class="text-xs text-gray-500">{{ $periodLabel }}</p>
                         </div>
                     </div>
@@ -416,72 +416,72 @@
                     {{-- Platform KPIs --}}
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         @if($platformKey === 'snapchat')
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Swipes') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['swipes']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Swipes') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['swipes']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['conversions']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['roas'], 1) }}x</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['cpa'], 0) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpa'], 0) }}</div></div>
                             @else
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Native Leads') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['native_leads']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversion Sign Ups') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['sign_ups']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPL Snap') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['cpl'], 1) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Native Leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['native_leads']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversion Sign Ups') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['sign_ups']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPL Snap') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpl'], 1) }}</div></div>
                             @endif
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPM Snap') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['cpm'], 2) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPM Snap') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 2) }}</div></div>
                         @elseif($platformKey === 'facebook')
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Total spent Meta') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions Meta') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Link clicks Meta') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['link_clicks']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Total spent Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Link clicks Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['link_clicks']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['conversions']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['roas'], 1) }}x</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['cpa'], 0) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpa'], 0) }}</div></div>
                             @else
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Website Leads Meta') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['website_leads']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPM Meta') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['cpm'], 1) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Cost per On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ $platform['on_facebook_leads'] > 0 ? number_format($platform['spend'] / $platform['on_facebook_leads'], 1) : '-' }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['on_facebook_leads']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('sign_up') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['sign_ups']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Website Leads Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['website_leads']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPM Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 1) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Cost per On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ $platform['on_facebook_leads'] > 0 ? number_format($platform['spend'] / $platform['on_facebook_leads'], 1) : '-' }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['on_facebook_leads']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('sign_up') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['sign_ups']) }}</div></div>
                             @endif
                         @elseif($platformKey === 'google')
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Cost') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Average cpm') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['cpm'], 0) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['clicks']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['conversions']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Cost') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Average cpm') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 0) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['clicks']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
                             @endif
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Ctr') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['ctr'], 0) }}%</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Average cpc') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ $platform['clicks'] > 0 ? number_format($platform['spend'] / $platform['clicks'], 0) : '-' }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Ctr') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['ctr'], 0) }}%</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Average cpc') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ $platform['clicks'] > 0 ? number_format($platform['spend'] / $platform['clicks'], 0) : '-' }}</div></div>
                         @else
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['clicks']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['clicks']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['conversions']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
                             @else
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Leads') }}</div><div class="text-xl font-semibold tracking-tight text-gray-900">{{ fmtNum($platform['blended_leads']) }}</div></div>
+                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['blended_leads']) }}</div></div>
                             @endif
                         @endif
                     </div>
 
                     {{-- Best Performing Ads --}}
                     @if(!empty($platformAds))
-                        <h4 class="text-sm font-semibold text-gray-800 mb-3">{{ ucfirst($platform['platform']) }} {{ __('best performing Ads') }}</h4>
+                        <h4 class="text-sm font-semibold text-gray-100 mb-3">{{ ucfirst($platform['platform']) }} {{ __('best performing Ads') }}</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             @foreach($platformAds as $ad)
                                 <div class="card overflow-hidden">
                                     @php
                                         $hasImage = !empty($ad['image_url']) || !empty($ad['thumbnail_url']) || !empty($ad['video_url']);
                                     @endphp
-                                    <div class="aspect-video bg-gray-200 flex items-center justify-center relative"
+                                    <div class="aspect-video bg-white/8 flex items-center justify-center relative"
                                          x-data="{ src: '{{ $ad['image_url'] ?? $ad['thumbnail_url'] ?? $ad['video_url'] ?? '' }}', failed: false }">
                                         <template x-if="src && !failed">
                                             <img :src="src" x-on:error="failed = true" alt="" class="w-full h-full object-contain" loading="lazy">
@@ -499,7 +499,7 @@
                                             @endphp
                                             @if($fallbackText)
                                                 <div class="px-4 py-3 text-center w-full h-full flex flex-col items-center justify-center">
-                                                    <div class="text-gray-800 text-sm font-semibold line-clamp-2 leading-snug">{{ $fallbackText }}</div>
+                                                    <div class="text-gray-100 text-sm font-semibold line-clamp-2 leading-snug">{{ $fallbackText }}</div>
                                                     @if(!empty($ad['campaign_name']) && $ad['campaign_name'] !== $fallbackText)
                                                         <div class="text-gray-500 text-[10px] mt-1 line-clamp-1">{{ $ad['campaign_name'] }}</div>
                                                     @endif
@@ -522,12 +522,12 @@
                                             }
                                         @endphp
                                         @if($showNameBelow)
-                                            <div class="text-xs font-semibold text-gray-900 truncate" title="{{ $ad['name'] }}">{{ $ad['name'] }}</div>
+                                            <div class="text-xs font-semibold text-white truncate" title="{{ $ad['name'] }}">{{ $ad['name'] }}</div>
                                         @endif
                                         @if(!empty($ad['campaign_name']) && $ad['campaign_name'] !== $ad['name'])
-                                            <div class="text-[10px] text-gray-500 truncate {{ $showNameBelow ? '' : 'font-semibold text-gray-900' }}" title="{{ $ad['campaign_name'] }}">{{ $ad['campaign_name'] }}</div>
+                                            <div class="text-[10px] text-gray-500 truncate {{ $showNameBelow ? '' : 'font-semibold text-white' }}" title="{{ $ad['campaign_name'] }}">{{ $ad['campaign_name'] }}</div>
                                         @endif
-                                        <div class="mt-2 grid grid-cols-3 gap-2 text-[10px] text-gray-600">
+                                        <div class="mt-2 grid grid-cols-3 gap-2 text-[10px] text-gray-300">
                                             <div><span class="block text-gray-400">{{ __('common.impr') }}</span>{{ fmtNum($ad['impressions']) }}</div>
                                             <div><span class="block text-gray-400">{{ __('alerts.metrics.clicks') }}</span>{{ fmtNum($ad['clicks']) }}</div>
                                             @if($dashboardData['is_ecommerce'])
@@ -550,7 +550,7 @@
                     <div class="flex items-center gap-3 mb-5">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-lg bg-zinc-900 text-white">T</div>
                         <div>
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">Teads</h3>
+                            <h3 class="text-lg font-semibold tracking-tight text-white">Teads</h3>
                             <p class="text-xs text-gray-500">{{ $periodLabel }}</p>
                         </div>
                     </div>
@@ -567,15 +567,15 @@
                             <tbody>
                                 @foreach($teads['rows'] as $row)
                                     <tr>
-                                        <td class="text-gray-900">{{ $row->day }}</td>
-                                        <td class="text-end text-gray-700">{{ number_format($row->impressions) }}</td>
-                                        <td class="text-end text-gray-700">{{ number_format($row->clicks) }}</td>
-                                        <td class="text-end text-gray-700">{{ fmtCurrency($row->spend) }}</td>
+                                        <td class="text-white">{{ $row->day }}</td>
+                                        <td class="text-end text-gray-200">{{ number_format($row->impressions) }}</td>
+                                        <td class="text-end text-gray-200">{{ number_format($row->clicks) }}</td>
+                                        <td class="text-end text-gray-200">{{ fmtCurrency($row->spend) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="bg-[#F1F1EF] text-gray-900">
+                                <tr class="bg-[#F1F1EF] text-white">
                                     <td class="font-semibold">{{ __('Summary') }}</td>
                                     <td class="text-end font-semibold">{{ number_format($teads['summary']['impressions'] ?? 0) }}</td>
                                     <td class="text-end font-semibold">{{ number_format($teads['summary']['clicks'] ?? 0) }}</td>
@@ -610,7 +610,7 @@
                             @endphp
                             <div class="flex items-center gap-3 p-3 rounded-md {{ $insightBorder }}">
                                 <span class="text-lg leading-none">{{ $insight['icon'] }}</span>
-                                <span class="text-sm text-gray-700">{{ $insight['text'] }}</span>
+                                <span class="text-sm text-gray-200">{{ $insight['text'] }}</span>
                             </div>
                         @endforeach
                     </div>

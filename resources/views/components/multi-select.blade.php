@@ -25,7 +25,7 @@
 >
     {{-- Label --}}
     @if($label)
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label class="block text-sm font-medium text-gray-200 mb-1">
             @if($icon)
                 <x-dynamic-component :component="$icon" class="h-4 w-4 inline me-1 text-gray-400" />
             @endif
@@ -37,7 +37,7 @@
     <button
         @click="open = !open"
         type="button"
-        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 text-start text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
+        class="w-full bg-gray-900 border border-white/15 rounded-md shadow-sm px-3 py-2 text-start text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
     >
         <div class="flex items-center justify-between">
             <span x-show="selected.length === 0" class="text-gray-500">{{ $placeholder }}</span>
@@ -59,22 +59,22 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute z-50 mt-1 w-full bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        class="absolute z-50 mt-1 w-full bg-gray-900 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         x-cloak
     >
         <div class="max-h-60 overflow-auto py-1">
             @foreach($options as $value => $optionLabel)
                 <label
                     @click.prevent="toggle('{{ $value }}')"
-                    class="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                    class="flex items-center px-3 py-2 hover:bg-gray-950 cursor-pointer transition-colors"
                 >
                     <input
                         type="checkbox"
                         :checked="isSelected('{{ $value }}')"
-                        class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 pointer-events-none"
+                        class="h-4 w-4 rounded border-white/15 text-primary-600 focus:ring-primary-500 pointer-events-none"
                         tabindex="-1"
                     />
-                    <span class="ms-2 text-sm text-gray-700">{{ $optionLabel }}</span>
+                    <span class="ms-2 text-sm text-gray-200">{{ $optionLabel }}</span>
                 </label>
             @endforeach
         </div>

@@ -17,21 +17,21 @@
 
     {{-- Stats row --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-neutral-200 border border-neutral-200 rounded-lg overflow-hidden">
-        <div class="bg-white px-5 py-4">
+        <div class="bg-gray-900 px-5 py-4">
             <div class="text-2xl font-bold tracking-tight font-mono">{{ $totalCount }}</div>
             <div class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mt-1">Total Reports</div>
         </div>
-        <div class="bg-white px-5 py-4">
+        <div class="bg-gray-900 px-5 py-4">
             <div class="text-2xl font-bold tracking-tight font-mono text-green-600">{{ $readyCount }}</div>
             <div class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mt-1">Ready</div>
         </div>
-        <div class="bg-white px-5 py-4">
+        <div class="bg-gray-900 px-5 py-4">
             <div class="text-2xl font-bold tracking-tight font-mono">
                 {{ \App\Models\Report::where('tenant_id', auth()->user()->tenant_id)->where('status', 'generating')->count() }}
             </div>
             <div class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mt-1">Generating</div>
         </div>
-        <div class="bg-white px-5 py-4">
+        <div class="bg-gray-900 px-5 py-4">
             <div class="text-2xl font-bold tracking-tight font-mono">
                 {{ \App\Models\Report::where('tenant_id', auth()->user()->tenant_id)->whereNotNull('sent_at')->count() }}
             </div>
@@ -51,7 +51,7 @@
                    class="w-full pl-9 pr-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition">
         </div>
         <select wire:model.live="statusFilter"
-                class="text-sm border border-neutral-200 rounded-md px-3 py-2 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-white text-neutral-700">
+                class="text-sm border border-neutral-200 rounded-md px-3 py-2 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-gray-900 text-neutral-700">
             <option value="">All statuses</option>
             <option value="draft">Draft</option>
             <option value="generating">Generating</option>
@@ -61,7 +61,7 @@
     </div>
 
     {{-- Reports table --}}
-    <div class="border border-neutral-200 rounded-lg overflow-hidden bg-white">
+    <div class="border border-neutral-200 rounded-lg overflow-hidden bg-gray-900">
         @if($reports->isEmpty())
             <div class="flex flex-col items-center justify-center py-16 px-6 text-center">
                 <div class="h-12 w-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center mb-4">

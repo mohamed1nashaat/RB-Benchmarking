@@ -2,9 +2,9 @@
         @if($activeTabIndex === 1)
             {{-- SEO Settings Panel --}}
             <div class="card mb-6" x-data>
-                <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                <div class="flex items-center justify-between p-4 border-b border-white/8">
                     <div class="flex items-center gap-3">
-                        <button wire:click="toggleSeoSettings" class="btn-ghost gap-2 {{ $seoSettingsOpen ? 'bg-primary-100 text-primary-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                        <button wire:click="toggleSeoSettings" class="btn-ghost gap-2 {{ $seoSettingsOpen ? 'bg-primary-100 text-primary-700' : 'text-gray-300 hover:bg-white/5' }}">
                             <x-heroicon-o-cog-6-tooth class="w-4 h-4" />
                             {{ __('SEO Properties') }}
                             <x-heroicon-o-chevron-down class="w-3 h-3 transition-transform {{ $seoSettingsOpen ? 'rotate-180' : '' }}" />
@@ -27,7 +27,7 @@
                 </div>
 
                 @if($seoSettingsOpen)
-                    <div class="p-4 bg-gray-50 border-b border-gray-100">
+                    <div class="p-4 bg-gray-950 border-b border-white/8">
                         @if(!$seoHasIntegration)
                             <div class="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
                                 <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-yellow-500 flex-shrink-0" />
@@ -41,7 +41,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {{-- Search Console Site --}}
                             <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('Search Console Site') }}</label>
+                                <label class="block text-xs font-medium text-gray-200 mb-1">{{ __('Search Console Site') }}</label>
                                 <div class="relative">
                                     <select wire:model="seoSearchConsoleSite"
                                             class="input-field pe-8"
@@ -64,7 +64,7 @@
 
                             {{-- GA4 Property --}}
                             <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('GA4 Property') }}</label>
+                                <label class="block text-xs font-medium text-gray-200 mb-1">{{ __('GA4 Property') }}</label>
                                 <div class="relative">
                                     <select wire:model="seoGa4PropertyId"
                                             class="input-field pe-8"
@@ -87,7 +87,7 @@
 
                             {{-- PageSpeed URL --}}
                             <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('PageSpeed URL') }}</label>
+                                <label class="block text-xs font-medium text-gray-200 mb-1">{{ __('PageSpeed URL') }}</label>
                                 <input wire:model="seoPagespeedUrl" type="url" placeholder="{{ __('placeholders.website') }}"
                                        class="input-field" />
                             </div>
@@ -138,11 +138,11 @@
 
                         {{-- Compare Toggle --}}
                         <label class="inline-flex items-center gap-2 cursor-pointer">
-                            <span class="text-sm font-medium text-gray-600">{{ __('Compare') }}</span>
+                            <span class="text-sm font-medium text-gray-300">{{ __('Compare') }}</span>
                             <button wire:click="$toggle('seoCompareEnabled')" type="button"
-                                class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $seoCompareEnabled ? 'bg-primary-600' : 'bg-gray-200' }}"
+                                class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {{ $seoCompareEnabled ? 'bg-primary-600' : 'bg-white/8' }}"
                                 role="switch" aria-checked="{{ $seoCompareEnabled ? 'true' : 'false' }}">
-                                <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {{ $seoCompareEnabled ? 'translate-x-4 rtl:-translate-x-4' : 'translate-x-0' }}"></span>
+                                <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-gray-900 shadow ring-0 transition duration-200 ease-in-out {{ $seoCompareEnabled ? 'translate-x-4 rtl:-translate-x-4' : 'translate-x-0' }}"></span>
                             </button>
                         </label>
 
@@ -175,15 +175,15 @@
                             <div x-show="exportOpen" @click.outside="exportOpen = false"
                                  x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                                  x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                                 class="absolute end-0 z-20 mt-2 w-48 origin-top-right rounded-xl bg-white border border-gray-200">
+                                 class="absolute end-0 z-20 mt-2 w-48 origin-top-right rounded-xl bg-gray-900 border border-white/10">
                                 <div class="py-1">
-                                    <a href="{{ route('client-seo-report-pdf', $clientId) }}?period={{ $seoPeriod }}" target="_blank" @click="exportOpen = false" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{{ route('client-seo-report-pdf', $clientId) }}?period={{ $seoPeriod }}" target="_blank" @click="exportOpen = false" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-white/5">
                                         <x-heroicon-o-document class="w-4 h-4 me-2 text-gray-400" /> {{ __('Download PDF') }}
                                     </a>
-                                    <a href="{{ route('client-seo-report-excel', $clientId) }}?period={{ $seoPeriod }}" target="_blank" @click="exportOpen = false" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{{ route('client-seo-report-excel', $clientId) }}?period={{ $seoPeriod }}" target="_blank" @click="exportOpen = false" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-white/5">
                                         <x-heroicon-o-table-cells class="w-4 h-4 me-2 text-green-600" /> {{ __('Export Excel') }}
                                     </a>
-                                    <button @click="window.print(); exportOpen = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <button @click="window.print(); exportOpen = false" class="flex items-center w-full px-4 py-2 text-sm text-gray-200 hover:bg-white/5">
                                         <x-heroicon-o-printer class="w-4 h-4 me-2 text-gray-500" /> {{ __('Print') }}
                                     </button>
                                 </div>
@@ -197,26 +197,26 @@
                 <div class="space-y-6 animate-pulse">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         @for($i = 0; $i < 8; $i++)
-                            <div class="bg-white rounded-lg border border-gray-200 p-4">
+                            <div class="bg-gray-900 rounded-lg border border-white/10 p-4">
                                 <div class="flex items-center justify-between">
                                     <div class="space-y-2 flex-1">
-                                        <div class="h-3 bg-gray-200 rounded w-24"></div>
-                                        <div class="h-7 bg-gray-200 rounded w-16"></div>
+                                        <div class="h-3 bg-white/8 rounded w-24"></div>
+                                        <div class="h-7 bg-white/8 rounded w-16"></div>
                                     </div>
-                                    <div class="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                                    <div class="w-10 h-10 bg-white/8 rounded-lg"></div>
                                 </div>
                             </div>
                         @endfor
                     </div>
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="h-4 bg-gray-200 rounded w-48 mb-4"></div>
-                        <div class="h-48 bg-gray-100 rounded"></div>
+                    <div class="bg-gray-900 rounded-lg border border-white/10 p-6">
+                        <div class="h-4 bg-white/8 rounded w-48 mb-4"></div>
+                        <div class="h-48 bg-white/5 rounded"></div>
                     </div>
-                    <div class="bg-white rounded-lg border border-gray-200 p-6">
-                        <div class="h-4 bg-gray-200 rounded w-32 mb-4"></div>
+                    <div class="bg-gray-900 rounded-lg border border-white/10 p-6">
+                        <div class="h-4 bg-white/8 rounded w-32 mb-4"></div>
                         <div class="space-y-3">
                             @for($i = 0; $i < 5; $i++)
-                                <div class="h-3 bg-gray-100 rounded"></div>
+                                <div class="h-3 bg-white/5 rounded"></div>
                             @endfor
                         </div>
                     </div>
@@ -250,31 +250,31 @@
 
                     {{-- Sub-Tab Navigation (Feature 13) --}}
                     <div x-data="{ subTab: 'overview' }">
-                        <nav class="border-b border-gray-200 mb-6 -mb-px flex gap-x-6 overflow-x-auto">
-                            <button @click="subTab = 'overview'" :class="subTab === 'overview' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                        <nav class="border-b border-white/10 mb-6 -mb-px flex gap-x-6 overflow-x-auto">
+                            <button @click="subTab = 'overview'" :class="subTab === 'overview' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                 {{ __('client_dashboard.seo.tab_overview') }}
                             </button>
                             @if($hasSc)
-                                <button @click="subTab = 'search_console'" :class="subTab === 'search_console' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'search_console'" :class="subTab === 'search_console' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_search_console') }}
                                 </button>
                             @endif
                             @if($hasGa4)
-                                <button @click="subTab = 'analytics'" :class="subTab === 'analytics' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'analytics'" :class="subTab === 'analytics' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_analytics') }}
                                 </button>
                             @endif
                             @if($hasPs)
-                                <button @click="subTab = 'pagespeed'" :class="subTab === 'pagespeed' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'pagespeed'" :class="subTab === 'pagespeed' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_pagespeed') }}
                                 </button>
                             @endif
                             @if($hasEcommerce)
-                                <button @click="subTab = 'ecommerce'" :class="subTab === 'ecommerce' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                                <button @click="subTab = 'ecommerce'" :class="subTab === 'ecommerce' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                     {{ __('client_dashboard.seo.tab_ecommerce') }}
                                 </button>
                             @endif
-                            <button @click="subTab = 'audit'" :class="subTab === 'audit' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
+                            <button @click="subTab = 'audit'" :class="subTab === 'audit' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15'" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors">
                                 {{ __('client_dashboard.seo.tab_audit') }}
                             </button>
                         </nav>
@@ -285,7 +285,7 @@
                     <div class="mb-6">
                         <div class="flex items-center gap-2 mb-4">
                             <x-heroicon-o-chart-bar-square class="w-5 h-5 text-gray-400" />
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Key Metrics') }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Key Metrics') }}</h3>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             @php $cmp = $seoReportData['comparison'] ?? []; $spk = $seoReportData['sparklines'] ?? []; @endphp
@@ -305,7 +305,7 @@
                                                 <svg class="mt-1.5 w-20 h-6"><polyline points="{{ sparklinePath($spk['active_users']) }}" fill="none" stroke="#EF4444" stroke-width="1.5"/></svg>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-users class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -327,7 +327,7 @@
                                                 <svg class="mt-1.5 w-20 h-6"><polyline points="{{ sparklinePath($spk['total_impressions']) }}" fill="none" stroke="#a855f7" stroke-width="1.5"/></svg>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-eye class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -344,7 +344,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-arrow-trending-up class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -364,7 +364,7 @@
                                                 <svg class="mt-1.5 w-20 h-6"><polyline points="{{ sparklinePath($spk['total_clicks']) }}" fill="none" stroke="#6366f1" stroke-width="1.5"/></svg>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-cursor-arrow-rays class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -381,7 +381,7 @@
                                             <p class="kpi-label">{{ __('client_dashboard.seo.mobile_speed') }}</p>
                                             <p class="kpi-value {{ $scoreColor }}">{{ $score }}</p>
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-bolt class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -403,7 +403,7 @@
                                                 <svg class="mt-1.5 w-20 h-6"><polyline points="{{ sparklinePath($spk['sessions']) }}" fill="none" stroke="#16a34a" stroke-width="1.5"/></svg>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-clock class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -416,7 +416,7 @@
                                             <p class="kpi-label">{{ __('client_dashboard.seo.page_views') }}</p>
                                             <p class="kpi-value">{{ fmtNum($seoReportData['ga4']['summary']['page_views']) }}</p>
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-document-text class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -435,7 +435,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-user-group class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -454,7 +454,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-user-plus class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -473,7 +473,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-check-circle class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -492,7 +492,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-banknotes class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -514,7 +514,7 @@
                                                 <svg class="mt-1.5 w-20 h-6"><polyline points="{{ sparklinePath($spk['bounce_rate']) }}" fill="none" stroke="#f43f5e" stroke-width="1.5"/></svg>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-arrow-uturn-left class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -532,7 +532,7 @@
                                             <p class="kpi-label">{{ __('client_dashboard.seo.avg_engagement_time') }}</p>
                                             <p class="kpi-value">{{ $mins }}m {{ $secs }}s</p>
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-clock class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -551,7 +551,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-fire class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -568,7 +568,7 @@
                                             <p class="kpi-label">{{ __('client_dashboard.seo.organic_share') }}</p>
                                             <p class="kpi-value text-green-600">{{ number_format($organicShare, 1) }}%</p>
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-magnifying-glass class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -587,7 +587,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-arrow-up-right class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -600,7 +600,7 @@
                                             <p class="kpi-label">{{ __('client_dashboard.seo.unique_pages_ranking') }}</p>
                                             <p class="kpi-value">{{ count($seoReportData['search_console']['pages']) }}</p>
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-document-duplicate class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -613,7 +613,7 @@
                                             <p class="kpi-label">{{ __('client_dashboard.seo.unique_keywords') }}</p>
                                             <p class="kpi-value">{{ count($seoReportData['search_console']['queries']) }}</p>
                                         </div>
-                                        <div class="p-2.5 bg-gray-100 rounded-lg">
+                                        <div class="p-2.5 bg-white/5 rounded-lg">
                                             <x-heroicon-o-key class="w-5 h-5 text-gray-500" />
                                         </div>
                                     </div>
@@ -625,7 +625,7 @@
                     {{-- Search Console Trend Chart --}}
                     @if(!empty($seoReportData['search_console']['timeseries']))
                         <div class="card p-6 mb-6">
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">{{ __('client_dashboard.seo.search_performance_trend') }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white mb-4">{{ __('client_dashboard.seo.search_performance_trend') }}</h3>
                             <div class="h-64 sm:h-72 md:h-80" x-data="{ chart: null }" x-init="chart = new Chart($refs.scTrendCanvas, @js($scTrendChartConfig))" wire:ignore>
                                 <canvas x-ref="scTrendCanvas"></canvas>
                             </div>
@@ -635,7 +635,7 @@
                     {{-- GA4 Analytics Trend Chart --}}
                     @if(!empty($seoReportData['ga4']['timeseries']))
                         <div class="card p-6 mb-6">
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">{{ __('client_dashboard.seo.ga4_analytics_trend') }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white mb-4">{{ __('client_dashboard.seo.ga4_analytics_trend') }}</h3>
                             <div class="h-64 sm:h-72 md:h-80" x-data="{ chart: null }" x-init="chart = new Chart($refs.ga4TrendCanvas, @js($ga4TrendChartConfig))" wire:ignore>
                                 <canvas x-ref="ga4TrendCanvas"></canvas>
                             </div>
@@ -649,7 +649,7 @@
                     @if($seoPagespeedUrl)
                         <div class="card mb-6" x-data="{ open: true }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.pagespeed_title') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.pagespeed_title') }}</h3>
                                 <div class="flex items-center gap-3">
                                     <button wire:click.stop="runPageSpeed" wire:loading.attr="disabled" wire:target="runPageSpeed"
                                             class="btn-secondary disabled:opacity-50"
@@ -674,8 +674,8 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     @foreach(['mobile' => $seoReportData['pagespeed_mobile'] ?? null, 'desktop' => $seoReportData['pagespeed_desktop'] ?? null] as $type => $ps)
                                         @if($ps && isset($ps['scores']))
-                                            <div class="border border-gray-200 rounded-lg p-4">
-                                                <h4 class="text-sm font-medium text-gray-700 mb-3 capitalize">{{ $type }}</h4>
+                                            <div class="border border-white/10 rounded-lg p-4">
+                                                <h4 class="text-sm font-medium text-gray-200 mb-3 capitalize">{{ $type }}</h4>
                                                 <div class="flex items-center justify-around gap-3 mb-4">
                                                     @foreach(['performance' => __('client_dashboard.seo.score_performance'), 'accessibility' => __('client_dashboard.seo.score_accessibility'), 'best_practices' => __('client_dashboard.seo.score_best_practices'), 'seo' => __('client_dashboard.seo.score_seo')] as $key => $label)
                                                         @php
@@ -699,8 +699,8 @@
                                                 </div>
                                                 {{-- Core Web Vitals --}}
                                                 @if(isset($ps['core_web_vitals']) && !empty($ps['core_web_vitals']))
-                                                    <div class="mt-4 pt-4 border-t border-gray-200">
-                                                        <h5 class="text-xs font-medium text-gray-600 mb-2">{{ __('client_dashboard.seo.core_web_vitals') }}</h5>
+                                                    <div class="mt-4 pt-4 border-t border-white/10">
+                                                        <h5 class="text-xs font-medium text-gray-300 mb-2">{{ __('client_dashboard.seo.core_web_vitals') }}</h5>
                                                         <div class="grid grid-cols-3 gap-2">
                                                             @foreach(['lcp' => 'LCP', 'fid' => 'FID', 'cls' => 'CLS', 'fcp' => 'FCP', 'tbt' => 'TBT', 'ttfb' => 'TTFB'] as $cwvKey => $cwvLabel)
                                                                 @if(isset($ps['core_web_vitals'][$cwvKey]))
@@ -743,7 +743,7 @@
                     @if(!empty($seoReportData['ga4']['traffic_sources']))
                         <div class="card mb-6" x-data="{ open: true }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Traffic Sources') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Traffic Sources') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -790,7 +790,7 @@
                                                     @endif
                                                 @endif
                                                 <td>
-                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="w-full bg-white/8 rounded-full h-2">
                                                         <div class="bg-primary-600 h-2 rounded-full" style="width: {{ min($source['share'] ?? 0, 100) }}%"></div>
                                                     </div>
                                                 </td>
@@ -810,7 +810,7 @@
                             @if(!empty($seoReportData['search_console']['pages']))
                                 <div class="card mb-0" x-data="{ open: true, expanded: false }">
                                     <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Top Pages (Search Console)') }}</h3>
+                                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Top Pages (Search Console)') }}</h3>
                                         <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                                     </div>
                                     <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -866,7 +866,7 @@
                             @if(!empty($seoReportData['ga4']['top_pages']))
                                 <div class="card mb-0" x-data="{ open: true, expanded: false }">
                                     <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Top Pages (GA4)') }}</h3>
+                                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Top Pages (GA4)') }}</h3>
                                         <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                                     </div>
                                     <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -922,7 +922,7 @@
                     @if(!empty($seoReportData['search_console']['queries']))
                         <div class="card mb-6" x-data="{ open: true, expanded: false }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Top Search Queries') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Top Search Queries') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -979,7 +979,7 @@
                     @if(!empty($seoReportData['ga4']['devices']))
                         <div class="card mb-6" x-data="{ open: true }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Devices') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Devices') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -1036,7 +1036,7 @@
                     @if(!empty($seoReportData['ga4']['geo']))
                         <div class="card mb-6" x-data="{ open: true, expanded: false }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Geographic Data') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Geographic Data') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -1137,7 +1137,7 @@
                         {{-- SC Trend Chart --}}
                         @if(!empty($seoReportData['search_console']['timeseries']))
                             <div class="card p-6 mb-6">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">{{ __('client_dashboard.seo.search_performance_trend') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white mb-4">{{ __('client_dashboard.seo.search_performance_trend') }}</h3>
                                 <div class="h-64 sm:h-72 md:h-80" x-data="{ chart: null }" x-init="chart = new Chart($refs.scTrendCanvas2, @js($scTrendChartConfig))" wire:ignore>
                                     <canvas x-ref="scTrendCanvas2"></canvas>
                                 </div>
@@ -1149,7 +1149,7 @@
                     @if(!empty($seoReportData['search_console']['pages']))
                         <div class="card mb-6" x-data="{ open: true, expanded: false }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Top Pages (Search Console)') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Top Pages (Search Console)') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -1205,7 +1205,7 @@
                     @if(!empty($seoReportData['search_console']['queries']))
                         <div class="card mb-6" x-data="{ open: true, expanded: false }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Top Search Queries') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Top Search Queries') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -1262,16 +1262,16 @@
                         @php $cov2 = $seoReportData['search_console']['coverage']; @endphp
                         <div class="card mb-6" x-data="{ open: true }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.sc_coverage') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.sc_coverage') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
                                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                    <div class="text-center border border-gray-200 rounded-lg p-4"><p class="stat-num text-gray-900">{{ fmtNum($cov2['total_submitted']) }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.submitted_pages') }}</p></div>
-                                    <div class="text-center border border-gray-200 rounded-lg p-4"><p class="stat-num text-green-600">{{ fmtNum($cov2['total_indexed']) }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.indexed_pages') }}</p></div>
-                                    <div class="text-center border border-gray-200 rounded-lg p-4">@php $rc = $cov2['index_rate'] >= 90 ? 'text-green-600' : ($cov2['index_rate'] >= 50 ? 'text-orange-600' : 'text-red-600'); @endphp<p class="stat-num {{ $rc }}">{{ $cov2['index_rate'] }}%</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.index_rate') }}</p></div>
-                                    <div class="text-center border border-gray-200 rounded-lg p-4"><p class="stat-num text-red-600">{{ $cov2['total_errors'] }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.errors') }}</p></div>
-                                    <div class="text-center border border-gray-200 rounded-lg p-4"><p class="stat-num text-orange-600">{{ $cov2['total_warnings'] }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.warnings') }}</p></div>
+                                    <div class="text-center border border-white/10 rounded-lg p-4"><p class="stat-num text-white">{{ fmtNum($cov2['total_submitted']) }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.submitted_pages') }}</p></div>
+                                    <div class="text-center border border-white/10 rounded-lg p-4"><p class="stat-num text-green-600">{{ fmtNum($cov2['total_indexed']) }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.indexed_pages') }}</p></div>
+                                    <div class="text-center border border-white/10 rounded-lg p-4">@php $rc = $cov2['index_rate'] >= 90 ? 'text-green-600' : ($cov2['index_rate'] >= 50 ? 'text-orange-600' : 'text-red-600'); @endphp<p class="stat-num {{ $rc }}">{{ $cov2['index_rate'] }}%</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.index_rate') }}</p></div>
+                                    <div class="text-center border border-white/10 rounded-lg p-4"><p class="stat-num text-red-600">{{ $cov2['total_errors'] }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.errors') }}</p></div>
+                                    <div class="text-center border border-white/10 rounded-lg p-4"><p class="stat-num text-orange-600">{{ $cov2['total_warnings'] }}</p><p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.warnings') }}</p></div>
                                 </div>
                             </div>
                         </div>
@@ -1292,8 +1292,8 @@
                         {{-- Ecommerce Section Divider --}}
                         <div class="flex items-center gap-2 mb-4 mt-2">
                             <x-heroicon-o-shopping-cart class="w-5 h-5 text-gray-400" />
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('Ecommerce') }}</h3>
-                            <div class="flex-1 h-px bg-gray-200"></div>
+                            <h3 class="text-base font-semibold tracking-tight text-white">{{ __('Ecommerce') }}</h3>
+                            <div class="flex-1 h-px bg-white/8"></div>
                         </div>
 
                         {{-- Top Products by Revenue --}}
@@ -1302,7 +1302,7 @@
                         @endphp
                         @if(!empty($ecomPages))
                             <div class="card p-6 mb-6">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">{{ __('client_dashboard.seo.top_ecommerce_pages') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white mb-4">{{ __('client_dashboard.seo.top_ecommerce_pages') }}</h3>
                                 <div class="overflow-hidden rounded-xl">
                                     <table class="data-table">
                                         <thead>
@@ -1348,7 +1348,7 @@
                                 {{-- Top 5 Products --}}
                                 @if(!empty($seoReportData['ga4']['top_products']))
                                     <div class="card p-6">
-                                        <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">{{ __('client_dashboard.seo.top_products') }}</h3>
+                                        <h3 class="text-base font-semibold tracking-tight text-white mb-4">{{ __('client_dashboard.seo.top_products') }}</h3>
                                         <div class="overflow-hidden rounded-xl">
                                             <table class="data-table">
                                                 <thead>
@@ -1391,7 +1391,7 @@
                                 {{-- Least 5 Products --}}
                                 @if(!empty($seoReportData['ga4']['least_products']))
                                     <div class="card p-6">
-                                        <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">{{ __('client_dashboard.seo.least_products') }}</h3>
+                                        <h3 class="text-base font-semibold tracking-tight text-white mb-4">{{ __('client_dashboard.seo.least_products') }}</h3>
                                         <div class="overflow-hidden rounded-xl">
                                             <table class="data-table">
                                                 <thead>
@@ -1444,7 +1444,7 @@
                         @php $browserTotalRevenue = array_sum(array_column($seoReportData['ga4']['browsers'], 'revenue')); @endphp
                         <div class="card mb-6" x-data="{ open: true }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.browser_technology') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.browser_technology') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
@@ -1497,29 +1497,29 @@
                         @php $cov = $seoReportData['search_console']['coverage']; @endphp
                         <div class="card mb-6" x-data="{ open: true }">
                             <div class="flex items-center justify-between p-6 cursor-pointer select-none" @click="open = !open">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.sc_coverage') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.sc_coverage') }}</h3>
                                 <x-heroicon-o-chevron-down class="w-5 h-5 text-gray-400 transition-transform duration-200" ::class="{ 'rotate-180': open }" />
                             </div>
                             <div x-show="open" x-transition.duration.200ms class="px-6 pb-6">
                             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
-                                    <p class="stat-num text-gray-900">{{ fmtNum($cov['total_submitted']) }}</p>
+                                <div class="text-center border border-white/10 rounded-lg p-4">
+                                    <p class="stat-num text-white">{{ fmtNum($cov['total_submitted']) }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.submitted_pages') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     <p class="stat-num text-green-600">{{ fmtNum($cov['total_indexed']) }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.indexed_pages') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     @php $rateColor = $cov['index_rate'] >= 90 ? 'text-green-600' : ($cov['index_rate'] >= 50 ? 'text-orange-600' : 'text-red-600'); @endphp
                                     <p class="stat-num {{ $rateColor }}">{{ $cov['index_rate'] }}%</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.index_rate') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     <p class="stat-num text-red-600">{{ $cov['total_errors'] }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.errors') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     <p class="stat-num text-orange-600">{{ $cov['total_warnings'] }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.warnings') }}</p>
                                 </div>
@@ -1564,7 +1564,7 @@
                     <div class="card p-6 mb-6">
                         <div class="flex items-center gap-2 mb-2">
                             <x-heroicon-o-shield-check class="w-5 h-5 text-gray-400" />
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.audit_health_score') }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.audit_health_score') }}</h3>
                         </div>
                         <p class="text-sm text-gray-500 mb-6">{{ __('client_dashboard.seo.audit_health_desc') }}</p>
 
@@ -1652,13 +1652,13 @@
                         <div class="card p-6 mb-6">
                             <div class="flex items-center gap-2 mb-4">
                                 <x-heroicon-o-bolt class="w-5 h-5 text-gray-400" />
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.pagespeed_title') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.pagespeed_title') }}</h3>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 @foreach(['mobile' => $seoReportData['pagespeed_mobile'] ?? null, 'desktop' => $seoReportData['pagespeed_desktop'] ?? null] as $type => $ps)
                                     @if($ps && isset($ps['scores']))
-                                        <div class="border border-gray-200 rounded-lg p-4">
-                                            <h4 class="text-sm font-medium text-gray-700 mb-3 capitalize">{{ $type }}</h4>
+                                        <div class="border border-white/10 rounded-lg p-4">
+                                            <h4 class="text-sm font-medium text-gray-200 mb-3 capitalize">{{ $type }}</h4>
                                             <div class="flex items-center justify-around gap-3 mb-4">
                                                 @foreach(['performance' => __('client_dashboard.seo.score_performance'), 'accessibility' => __('client_dashboard.seo.score_accessibility'), 'best_practices' => __('client_dashboard.seo.score_best_practices'), 'seo' => __('client_dashboard.seo.score_seo')] as $key => $label)
                                                     @php
@@ -1681,8 +1681,8 @@
                                                 @endforeach
                                             </div>
                                             @if(isset($ps['core_web_vitals']) && !empty($ps['core_web_vitals']))
-                                                <div class="mt-4 pt-4 border-t border-gray-200">
-                                                    <h5 class="text-xs font-medium text-gray-600 mb-2">{{ __('client_dashboard.seo.core_web_vitals') }}</h5>
+                                                <div class="mt-4 pt-4 border-t border-white/10">
+                                                    <h5 class="text-xs font-medium text-gray-300 mb-2">{{ __('client_dashboard.seo.core_web_vitals') }}</h5>
                                                     <div class="grid grid-cols-3 gap-2">
                                                         @foreach(['lcp' => 'LCP', 'fid' => 'FID', 'cls' => 'CLS', 'fcp' => 'FCP', 'tbt' => 'TBT', 'ttfb' => 'TTFB'] as $cwvKey => $cwvLabel)
                                                             @if(isset($ps['core_web_vitals'][$cwvKey]))
@@ -1711,27 +1711,27 @@
                         <div class="card p-6 mb-6">
                             <div class="flex items-center gap-2 mb-4">
                                 <x-heroicon-o-globe-alt class="w-5 h-5 text-gray-400" />
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.sc_coverage') }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.sc_coverage') }}</h3>
                             </div>
                             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
-                                    <p class="stat-num text-gray-900">{{ fmtNum($auditCovData['total_submitted']) }}</p>
+                                <div class="text-center border border-white/10 rounded-lg p-4">
+                                    <p class="stat-num text-white">{{ fmtNum($auditCovData['total_submitted']) }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.submitted_pages') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     <p class="stat-num text-green-600">{{ fmtNum($auditCovData['total_indexed']) }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.indexed_pages') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     @php $auditRateColor = $auditCovData['index_rate'] >= 90 ? 'text-green-600' : ($auditCovData['index_rate'] >= 50 ? 'text-orange-600' : 'text-red-600'); @endphp
                                     <p class="stat-num {{ $auditRateColor }}">{{ $auditCovData['index_rate'] }}%</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.index_rate') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     <p class="stat-num text-red-600">{{ $auditCovData['total_errors'] }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.errors') }}</p>
                                 </div>
-                                <div class="text-center border border-gray-200 rounded-lg p-4">
+                                <div class="text-center border border-white/10 rounded-lg p-4">
                                     <p class="stat-num text-orange-600">{{ $auditCovData['total_warnings'] }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ __('client_dashboard.seo.warnings') }}</p>
                                 </div>
@@ -1742,7 +1742,7 @@
                     {{-- Section 4: Technical Issues Table --}}
                     <div class="card mb-6">
                         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4">
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('client_dashboard.seo.technical_issues') }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white">{{ __('client_dashboard.seo.technical_issues') }}</h3>
                             <div class="flex items-center gap-3">
                                 <select wire:model.live="auditStatusFilter" class="input-field">
                                     <option value="all">{{ __('client_dashboard.seo.all_statuses') }}</option>
@@ -1781,14 +1781,14 @@
                                                 <td>
                                                     @php
                                                         $sevColors = ['critical' => 'bg-[#FDEBEC] text-[#9F2F2D]', 'high' => 'bg-[#FBF3DB] text-[#956400]', 'medium' => 'bg-[#E1F3FE] text-[#1F6C9F]', 'low' => 'bg-[#F1F1EF] text-[#6B6B66]'];
-                                                        $sevClass = $sevColors[$issue['severity']] ?? 'bg-gray-100 text-gray-700';
+                                                        $sevClass = $sevColors[$issue['severity']] ?? 'bg-white/5 text-gray-200';
                                                     @endphp
                                                     <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $sevClass }}">
                                                         {{ __('client_dashboard.seo.severity_' . $issue['severity']) }}
                                                     </span>
                                                 </td>
-                                                <td class="text-sm text-gray-700">{{ $issue['readable_type'] ?? $issue['issue_type'] ?? '-' }}</td>
-                                                <td class="text-sm text-gray-600 max-w-[250px] truncate" title="{{ app()->getLocale() === 'ar' ? ($issue['description_ar'] ?? $issue['description_en'] ?? '') : ($issue['description_en'] ?? '') }}">
+                                                <td class="text-sm text-gray-200">{{ $issue['readable_type'] ?? $issue['issue_type'] ?? '-' }}</td>
+                                                <td class="text-sm text-gray-300 max-w-[250px] truncate" title="{{ app()->getLocale() === 'ar' ? ($issue['description_ar'] ?? $issue['description_en'] ?? '') : ($issue['description_en'] ?? '') }}">
                                                     {{ app()->getLocale() === 'ar' ? ($issue['description_ar'] ?? $issue['description_en'] ?? '-') : ($issue['description_en'] ?? '-') }}
                                                 </td>
                                                 <td class="text-sm max-w-[200px] truncate">
@@ -1809,7 +1809,7 @@
                                                     @else
                                                         @php
                                                             $statusColors = ['open' => 'bg-[#FDEBEC] text-[#9F2F2D]', 'in_progress' => 'bg-[#FBF3DB] text-[#956400]', 'resolved' => 'bg-[#EDF3EC] text-[#346538]', 'wont_fix' => 'bg-[#F1F1EF] text-[#6B6B66]'];
-                                                            $statusClass = $statusColors[$issue['current_status']] ?? 'bg-gray-100 text-gray-700';
+                                                            $statusClass = $statusColors[$issue['current_status']] ?? 'bg-white/5 text-gray-200';
                                                         @endphp
                                                         <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $statusClass }}">
                                                             {{ __('client_dashboard.seo.status_' . $issue['current_status']) }}
@@ -1823,7 +1823,7 @@
                                                             <button wire:click="saveIssueUpdate" class="text-green-600 hover:text-green-800" title="{{ __('client_dashboard.seo.audit_save') }}">
                                                                 <x-heroicon-o-check class="w-4 h-4" />
                                                             </button>
-                                                            <button wire:click="cancelEditIssue" class="text-gray-400 hover:text-gray-600" title="{{ __('client_dashboard.seo.audit_cancel') }}">
+                                                            <button wire:click="cancelEditIssue" class="text-gray-400 hover:text-gray-300" title="{{ __('client_dashboard.seo.audit_cancel') }}">
                                                                 <x-heroicon-o-x-mark class="w-4 h-4" />
                                                             </button>
                                                         </div>
@@ -1836,9 +1836,9 @@
                                             </tr>
                                             {{-- Inline editing expanded row --}}
                                             @if($editingIssueId === $issue['id'])
-                                                <tr class="bg-gray-50">
+                                                <tr class="bg-gray-950">
                                                     <td colspan="7" class="px-6 py-3">
-                                                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ __('client_dashboard.seo.notes') }}</label>
+                                                        <label class="block text-xs font-medium text-gray-300 mb-1">{{ __('client_dashboard.seo.notes') }}</label>
                                                         <textarea wire:model="editingIssueNotes" rows="2" class="input-field" placeholder="{{ __('client_dashboard.seo.notes') }}..."></textarea>
                                                     </td>
                                                 </tr>

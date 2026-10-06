@@ -12,7 +12,7 @@
     {{-- Header --}}
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h1 class="text-xl font-semibold tracking-tight text-gray-900">
+            <h1 class="text-xl font-semibold tracking-tight text-white">
                 {{ __('pages.ad_accounts.title') }}
             </h1>
             <p class="mt-1 text-sm text-gray-500">
@@ -276,14 +276,14 @@
 
     {{-- Ad Accounts Table --}}
     <div class="card overflow-hidden">
-        <div class="p-5 border-b border-gray-200">
+        <div class="p-5 border-b border-white/10">
             <div class="flex items-center justify-between">
                 <h3 class="section-title">{{ __('pages.ad_accounts.title') }}</h3>
                 <div class="flex items-center gap-x-2">
                     <input type="checkbox"
                         wire:click="toggleSelectAll"
                         @checked($accounts->count() > 0 && count($selectedAccounts) === $accounts->total())
-                        class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                        class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-white/15 rounded" />
                     <span class="text-sm text-gray-500">{{ __('pages.ad_accounts.select_all') }}</span>
                 </div>
             </div>
@@ -296,14 +296,14 @@
                         <th scope="col">
                             {{ __('labels.select') }}
                         </th>
-                        <th scope="col" wire:click="sortBy('account_name')" class="min-w-[200px] sticky start-0 z-20 border-e border-gray-200 cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('account_name')" class="min-w-[200px] sticky start-0 z-20 border-e border-white/10 cursor-pointer hover:bg-white/5">
                             <div class="flex items-center gap-x-1">
                                 <span>{{ __('labels.account') }}</span>
                                 @if($sortField === 'account_name')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                     @endif
                                 @else
                                     <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -311,31 +311,31 @@
                             </div>
                         </th>
                         <th scope="col">{{ __('labels.client') }}</th>
-                        <th scope="col" wire:click="sortBy('total_spend')" class="cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('total_spend')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center justify-end gap-x-1">
                                 <span>{{ __('labels.total_spend') }}</span>
                                 @if($sortField === 'total_spend')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                     @endif
                                 @endif
                             </div>
                         </th>
-                        <th scope="col" wire:click="sortBy('platform')" class="cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('platform')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center gap-x-1">
                                 <span>{{ __('labels.platform') }}</span>
                                 @if($sortField === 'platform')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                     @endif
                                 @endif
                             </div>
                         </th>
-                        <th scope="col" wire:click="sortBy('status')" class="cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('status')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center gap-x-1"><span>{{ __('labels.status') }}</span></div>
                         </th>
                         <th scope="col">{{ __('labels.verification') }}</th>
@@ -343,38 +343,38 @@
                         <th scope="col">{{ __('labels.country') }}</th>
                         <th scope="col">{{ __('labels.category') }}</th>
                         <th scope="col">{{ __('labels.campaigns') }}</th>
-                        <th scope="col" wire:click="sortBy('total_revenue')" class="cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('total_revenue')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center justify-end gap-x-1">
                                 <span>{{ __('labels.revenue') }}</span>
                                 @if($sortField === 'total_revenue')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                     @endif
                                 @endif
                             </div>
                         </th>
-                        <th scope="col" wire:click="sortBy('total_purchases')" class="cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('total_purchases')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center justify-center gap-x-1">
                                 <span>{{ __('labels.purchases') }}</span>
                                 @if($sortField === 'total_purchases')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                     @endif
                                 @endif
                             </div>
                         </th>
-                        <th scope="col" wire:click="sortBy('roas')" class="cursor-pointer hover:bg-gray-100">
+                        <th scope="col" wire:click="sortBy('roas')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center justify-end gap-x-1">
                                 <span>ROAS</span>
                                 @if($sortField === 'roas')
                                     @if($sortDirection === 'asc')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                     @else
-                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                        <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                     @endif
                                 @endif
                             </div>
@@ -389,19 +389,19 @@
                         <tr>
                             <td>
                                 <input type="checkbox" value="{{ $account->id }}" wire:model.live="selectedAccounts"
-                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
+                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-white/15 rounded" />
                             </td>
 
-                            <td class="sticky start-0 z-10 sticky-col border-e border-gray-200">
+                            <td class="sticky start-0 z-10 sticky-col border-e border-white/10">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-8 w-8">
-                                        <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <div class="h-8 w-8 rounded-full bg-white/8 flex items-center justify-center">
                                             <x-heroicon-o-building-office class="h-4 w-4 text-gray-500" />
                                         </div>
                                     </div>
                                     <div class="ms-3">
                                         <a href="{{ route('ad-account-detail', ['id' => $account->id]) }}" wire:navigate
-                                            class="text-sm font-medium text-gray-900 hover:underline">
+                                            class="text-sm font-medium text-white hover:underline">
                                             {{ $account->account_name }}
                                         </a>
                                         <div class="text-xs text-gray-500">{{ $account->external_account_id }}</div>
@@ -600,8 +600,8 @@
                         <div>
                             <div class="flex items-center mb-1">
                                 <input type="checkbox" wire:model.live="bulkChangeClient" id="bulkChangeClient"
-                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
-                                <label for="bulkChangeClient" class="ms-2 block text-sm font-medium text-gray-700">
+                                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-white/15 rounded" />
+                                <label for="bulkChangeClient" class="ms-2 block text-sm font-medium text-gray-200">
                                     {{ __('pages.ad_accounts.change_client') }}
                                 </label>
                             </div>

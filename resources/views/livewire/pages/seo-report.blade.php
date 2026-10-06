@@ -66,11 +66,11 @@
         </div>
     @elseif($clientData && $reportData)
         {{-- HEADER --}}
-        <div class="report-header bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="report-header bg-gray-900 border-b border-white/10 sticky top-0 z-50">
             <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
                 <div class="flex items-center gap-4 min-w-0">
                     @if($clientData['logo'])
-                        <img src="{{ $clientData['logo'] }}" alt="" class="h-12 w-12 rounded-xl object-cover border border-gray-200 shrink-0">
+                        <img src="{{ $clientData['logo'] }}" alt="" class="h-12 w-12 rounded-xl object-cover border border-white/10 shrink-0">
                     @else
                         <div class="h-12 w-12 rounded-xl bg-brand-600 text-white flex items-center justify-center text-lg font-semibold shrink-0">{{ strtoupper(substr($clientData['name'], 0, 1)) }}</div>
                     @endif
@@ -183,7 +183,7 @@
             @if($psHasScores || $psHasError)
                 <div class="card p-6 mb-6">
                     <div class="flex items-center gap-2 mb-5">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span class="text-sm font-semibold tracking-tight text-gray-900">{{ __("PageSpeed Insights") }}</span>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span class="text-sm font-semibold tracking-tight text-white">{{ __("PageSpeed Insights") }}</span>
                     </div>
 
                     @if($psHasError && !$psHasScores)
@@ -232,7 +232,7 @@
                                             @foreach(['lcp' => 'LCP', 'fid' => 'FID', 'cls' => 'CLS', 'fcp' => 'FCP', 'tbt' => 'TBT', 'ttfb' => 'TTFB'] as $cwvKey => $cwvLabel)
                                                 @if(isset($ps['core_web_vitals'][$cwvKey]))
                                                     @php $cwvItem = $ps['core_web_vitals'][$cwvKey]; @endphp
-                                                    <div class="bg-gray-50 rounded-lg p-3.5 text-center">
+                                                    <div class="bg-gray-950 rounded-lg p-3.5 text-center">
                                                         <div class="text-lg font-semibold mb-0.5" style="color: {{ ($cwvItem['score'] ?? '') === 'good' ? '#22c55e' : (($cwvItem['score'] ?? '') === 'needs_improvement' ? '#f59e0b' : '#ef4444') }}">
                                                             {{ $cwvItem['display'] ?? '-' }}
                                                         </div>
@@ -253,7 +253,7 @@
             @if(isset($reportData['ga4']['traffic_sources']) && count($reportData['ga4']['traffic_sources']) > 0)
                 <div class="card p-6 mb-6">
                     <div class="flex items-center gap-2 mb-5">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/><circle cx="12" cy="12" r="10"/></svg><span class="text-sm font-semibold tracking-tight text-gray-900">{{ __("Traffic Sources") }}</span>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/><circle cx="12" cy="12" r="10"/></svg><span class="text-sm font-semibold tracking-tight text-white">{{ __("Traffic Sources") }}</span>
                     </div>
                     @php
                         $totalSessions = array_sum(array_column($reportData['ga4']['traffic_sources'], 'sessions'));
@@ -277,7 +277,7 @@
                                     <td class="text-end">{{ seoFmt($source['sessions']) }}</td>
                                     <td class="text-end">{{ $share }}%</td>
                                     <td>
-                                        <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden min-w-[80px]">
+                                        <div class="h-1.5 bg-white/5 rounded-full overflow-hidden min-w-[80px]">
                                             <div class="h-full bg-gray-900 rounded-full transition-[width] duration-500" style="width: {{ $share }}%"></div>
                                         </div>
                                     </td>
@@ -294,7 +294,7 @@
                 @if(isset($reportData['search_console']['pages']) && count($reportData['search_console']['pages']) > 0)
                     <div class="card p-6">
                         <div class="flex items-center gap-2 mb-5">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="text-sm font-semibold tracking-tight text-gray-900">{{ __("Top Pages") }}</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="text-sm font-semibold tracking-tight text-white">{{ __("Top Pages") }}</span>
                         </div>
                         <table class="data-table">
                             <thead>
@@ -325,7 +325,7 @@
                 @if(isset($reportData['search_console']['queries']) && count($reportData['search_console']['queries']) > 0)
                     <div class="card p-6">
                         <div class="flex items-center gap-2 mb-5">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="text-sm font-semibold tracking-tight text-gray-900">{{ __("Top Search Queries") }}</span>
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="text-sm font-semibold tracking-tight text-white">{{ __("Top Search Queries") }}</span>
                         </div>
                         <table class="data-table">
                             <thead>
@@ -357,7 +357,7 @@
             @if(isset($reportData['ga4']['top_pages']) && count($reportData['ga4']['top_pages']) > 0)
                 <div class="card p-6 mb-6">
                     <div class="flex items-center gap-2 mb-5">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 002 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span class="text-sm font-semibold tracking-tight text-gray-900">{{ __("Top Pages (Analytics)") }}</span>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 002 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span class="text-sm font-semibold tracking-tight text-white">{{ __("Top Pages (Analytics)") }}</span>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -391,7 +391,7 @@
                 <div class="card p-6 mb-6">
                     <div class="flex items-center gap-2 mb-5">
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        <span class="text-sm font-semibold tracking-tight text-gray-900">Devices & Browsers</span>
+                        <span class="text-sm font-semibold tracking-tight text-white">Devices & Browsers</span>
                     </div>
                     @php
                         $totalDevSessions = array_sum(array_column($reportData['ga4']['devices'], 'sessions'));
@@ -415,7 +415,7 @@
                                     <td class="text-end">{{ seoFmt($device['sessions']) }}</td>
                                     <td class="text-end">{{ $devShare }}%</td>
                                     <td>
-                                        <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden min-w-[80px]">
+                                        <div class="h-1.5 bg-white/5 rounded-full overflow-hidden min-w-[80px]">
                                             <div class="h-full bg-gray-900 rounded-full transition-[width] duration-500" style="width: {{ $devShare }}%"></div>
                                         </div>
                                     </td>
@@ -443,8 +443,8 @@
         </div>
 
         {{-- FOOTER --}}
-        <div class="border-t border-gray-200 py-8 px-6 text-center">
-            <p class="text-xs text-gray-400">Generated on {{ now()->format('F j, Y \a\t g:i A') }} &middot; <span class="font-semibold text-gray-900">{{ __("RB Benchmarks") }}</span></p>
+        <div class="border-t border-white/10 py-8 px-6 text-center">
+            <p class="text-xs text-gray-400">Generated on {{ now()->format('F j, Y \a\t g:i A') }} &middot; <span class="font-semibold text-white">{{ __("RB Benchmarks") }}</span></p>
             @if($clientData['website'])
                 <p class="text-xs text-gray-400 mt-1">{{ $clientData['website'] }}</p>
             @endif

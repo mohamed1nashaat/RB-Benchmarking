@@ -13,7 +13,7 @@
 
 <div @if($uid) wire:key="{{ $uid }}" @endif>
     @if($label)
-        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $label }}</label>
+        <label class="block text-sm font-medium text-gray-200 mb-1">{{ $label }}</label>
     @endif
 
     <div

@@ -32,7 +32,7 @@
 
     {{-- ═══ STEP 1: Configure ═══ --}}
     @if($step === 1)
-    <div class="bg-white border border-neutral-200 rounded-lg divide-y divide-neutral-100">
+    <div class="bg-gray-900 border border-neutral-200 rounded-lg divide-y divide-neutral-100">
         <div class="px-6 py-5">
             <h2 class="text-sm font-semibold text-neutral-800 mb-4">Report details</h2>
             <div class="space-y-4">
@@ -62,7 +62,7 @@
                 <div>
                     <label class="block text-[13px] font-medium text-neutral-700 mb-1.5">Ad account <span class="text-neutral-400 font-normal">(optional — leave blank for all accounts)</span></label>
                     <select wire:model.live="adAccountId"
-                            class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-white text-neutral-700">
+                            class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-gray-900 text-neutral-700">
                         <option value="">All active accounts</option>
                         @foreach($adAccounts as $account)
                             <option value="{{ $account['id'] }}">{{ $account['account_name'] }}</option>
@@ -74,7 +74,7 @@
                     <div>
                         <label class="block text-[13px] font-medium text-neutral-700 mb-1.5">Platform <span class="text-neutral-400 font-normal">(optional)</span></label>
                         <select wire:model="platform"
-                                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-white text-neutral-700">
+                                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-gray-900 text-neutral-700">
                             <option value="">All platforms</option>
                             <option value="facebook">Facebook / Meta</option>
                             <option value="google">Google Ads</option>
@@ -86,7 +86,7 @@
                     <div>
                         <label class="block text-[13px] font-medium text-neutral-700 mb-1.5">Industry <span class="text-neutral-400 font-normal">(for benchmarks)</span></label>
                         <select wire:model="industry"
-                                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-white text-neutral-700">
+                                class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition bg-gray-900 text-neutral-700">
                             <option value="">Not specified</option>
                             <option value="automotive">Automotive</option>
                             <option value="e_commerce_retail">E-commerce & Retail</option>
@@ -110,11 +110,11 @@
                     <label class="block text-[13px] font-medium text-neutral-700 mb-1.5">Report language</label>
                     <div class="flex rounded-md border border-neutral-200 overflow-hidden w-fit">
                         <button type="button" wire:click="$set('language','en')"
-                                class="{{ $language === 'en' ? 'bg-brand-600 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50' }} px-5 py-2 text-sm font-medium transition-colors">
+                                class="{{ $language === 'en' ? 'bg-brand-600 text-white' : 'bg-gray-900 text-neutral-700 hover:bg-neutral-50' }} px-5 py-2 text-sm font-medium transition-colors">
                             English
                         </button>
                         <button type="button" wire:click="$set('language','ar')"
-                                class="{{ $language === 'ar' ? 'bg-brand-600 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50' }} px-5 py-2 text-sm font-medium transition-colors border-l border-neutral-200">
+                                class="{{ $language === 'ar' ? 'bg-brand-600 text-white' : 'bg-gray-900 text-neutral-700 hover:bg-neutral-50' }} px-5 py-2 text-sm font-medium transition-colors border-l border-neutral-200">
                             العربية
                         </button>
                     </div>
@@ -126,7 +126,7 @@
                     <div class="grid grid-cols-3 gap-2">
                         @foreach(['none' => 'One-time', 'weekly' => 'Weekly', 'monthly' => 'Monthly'] as $val => $lbl)
                         <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-colors
-                            {{ $scheduleFrequency === $val ? 'border-brand-500 bg-brand-50' : 'border-neutral-200 bg-white hover:border-neutral-300' }}">
+                            {{ $scheduleFrequency === $val ? 'border-brand-500 bg-brand-50' : 'border-neutral-200 bg-gray-900 hover:border-neutral-300' }}">
                             <input type="radio" wire:model.live="scheduleFrequency" value="{{ $val }}" class="sr-only">
                             <span class="text-[13px] font-medium {{ $scheduleFrequency === $val ? 'text-brand-700' : 'text-neutral-600' }}">{{ $lbl }}</span>
                         </label>
@@ -161,7 +161,7 @@
     {{-- ═══ STEP 2: Preview metrics ═══ --}}
     @if($step === 2)
     <div class="space-y-4">
-        <div class="bg-white border border-neutral-200 rounded-lg">
+        <div class="bg-gray-900 border border-neutral-200 rounded-lg">
             <div class="px-6 py-4 border-b border-neutral-100">
                 <h2 class="text-sm font-semibold text-neutral-800">Data preview</h2>
                 <p class="text-xs text-neutral-400 mt-0.5">
@@ -247,7 +247,7 @@
     {{-- ═══ STEP 3: Generated report ═══ --}}
     @if($step === 3)
         @if($report && $report->isGenerating())
-        <div class="bg-white border border-neutral-200 rounded-lg px-6 py-12 text-center">
+        <div class="bg-gray-900 border border-neutral-200 rounded-lg px-6 py-12 text-center">
             <div class="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-brand-50 border border-brand-100 mb-5">
                 <svg class="h-7 w-7 text-brand-500 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -289,7 +289,7 @@
 
             {{-- Executive Summary --}}
             @if($report->executive_summary)
-            <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <div class="bg-gray-900 border border-neutral-200 rounded-lg overflow-hidden">
                 <div class="px-5 py-3 border-b border-neutral-100 bg-neutral-50">
                     <span class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Executive Summary</span>
                 </div>
@@ -299,7 +299,7 @@
 
             {{-- Full Report --}}
             @if(!empty($report->sections['full_narrative']))
-            <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <div class="bg-gray-900 border border-neutral-200 rounded-lg overflow-hidden">
                 <div class="px-5 py-3 border-b border-neutral-100 bg-neutral-50">
                     <span class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Full Analysis</span>
                 </div>
@@ -309,7 +309,7 @@
 
             {{-- Recommendations --}}
             @if(!empty($report->recommendations))
-            <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <div class="bg-gray-900 border border-neutral-200 rounded-lg overflow-hidden">
                 <div class="px-5 py-3 border-b border-neutral-100 bg-neutral-50">
                     <span class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Recommendations</span>
                 </div>

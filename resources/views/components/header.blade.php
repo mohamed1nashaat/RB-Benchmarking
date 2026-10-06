@@ -13,7 +13,7 @@
     }
 @endphp
 
-<header class="bg-white border-b border-neutral-200 sticky top-0 z-50">
+<header class="sticky top-0 z-50 border-b" style="background-color: #0d0f16; border-color: rgba(255,255,255,0.08);">
     <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-14">
             <!-- Left: Logo + Primary Nav -->
@@ -28,7 +28,7 @@
                     @foreach($primaryNavigation as $item)
                         <a
                             href="{{ $item['href'] }}"
-                            class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ request()->is(ltrim($item['href'], '/') . '*') ? 'bg-primary-50 text-primary-600' : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900' }}"
+                            class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ request()->is(ltrim($item['href'], '/') . '*') ? 'bg-brand-500/15 text-brand-400' : 'text-gray-400 hover:bg-white/8 hover:text-white' }}"
                         >
                             {{ __($item['label']) }}
                         </a>
@@ -50,7 +50,7 @@
                 <div x-data="{ mobileMenuOpen: false }" class="lg:hidden">
                     <button
                         @click="mobileMenuOpen = !mobileMenuOpen"
-                        class="p-2 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+                        class="p-2 rounded-md text-gray-400 hover:bg-white/8 hover:text-white transition-colors"
                     >
                         <x-heroicon-o-bars-3 x-show="!mobileMenuOpen" class="h-5 w-5" />
                         <x-heroicon-o-x-mark x-show="mobileMenuOpen" class="h-5 w-5" x-cloak />
@@ -65,7 +65,8 @@
                         x-transition:leave="transition duration-150 ease-in"
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 -translate-y-1"
-                        class="absolute top-14 inset-x-0 border-t border-neutral-200 bg-white"
+                        class="absolute top-14 inset-x-0 border-t"
+                        style="background-color: #0d0f16; border-color: rgba(255,255,255,0.08);"
                         x-cloak
                     >
                         <div class="px-4 py-3 space-y-0.5">
@@ -73,7 +74,7 @@
                                 <a
                                     href="{{ $item['href'] }}"
                                     @click="mobileMenuOpen = false"
-                                    class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors {{ request()->is(ltrim($item['href'], '/') . '*') ? 'bg-primary-50 text-primary-600' : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900' }}"
+                                    class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors {{ request()->is(ltrim($item['href'], '/') . '*') ? 'bg-brand-500/15 text-brand-400' : 'text-gray-400 hover:bg-white/8 hover:text-white' }}"
                                 >
                                     {{ __($item['label']) }}
                                 </a>

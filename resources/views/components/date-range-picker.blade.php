@@ -276,7 +276,7 @@
             } else if (this.isToday(d)) {
                 classes += 'ring-1 ring-primary-400 text-primary-600 rounded-md';
             } else {
-                classes += 'text-gray-700 hover:bg-gray-100 rounded-md';
+                classes += 'text-gray-200 hover:bg-white/5 rounded-md';
             }
 
             return classes;
@@ -293,7 +293,7 @@
 >
     {{-- Label --}}
     @if($label)
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label class="block text-sm font-medium text-gray-200 mb-1">
             @if($icon)
                 <x-dynamic-component :component="$icon" class="h-4 w-4 inline me-1 text-gray-400" />
             @endif
@@ -305,7 +305,7 @@
     <button
         @click="open = !open"
         type="button"
-        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 text-start text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
+        class="w-full bg-gray-900 border border-white/15 rounded-md shadow-sm px-3 py-2 text-start text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors hover:border-gray-400"
     >
         <div class="flex items-center justify-between">
             <span class="flex items-center gap-1.5 truncate">
@@ -313,7 +313,7 @@
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800" x-text="presets[activePreset]?.label"></span>
                 </template>
                 <template x-if="!activePreset && dateFrom && dateTo">
-                    <span class="text-gray-700" x-text="displayText"></span>
+                    <span class="text-gray-200" x-text="displayText"></span>
                 </template>
                 <template x-if="!activePreset && (!dateFrom || !dateTo)">
                     <span class="text-gray-500">{{ __('Select date range...') }}</span>
@@ -334,26 +334,26 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute z-50 mt-1 {{ $align === 'left' ? 'start-0' : 'end-0' }} w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[640px] bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        class="absolute z-50 mt-1 {{ $align === 'left' ? 'start-0' : 'end-0' }} w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[640px] bg-gray-900 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         x-cloak
     >
         <div class="flex flex-col sm:flex-row">
             {{-- Presets Sidebar --}}
-            <div class="w-full sm:w-40 border-b sm:border-b-0 sm:border-e border-gray-200 py-2 flex flex-row sm:flex-col overflow-x-auto sm:overflow-x-visible">
+            <div class="w-full sm:w-40 border-b sm:border-b-0 sm:border-e border-white/10 py-2 flex flex-row sm:flex-col overflow-x-auto sm:overflow-x-visible">
                 <template x-for="(preset, key) in presets" :key="key">
                     <button
                         @click="applyPreset(key)"
                         type="button"
                         class="w-full text-start px-3 py-2 text-sm transition-colors"
-                        :class="activePreset === key ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
+                        :class="activePreset === key ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-200 hover:bg-gray-950'"
                         x-text="preset.label"
                     ></button>
                 </template>
-                <div class="mt-0 sm:mt-auto border-t-0 sm:border-t border-gray-200 pt-0 sm:pt-2 px-3">
+                <div class="mt-0 sm:mt-auto border-t-0 sm:border-t border-white/10 pt-0 sm:pt-2 px-3">
                     <button
                         @click="clearDates()"
                         type="button"
-                        class="w-full text-start text-sm text-gray-500 hover:text-gray-700 py-1"
+                        class="w-full text-start text-sm text-gray-500 hover:text-gray-200 py-1"
                     >{{ __('Reset') }}</button>
                 </div>
             </div>
@@ -362,15 +362,15 @@
             <div class="flex-1 p-3">
                 {{-- Navigation --}}
                 <div class="flex items-center justify-between mb-3">
-                    <button @click="prevMonth()" type="button" class="p-1 hover:bg-gray-100 rounded transition-colors">
-                        <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <button @click="prevMonth()" type="button" class="p-1 hover:bg-white/5 rounded transition-colors">
+                        <svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <div class="flex gap-8 text-sm font-semibold text-gray-800">
+                    <div class="flex gap-8 text-sm font-semibold text-gray-100">
                         <span x-text="monthName(leftMonth) + ' ' + leftYear"></span>
                         <span x-text="monthName(rightMonth) + ' ' + rightYear"></span>
                     </div>
-                    <button @click="nextMonth()" type="button" class="p-1 hover:bg-gray-100 rounded transition-colors">
-                        <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <button @click="nextMonth()" type="button" class="p-1 hover:bg-white/5 rounded transition-colors">
+                        <svg class="h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>
                 </div>
 
@@ -417,7 +417,7 @@
                 </div>
 
                 {{-- Selected range display --}}
-                <div class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 text-center" x-text="displayText"></div>
+                <div class="mt-3 pt-3 border-t border-white/10 text-xs text-gray-500 text-center" x-text="displayText"></div>
             </div>
         </div>
     </div>

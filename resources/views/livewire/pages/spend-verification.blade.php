@@ -2,7 +2,7 @@
     {{-- Header --}}
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h1 class="text-xl font-semibold tracking-tight text-gray-900">
+            <h1 class="text-xl font-semibold tracking-tight text-white">
                 {{ __('pages.spend_verification.title') }}
             </h1>
             <p class="mt-1 text-sm text-gray-500">
@@ -91,9 +91,9 @@
 
     {{-- Table --}}
     <div class="card overflow-hidden">
-        <div class="px-4 py-3 sm:px-5 border-b border-gray-200">
+        <div class="px-4 py-3 sm:px-5 border-b border-white/10">
             <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold tracking-tight text-gray-900">
+                <h3 class="text-sm font-semibold tracking-tight text-white">
                     {{ __('pages.spend_verification.spend_data') }}
                     <span class="micro-label ms-2 normal-case">{{ trans_choice('common.rows', $rows->total()) }}</span>
                 </h3>
@@ -108,57 +108,57 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th wire:click="sortBy('account_name')" class="min-w-[220px] sticky start-0 z-20 border-e border-gray-200 cursor-pointer hover:bg-gray-100">
+                        <th wire:click="sortBy('account_name')" class="min-w-[220px] sticky start-0 z-20 border-e border-white/10 cursor-pointer hover:bg-white/5">
                             <div class="flex items-center gap-x-1">
                                 <span>{{ __('labels.account') }}</span>
                                 @if($sortField === 'account_name')
-                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-700" />
+                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-200" />
                                 @else
                                     <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
                                 @endif
                             </div>
                         </th>
-                        <th wire:click="sortBy('client_name')" class="cursor-pointer hover:bg-gray-100">
+                        <th wire:click="sortBy('client_name')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center gap-x-1">
                                 <span>{{ __('labels.client') }}</span>
                                 @if($sortField === 'client_name')
-                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-700" />
+                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-200" />
                                 @endif
                             </div>
                         </th>
-                        <th wire:click="sortBy('platform')" class="cursor-pointer hover:bg-gray-100">
+                        <th wire:click="sortBy('platform')" class="cursor-pointer hover:bg-white/5">
                             <div class="flex items-center gap-x-1">
                                 <span>{{ __('labels.platform') }}</span>
                                 @if($sortField === 'platform')
-                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-700" />
+                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-200" />
                                 @endif
                             </div>
                         </th>
                         @if($groupBy !== 'total')
-                            <th wire:click="sortBy('period')" class="cursor-pointer hover:bg-gray-100">
+                            <th wire:click="sortBy('period')" class="cursor-pointer hover:bg-white/5">
                                 <div class="flex items-center gap-x-1">
                                     <span>{{ __('labels.period') }}</span>
                                     @if($sortField === 'period')
-                                        <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-700" />
+                                        <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-200" />
                                     @endif
                                 </div>
                             </th>
                         @endif
                         <th class="text-center">{{ __('labels.currency') }}</th>
-                        <th wire:click="sortBy('total_spend')" class="text-end cursor-pointer hover:bg-gray-100">
+                        <th wire:click="sortBy('total_spend')" class="text-end cursor-pointer hover:bg-white/5">
                             <div class="flex items-center justify-end gap-x-1">
                                 <span>{{ __('pages.spend_verification.spend_original') }}</span>
                                 @if($sortField === 'total_spend')
-                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-700" />
+                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-200" />
                                 @endif
                             </div>
                         </th>
                         <th class="text-end">{{ __('pages.spend_verification.spend_sar') }}</th>
-                        <th wire:click="sortBy('total_revenue')" class="text-end cursor-pointer hover:bg-gray-100">
+                        <th wire:click="sortBy('total_revenue')" class="text-end cursor-pointer hover:bg-white/5">
                             <div class="flex items-center justify-end gap-x-1">
                                 <span>{{ __('pages.spend_verification.revenue_original') }}</span>
                                 @if($sortField === 'total_revenue')
-                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-700" />
+                                    <x-heroicon-o-chevron-up class="h-4 w-4 {{ $sortDirection === 'desc' ? 'rotate-180' : '' }} text-gray-200" />
                                 @endif
                             </div>
                         </th>
@@ -174,10 +174,10 @@
                     @forelse($rows as $row)
                         <tr>
                             {{-- Account --}}
-                            <td class="sticky start-0 z-10 sticky-col border-e border-gray-200">
+                            <td class="sticky start-0 z-10 sticky-col border-e border-white/10">
                                 <div>
                                     <a href="{{ route('ad-account-detail', ['id' => $row->ad_account_id]) }}" wire:navigate
-                                        class="text-sm font-medium text-gray-900 hover:underline">
+                                        class="text-sm font-medium text-white hover:underline">
                                         {{ $row->account_name }}
                                     </a>
                                     <div class="text-xs text-gray-400 font-mono">{{ $row->external_account_id }}</div>
@@ -219,7 +219,7 @@
                             </td>
 
                             {{-- Spend Original --}}
-                            <td class="whitespace-nowrap text-end font-semibold text-gray-900">
+                            <td class="whitespace-nowrap text-end font-semibold text-white">
                                 {{ number_format((float) $row->total_spend, 2) }}
                             </td>
 
@@ -233,7 +233,7 @@
                             </td>
 
                             {{-- Revenue Original --}}
-                            <td class="whitespace-nowrap text-end text-gray-900">
+                            <td class="whitespace-nowrap text-end text-white">
                                 {{ number_format((float) $row->total_revenue, 2) }}
                             </td>
 
@@ -306,7 +306,7 @@
             </table>
         </x-table-scroll>
 
-        <div class="px-4 py-3 border-t border-gray-200">
+        <div class="px-4 py-3 border-t border-white/10">
             <x-pagination-wrapper :paginator="$rows" :per-page-options="[10, 25, 50, 100]" />
         </div>
     </div>
@@ -314,9 +314,9 @@
     {{-- Verification Modal --}}
     @if($showVerificationModal)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" x-data x-on:keydown.escape.window="$wire.closeVerificationModal()">
-            <div class="relative top-20 mx-auto p-5 w-96 border border-gray-200 rounded-xl bg-white">
+            <div class="relative top-20 mx-auto p-5 w-96 border border-white/10 rounded-xl bg-gray-900">
                 <div class="mt-3">
-                    <h3 class="text-base font-semibold tracking-tight text-gray-900 mb-4">
+                    <h3 class="text-base font-semibold tracking-tight text-white mb-4">
                         {{ $verificationAction === 'approved' ? __('buttons.approve') : __('buttons.reject') }}
                         {{ count($accountsToVerify) }} {{ __('pages.ad_accounts.accounts') }}
                     </h3>

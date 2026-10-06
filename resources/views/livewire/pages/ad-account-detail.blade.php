@@ -56,20 +56,20 @@
 
         {{-- Account Details Card --}}
         <div class="card p-6">
-            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.ad_accounts.account_info') }}</h3>
+            <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.ad_accounts.account_info') }}</h3>
             <p class="mt-1 text-sm text-gray-500">{{ __('pages.ad_accounts.account_info_description') }}</p>
-            <dl class="mt-6 border-t border-gray-100">
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+            <dl class="mt-6 border-t border-white/8">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('pages.ad_accounts.external_account_id') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $adAccount['external_account_id'] }}</dd>
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">{{ $adAccount['external_account_id'] }}</dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('labels.platform') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 capitalize">{{ $adAccount['platform'] }}</dd>
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2 capitalize">{{ $adAccount['platform'] }}</dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('labels.industry') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">
                         <select wire:model="editableAccount.industry" wire:change="updateAccountInfo"
                             class="input-field">
                             <option value="">{{ __('placeholders.select_industry') }}</option>
@@ -79,9 +79,9 @@
                         </select>
                     </dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('labels.category') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">
                         <select wire:model="editableAccount.category" wire:change="updateAccountInfo"
                             class="input-field">
                             <option value="">{{ __('pages.ad_accounts.select_category') }}</option>
@@ -91,18 +91,18 @@
                         </select>
                     </dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('labels.currency') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $adAccount['currency'] }}</dd>
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">{{ $adAccount['currency'] }}</dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('pages.ad_accounts.total_campaigns') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ count($campaigns) }}</dd>
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">{{ count($campaigns) }}</dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('pages.ad_accounts.total_spend_sar') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                        <span class="font-semibold text-gray-900">SR {{ number_format($adAccount['total_spend_sar'] ?? 0, 2) }}</span>
+                    <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">
+                        <span class="font-semibold text-white">SR {{ number_format($adAccount['total_spend_sar'] ?? 0, 2) }}</span>
                         @if($filterStartDate && $filterEndDate)
                             <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#E1F3FE] text-[#1F6C9F]">
                                 {{ $filterStartDate }} {{ __('common.to') }} {{ $filterEndDate }}
@@ -112,11 +112,11 @@
                         @endif
                     </dd>
                 </div>
-                <div class="py-4 border-b border-gray-100 sm:grid sm:grid-cols-3 sm:gap-4">
+                <div class="py-4 border-b border-white/8 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="micro-label">{{ __('pages.ad_accounts.last_metrics_sync') }}</dt>
                     <dd class="mt-1 text-sm sm:mt-0 sm:col-span-2">
                         @if($adAccount['last_metrics_sync_at'])
-                            <span class="text-gray-900">{{ \Carbon\Carbon::parse($adAccount['last_metrics_sync_at'])->format('M d, Y H:i') }}</span>
+                            <span class="text-white">{{ \Carbon\Carbon::parse($adAccount['last_metrics_sync_at'])->format('M d, Y H:i') }}</span>
                             <span class="text-gray-500 text-xs ms-2">({{ \Carbon\Carbon::parse($adAccount['last_metrics_sync_at'])->diffForHumans() }})</span>
                         @else
                             <span class="text-gray-400 italic">{{ __('pages.ad_accounts.never_synced') }}</span>
@@ -128,10 +128,10 @@
 
         {{-- Campaigns Section --}}
         <div class="card overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
+            <div class="p-6 border-b border-white/8">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.ad_accounts.campaigns_section') }}</h3>
+                        <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.ad_accounts.campaigns_section') }}</h3>
                         <p class="mt-1 text-sm text-gray-500">{{ __('pages.ad_accounts.campaigns_subtitle') }}</p>
                     </div>
                     <div class="flex items-center gap-x-3">
@@ -150,8 +150,8 @@
                                     </span>
                                     <span class="text-[#956400]">{{ __('pages.ad_accounts.queued') }}</span>
                                 @elseif(($syncProgress['status'] ?? '') === 'running')
-                                    <x-heroicon-o-arrow-path class="h-4 w-4 text-gray-900 animate-spin" />
-                                    <span class="text-gray-700 truncate max-w-[180px]">{{ $syncProgress['current_step'] ?? __('pages.ad_accounts.syncing') }}</span>
+                                    <x-heroicon-o-arrow-path class="h-4 w-4 text-white animate-spin" />
+                                    <span class="text-gray-200 truncate max-w-[180px]">{{ $syncProgress['current_step'] ?? __('pages.ad_accounts.syncing') }}</span>
                                 @elseif(($syncProgress['status'] ?? '') === 'completed')
                                     <x-heroicon-s-check-circle class="h-4 w-4 text-[#346538]" />
                                     <span class="text-[#346538]">{{ __('pages.ad_accounts.sync_complete') }}</span>
@@ -209,16 +209,16 @@
                         <tr>
                             <th scope="col" class="w-10">
                                 <input type="checkbox" wire:click="toggleSelectAll" @checked($selectAll)
-                                    class="h-4 w-4 rounded border-gray-300 text-gray-900 cursor-pointer" />
+                                    class="h-4 w-4 rounded border-white/15 text-white cursor-pointer" />
                             </th>
                             <th scope="col" wire:click="sortBy('name')" class="min-w-[250px] cursor-pointer">
                                 <div class="flex items-center gap-x-1">
                                     <span>{{ __('labels.campaign_name') }}</span>
                                     @if($sortField === 'name')
                                         @if($sortDirection === 'asc')
-                                            <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-700" />
+                                            <x-heroicon-o-chevron-up class="h-4 w-4 text-gray-200" />
                                         @else
-                                            <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-700" />
+                                            <x-heroicon-o-chevron-down class="h-4 w-4 text-gray-200" />
                                         @endif
                                     @else
                                         <x-heroicon-o-chevron-up-down class="h-4 w-4 text-gray-400" />
@@ -245,22 +245,22 @@
                             <tr class="group">
                                 <td>
                                     <input type="checkbox" value="{{ $campaign['id'] }}" wire:model.live="selectedCampaigns"
-                                        class="h-4 w-4 rounded border-gray-300 text-gray-900 cursor-pointer" />
+                                        class="h-4 w-4 rounded border-white/15 text-white cursor-pointer" />
                                 </td>
                                 <td>
                                     <a href="{{ route('campaign-metrics', ['campaignId' => $campaign['id']]) }}" wire:navigate
-                                        class="text-sm font-medium text-gray-900 hover:underline cursor-pointer">
+                                        class="text-sm font-medium text-white hover:underline cursor-pointer">
                                         {{ $campaign['name'] }}
                                     </a>
                                     <div class="text-xs text-gray-500">{{ __('common.id') }}: {{ $campaign['external_campaign_id'] }}</div>
                                 </td>
                                 <td>
-                                    <span class="text-sm font-semibold text-gray-900">
+                                    <span class="text-sm font-semibold text-white">
                                         {{ $adAccount['currency'] }} {{ number_format($campaign['total_spend'], 2) }}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="text-sm font-semibold text-gray-900">
+                                    <span class="text-sm font-semibold text-white">
                                         SR {{ number_format($campaign['total_spend_sar'], 2) }}
                                     </span>
                                 </td>
@@ -301,7 +301,7 @@
                                 </td>
                                 <td class="text-end text-xs font-medium">
                                     <a href="{{ route('campaign-metrics', ['campaignId' => $campaign['id']]) }}" wire:navigate
-                                        class="text-gray-900 hover:underline">
+                                        class="text-white hover:underline">
                                         {{ __('common.view') }}
                                     </a>
                                 </td>
@@ -317,7 +317,7 @@
                         @endforelse
                     </tbody>
                     @if(count($campaigns) > 0)
-                        <tfoot class="sticky bottom-0 bg-gray-50 font-semibold text-sm text-gray-900">
+                        <tfoot class="sticky bottom-0 bg-gray-950 font-semibold text-sm text-white">
                             <tr>
                                 <td></td>
                                 <td>
@@ -348,7 +348,7 @@
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeSyncModal"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                <div class="inline-block align-bottom bg-white border border-gray-200 rounded-xl px-4 pt-5 pb-4 text-start overflow-hidden sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="inline-block align-bottom bg-gray-900 border border-white/10 rounded-xl px-4 pt-5 pb-4 text-start overflow-hidden sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
 
                     @php
                         $progressStatus = $syncProgress['status'] ?? null;
@@ -362,7 +362,7 @@
                                 <div class="h-5 w-5 rounded-full bg-[#956400] animate-pulse"></div>
                             </div>
                             <div class="mt-3 text-center sm:mt-5">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">
+                                <h3 class="text-base font-semibold tracking-tight text-white">
                                     {{ __('pages.ad_accounts.sync_for_platform', ['platform' => $platformName]) }}
                                 </h3>
                                 <p class="mt-2 text-sm text-[#956400] font-medium">
@@ -381,7 +381,7 @@
                                 <x-heroicon-o-arrow-path class="h-6 w-6 text-[#1F6C9F] animate-spin" />
                             </div>
                             <div class="mt-3 text-center sm:mt-5">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">
+                                <h3 class="text-base font-semibold tracking-tight text-white">
                                     {{ __('pages.ad_accounts.sync_for_platform', ['platform' => $platformName]) }}
                                 </h3>
                                 <p class="mt-2 text-sm text-[#1F6C9F] font-medium">
@@ -391,7 +391,7 @@
 
                             {{-- Step log --}}
                             @if(!empty($syncProgress['steps']))
-                                <div class="mt-4 max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50" x-data x-effect="$el.scrollTop = $el.scrollHeight">
+                                <div class="mt-4 max-h-48 overflow-y-auto border border-white/10 rounded-xl p-3 bg-gray-950" x-data x-effect="$el.scrollTop = $el.scrollHeight">
                                     <div class="space-y-2">
                                         @foreach($syncProgress['steps'] as $step)
                                             <div class="flex items-start text-xs">
@@ -404,7 +404,7 @@
                                                         <div class="h-3 w-3 rounded-full bg-gray-300"></div>
                                                     @endif
                                                 </div>
-                                                <span class="text-gray-700">{{ $step['message'] }}</span>
+                                                <span class="text-gray-200">{{ $step['message'] }}</span>
                                             </div>
                                         @endforeach
                                     </div>
@@ -418,7 +418,7 @@
                             <x-heroicon-s-check-circle class="h-6 w-6 text-[#346538]" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __('pages.ad_accounts.sync_complete') }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.ad_accounts.sync_complete') }}</h3>
                             <p class="mt-1 text-sm text-[#346538] font-medium">
                                 {{ __('pages.ad_accounts.sync_success_message', ['platform' => $platformName]) }}
                             </p>
@@ -428,19 +428,19 @@
                         @if(!empty($syncProgress['stats']))
                             <div class="mt-4 grid grid-cols-2 gap-3">
                                 @if(isset($syncProgress['stats']['accounts_processed']))
-                                    <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="bg-gray-950 rounded-xl p-3 text-center">
                                         <p class="stat-num">{{ $syncProgress['stats']['accounts_processed'] }}</p>
                                         <p class="text-xs text-gray-500">{{ __('labels.accounts') }}</p>
                                     </div>
                                 @endif
                                 @if(isset($syncProgress['stats']['campaigns_synced']))
-                                    <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="bg-gray-950 rounded-xl p-3 text-center">
                                         <p class="stat-num">{{ $syncProgress['stats']['campaigns_synced'] }}</p>
                                         <p class="text-xs text-gray-500">{{ __('labels.campaigns') }}</p>
                                     </div>
                                 @endif
                                 @if(isset($syncProgress['stats']['metrics_synced']))
-                                    <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="bg-gray-950 rounded-xl p-3 text-center">
                                         <p class="stat-num">{{ number_format($syncProgress['stats']['metrics_synced']) }}</p>
                                         <p class="text-xs text-gray-500">{{ __('pages.ad_accounts.metrics_synced') }}</p>
                                     </div>
@@ -457,8 +457,8 @@
                         {{-- Step log (collapsed) --}}
                         @if(!empty($syncProgress['steps']))
                             <details class="mt-3">
-                                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700">{{ __('pages.ad_accounts.show_sync_log', ['count' => count($syncProgress['steps'])]) }}</summary>
-                                <div class="mt-2 max-h-36 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50">
+                                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-200">{{ __('pages.ad_accounts.show_sync_log', ['count' => count($syncProgress['steps'])]) }}</summary>
+                                <div class="mt-2 max-h-36 overflow-y-auto border border-white/10 rounded-xl p-3 bg-gray-950">
                                     <div class="space-y-1">
                                         @foreach($syncProgress['steps'] as $step)
                                             <div class="flex items-start text-xs">
@@ -471,7 +471,7 @@
                                                         <div class="h-2.5 w-2.5 rounded-full bg-gray-300"></div>
                                                     @endif
                                                 </div>
-                                                <span class="text-gray-600">{{ $step['message'] }}</span>
+                                                <span class="text-gray-300">{{ $step['message'] }}</span>
                                             </div>
                                         @endforeach
                                     </div>
@@ -491,7 +491,7 @@
                             <x-heroicon-s-x-circle class="h-6 w-6 text-[#9F2F2D]" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
-                            <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ __("Sync Failed") }}</h3>
+                            <h3 class="text-base font-semibold tracking-tight text-white">{{ __("Sync Failed") }}</h3>
                             <p class="mt-2 text-sm text-[#9F2F2D]">
                                 {{ $syncProgress['error'] ?? __('pages.ad_accounts.sync_unknown_error') }}
                             </p>
@@ -500,8 +500,8 @@
                         {{-- Step log (collapsed) --}}
                         @if(!empty($syncProgress['steps']))
                             <details class="mt-3">
-                                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700">{{ trans_choice('pages.ad_accounts.show_sync_log', count($syncProgress['steps'])) }}</summary>
-                                <div class="mt-2 max-h-36 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50">
+                                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-200">{{ trans_choice('pages.ad_accounts.show_sync_log', count($syncProgress['steps'])) }}</summary>
+                                <div class="mt-2 max-h-36 overflow-y-auto border border-white/10 rounded-xl p-3 bg-gray-950">
                                     <div class="space-y-1">
                                         @foreach($syncProgress['steps'] as $step)
                                             <div class="flex items-start text-xs">
@@ -514,7 +514,7 @@
                                                         <div class="h-2.5 w-2.5 rounded-full bg-gray-300"></div>
                                                     @endif
                                                 </div>
-                                                <span class="text-gray-600">{{ $step['message'] }}</span>
+                                                <span class="text-gray-300">{{ $step['message'] }}</span>
                                             </div>
                                         @endforeach
                                     </div>

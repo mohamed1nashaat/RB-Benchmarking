@@ -36,13 +36,13 @@
 
     {{-- Roles List --}}
     @if($this->roles->count() > 0)
-        <div class="card divide-y divide-gray-100">
+        <div class="card divide-y divide-white/8">
             @foreach($this->roles as $role)
-                <div class="p-6 transition-colors hover:bg-gray-50" wire:key="role-{{ $role->id }}">
+                <div class="p-6 transition-colors hover:bg-gray-950" wire:key="role-{{ $role->id }}">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
-                                <h3 class="text-base font-semibold tracking-tight text-gray-900">{{ $role->display_name }}</h3>
+                                <h3 class="text-base font-semibold tracking-tight text-white">{{ $role->display_name }}</h3>
                                 @if($role->is_system)
                                     <span class="inline-flex items-center rounded-full bg-[#E1F3FE] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#1F6C9F]">
                                         {{ __('pages.roles.system_role') }}
@@ -120,7 +120,7 @@
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeFormModal"></div>
                 <div class="relative card max-w-2xl w-full mx-auto p-6 text-start">
-                    <h3 class="text-lg font-semibold tracking-tight text-gray-900">
+                    <h3 class="text-lg font-semibold tracking-tight text-white">
                         {{ $editingRoleId ? __('pages.roles.edit_role') : __('pages.roles.create_role') }}
                     </h3>
 
@@ -171,8 +171,8 @@
                             </label>
 
                             {{-- Select All --}}
-                            <div class="mb-3 flex items-center justify-between border-b border-gray-200 pb-3">
-                                <span class="text-sm text-gray-600">{{ __('pages.roles.select_all') }}</span>
+                            <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
+                                <span class="text-sm text-gray-300">{{ __('pages.roles.select_all') }}</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -180,7 +180,7 @@
                                         @checked($this->allSelected)
                                         class="sr-only peer"
                                     />
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/15 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:rtl:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                                    <div class="w-11 h-6 bg-white/8 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/15 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:rtl:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-gray-900 after:border-white/15 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
                                 </label>
                             </div>
 
@@ -189,8 +189,8 @@
                                 @foreach($this->groupedPermissions as $groupName => $groupPermissions)
                                     <div class="card">
                                         {{-- Group Header --}}
-                                        <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-                                            <span class="text-sm font-semibold text-gray-700 capitalize">{{ str_replace('_', ' ', $groupName) }}</span>
+                                        <div class="bg-gray-950 px-4 py-2 border-b border-white/10 flex items-center justify-between">
+                                            <span class="text-sm font-semibold text-gray-200 capitalize">{{ str_replace('_', ' ', $groupName) }}</span>
                                             <label class="relative inline-flex items-center cursor-pointer">
                                                 <input
                                                     type="checkbox"
@@ -198,21 +198,21 @@
                                                     @checked($this->isGroupSelected($groupName))
                                                     class="sr-only peer"
                                                 />
-                                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/15 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:rtl:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
+                                                <div class="w-9 h-5 bg-white/8 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-900/15 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:rtl:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-gray-900 after:border-white/15 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gray-900"></div>
                                             </label>
                                         </div>
                                         {{-- Group Permissions --}}
                                         <div class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             @foreach($groupPermissions as $permission)
-                                                <label class="flex items-start gap-x-3 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                                                <label class="flex items-start gap-x-3 p-2 rounded hover:bg-gray-950 cursor-pointer">
                                                     <input
                                                         type="checkbox"
                                                         wire:click="togglePermission({{ $permission['id'] }})"
                                                         @checked(in_array($permission['id'], $selectedPermissions))
-                                                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900/15"
+                                                        class="mt-0.5 h-4 w-4 rounded border-white/15 text-white focus:ring-gray-900/15"
                                                     />
                                                     <div class="flex-1 min-w-0">
-                                                        <span class="block text-sm font-medium text-gray-900">{{ $permission['display_name'] }}</span>
+                                                        <span class="block text-sm font-medium text-white">{{ $permission['display_name'] }}</span>
                                                         @if(!empty($permission['description']))
                                                             <span class="block text-xs text-gray-500 truncate">{{ $permission['description'] }}</span>
                                                         @endif
@@ -270,7 +270,7 @@
                             <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
                         </div>
                         <div class="text-start">
-                            <h3 class="text-lg font-semibold tracking-tight text-gray-900">{{ __('pages.roles.delete_role') }}</h3>
+                            <h3 class="text-lg font-semibold tracking-tight text-white">{{ __('pages.roles.delete_role') }}</h3>
                             <p class="text-sm text-gray-500">
                                 @if($roleToDeleteUsersCount > 0)
                                     {{ __('pages.roles.delete_message_with_users', ['name' => $roleToDeleteName, 'count' => $roleToDeleteUsersCount]) }}

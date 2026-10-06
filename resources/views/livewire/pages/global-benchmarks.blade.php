@@ -1,9 +1,9 @@
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-950">
     <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {{-- Page Header --}}
         <div class="mb-6">
-            <h1 class="text-xl font-semibold tracking-tight text-gray-900">{{ __('pages.global_benchmarks.title') }}</h1>
+            <h1 class="text-xl font-semibold tracking-tight text-white">{{ __('pages.global_benchmarks.title') }}</h1>
             <p class="mt-0.5 text-sm text-gray-500">{{ __('pages.global_benchmarks.description') }}</p>
         </div>
 
@@ -16,7 +16,7 @@
                     @foreach($this->platforms as $slug => $label)
                         <button
                             wire:click="$set('selectedPlatform', '{{ $slug }}')"
-                            class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $selectedPlatform === $slug ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
+                            class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $selectedPlatform === $slug ? 'bg-brand-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/8' }}"
                         >
                             {{ $label }}
                         </button>
@@ -25,7 +25,7 @@
 
                 {{-- Industry Filter --}}
                 <div class="flex items-center gap-2 ms-auto">
-                    <label class="text-sm font-medium text-gray-600">{{ __('filters.industry') }}:</label>
+                    <label class="text-sm font-medium text-gray-300">{{ __('filters.industry') }}:</label>
                     <select
                         wire:model.live="selectedIndustry"
                         class="input-field py-1.5"
@@ -51,19 +51,19 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-gray-50 border-b border-gray-200">
-                                <th class="text-left px-4 py-3 font-semibold text-gray-700 min-w-[180px]">{{ __('filters.industry') }}</th>
+                            <tr class="bg-gray-950 border-b border-white/10">
+                                <th class="text-left px-4 py-3 font-semibold text-gray-200 min-w-[180px]">{{ __('filters.industry') }}</th>
                                 @foreach($this->metrics as $metric)
-                                    <th class="text-center px-3 py-3 font-semibold text-gray-700 min-w-[130px]">
+                                    <th class="text-center px-3 py-3 font-semibold text-gray-200 min-w-[130px]">
                                         {{ $this->metricLabels[$metric] ?? strtoupper($metric) }}
                                     </th>
                                 @endforeach
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-white/8">
                             @foreach($tableData as $industry => $metricData)
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-4 py-3 font-medium text-gray-900">
+                                <tr class="hover:bg-gray-950 transition-colors">
+                                    <td class="px-4 py-3 font-medium text-white">
                                         {{ $this->industryLabels[$industry] ?? ucwords(str_replace('_', ' ', $industry)) }}
                                     </td>
                                     @foreach($this->metrics as $metric)
@@ -71,15 +71,15 @@
                                             @if(isset($metricData[$metric]))
                                                 @php $b = $metricData[$metric]; @endphp
                                                 <div class="flex flex-col items-center gap-0.5">
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500/15 text-green-400">
                                                         <span class="me-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_excellent') }}</span>
                                                         {{ number_format($b->percentile_75, 2) }}
                                                     </span>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/15 text-yellow-400">
                                                         <span class="me-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_avg') }}</span>
                                                         {{ number_format($b->percentile_50, 2) }}
                                                     </span>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-gray-200">
                                                         <span class="me-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_good') }}</span>
                                                         {{ number_format($b->percentile_25, 2) }}
                                                     </span>
@@ -100,10 +100,10 @@
         {{-- Sources Panel --}}
         @if(!empty($sources))
             <div class="card p-5">
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('pages.global_benchmarks.sources_label') }}</h3>
+                <h3 class="text-sm font-semibold text-gray-200 mb-3">{{ __('pages.global_benchmarks.sources_label') }}</h3>
                 <div class="flex flex-wrap gap-2">
                     @foreach($sources as $source)
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/5 text-gray-200 border border-white/10">
                             <x-heroicon-o-document-text class="h-3 w-3 me-1.5 opacity-60" />
                             {{ $source }}
                         </span>
