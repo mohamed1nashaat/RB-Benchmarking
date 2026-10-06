@@ -84,6 +84,7 @@
                         <th class="py-3 px-4 text-left text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hidden sm:table-cell">Period</th>
                         <th class="py-3 px-4 text-left text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hidden md:table-cell">Account</th>
                         <th class="py-3 px-4 text-left text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Status</th>
+                        <th class="py-3 px-4 text-left text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hidden xl:table-cell">Schedule</th>
                         <th class="py-3 px-4 text-left text-[11px] font-semibold uppercase tracking-wide text-neutral-400 hidden lg:table-cell">Created</th>
                         <th class="py-3 px-4"></th>
                     </tr>
@@ -110,6 +111,20 @@
                                     @endif
                                     {{ $report->status }}
                                 </span>
+                            </td>
+                            <td class="py-3 px-4 hidden xl:table-cell">
+                                @if($report->isScheduled())
+                                    <div>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 border border-blue-200">
+                                            {{ $report->scheduleLabel() }}
+                                        </span>
+                                        @if($report->next_run_at)
+                                            <p class="text-[11px] text-neutral-400 mt-0.5">Next: {{ $report->next_run_at->format('d M') }}</p>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-xs text-neutral-300">—</span>
+                                @endif
                             </td>
                             <td class="py-3 px-4 hidden lg:table-cell">
                                 <span class="text-xs text-neutral-400">{{ $report->created_at->diffForHumans() }}</span>

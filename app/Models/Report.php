@@ -27,16 +27,23 @@ class Report extends Model
         'created_by',
         'sent_at',
         'language',
+        'schedule_frequency',
+        'delivery_emails',
+        'next_run_at',
+        'last_auto_run_at',
     ];
 
     protected $casts = [
-        'performance_data' => 'array',
-        'recommendations'  => 'array',
-        'sections'         => 'array',
-        'metadata'         => 'array',
-        'period_start'     => 'date',
-        'period_end'       => 'date',
-        'sent_at'          => 'datetime',
+        'performance_data'  => 'array',
+        'recommendations'   => 'array',
+        'sections'          => 'array',
+        'metadata'          => 'array',
+        'delivery_emails'   => 'array',
+        'period_start'      => 'date',
+        'period_end'        => 'date',
+        'sent_at'           => 'datetime',
+        'next_run_at'       => 'datetime',
+        'last_auto_run_at'  => 'datetime',
     ];
 
     public function adAccount(): BelongsTo
@@ -62,6 +69,20 @@ class Report extends Model
     public function periodLabel(): string
     {
         return $this->period_start->format('d M') . ' – ' . $this->period_end->format('d M Y');
+    }
+
+    public function isScheduled(): bool
+    {
+        return !empty($this->schedule_frequency) && $this->schedule_frequency !== 'none';
+    }
+
+    public function scheduleLabel(): string
+    {
+        return match ($this->schedule_frequency) {
+            'weekly'  => 'Weekly',
+            'monthly' => 'Monthly',
+            default   => 'One-time',
+        };
     }
 
     public function statusColor(): string

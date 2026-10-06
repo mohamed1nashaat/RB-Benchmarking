@@ -54,11 +54,35 @@ Format each section clearly with the heading on its own line followed by the con
                 ],
             ]);
 
-            // Notify the report creator by email
+            // Update schedule next_run_at after successful generation
+            if (!empty($report->schedule_frequency) && $report->schedule_frequency !== 'none') {
+                $nextRun = match ($report->schedule_frequency) {
+                    'weekly'  => now()->addWeek(),
+                    'monthly' => now()->addMonth(),
+                    default   => null,
+                };
+                $report->update([
+                    'last_auto_run_at' => now(),
+                    'next_run_at'      => $nextRun,
+                ]);
+            }
+
+            // Notify the report creator + any delivery_emails
             try {
                 $report->load('creator');
+                $recipients = [];
                 if ($report->creator?->email) {
-                    Mail::to($report->creator->email)->queue(new AiReportReadyMail($report));
+                    $recipients[] = $report->creator->email;
+                }
+                foreach ($report->delivery_emails ?? [] as $email) {
+                    if (filter_var($email, FILTER_VALIDATE_EMAIL) && !in_array($email, $recipients)) {
+                        $recipients[] = $email;
+                    }
+                }
+                foreach ($recipients as $email) {
+                    Mail::to($email)->queue(new AiReportReadyMail($report));
+                }
+                if (!empty($recipients)) {
                     $report->update(['sent_at' => now()]);
                 }
             } catch (\Throwable $mailEx) {

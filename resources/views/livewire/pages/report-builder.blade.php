@@ -119,6 +119,31 @@
                         </button>
                     </div>
                 </div>
+
+                {{-- Delivery Schedule --}}
+                <div class="border-t border-neutral-100 pt-4 space-y-3">
+                    <label class="block text-[13px] font-semibold text-neutral-700">Delivery Schedule</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        @foreach(['none' => 'One-time', 'weekly' => 'Weekly', 'monthly' => 'Monthly'] as $val => $lbl)
+                        <label class="relative flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-colors
+                            {{ $scheduleFrequency === $val ? 'border-brand-500 bg-brand-50' : 'border-neutral-200 bg-white hover:border-neutral-300' }}">
+                            <input type="radio" wire:model.live="scheduleFrequency" value="{{ $val }}" class="sr-only">
+                            <span class="text-[13px] font-medium {{ $scheduleFrequency === $val ? 'text-brand-700' : 'text-neutral-600' }}">{{ $lbl }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                    @if($scheduleFrequency !== 'none')
+                    <div>
+                        <label class="block text-[13px] font-medium text-neutral-700 mb-1.5">Delivery emails</label>
+                        <input type="text" wire:model="deliveryEmails"
+                               placeholder="client@example.com, manager@agency.com"
+                               class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-md focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition text-neutral-900 placeholder-neutral-400">
+                        <p class="mt-1 text-xs text-neutral-400">Separate multiple emails with commas. Creator is always notified.</p>
+                    </div>
+                    @endif
+                </div>
+
+
             </div>
         </div>
         <div class="px-6 py-4 flex justify-end">

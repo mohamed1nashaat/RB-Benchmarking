@@ -16,7 +16,9 @@ class ReportBuilder extends Component
     public ?int   $adAccountId  = null;
     public string $platform    = '';
     public string $industry    = '';
-    public string $language    = 'en';
+    public string $language           = 'en';
+    public string $scheduleFrequency  = 'none';
+    public string $deliveryEmails     = '';
 
     public ?Report $report     = null;
     public bool $generating    = false;
@@ -31,8 +33,10 @@ class ReportBuilder extends Component
             $this->adAccountId = $this->report->ad_account_id;
             $this->platform    = $this->report->platform ?? '';
             $this->industry    = $this->report->industry ?? '';
-            $this->language    = $this->report->language ?? 'en';
-            $this->step        = $this->report->isReady() ? 3 : 2;
+            $this->language          = $this->report->language ?? 'en';
+            $this->scheduleFrequency = $this->report->schedule_frequency ?? 'none';
+            $this->deliveryEmails    = implode(', ', $this->report->delivery_emails ?? []);
+            $this->step              = $this->report->isReady() ? 3 : 2;
         } else {
             $this->periodEnd   = now()->format('Y-m-d');
             $this->periodStart = now()->subDays(30)->format('Y-m-d');
@@ -67,22 +71,33 @@ class ReportBuilder extends Component
                 'name'        => 'required|string|max:255',
                 'periodStart' => 'required|date',
                 'periodEnd'   => 'required|date|after_or_equal:periodStart',
-                'language'    => 'required|in:en,ar',
+                'language'          => 'required|in:en,ar',
+                'scheduleFrequency' => 'required|in:none,weekly,monthly',
             ]);
 
             $tenantId = auth()->user()->tenant_id;
 
+            $emails  = array_values(array_filter(array_map('trim', explode(',', $this->deliveryEmails))));
+            $nextRun = match ($this->scheduleFrequency) {
+                'weekly'  => now()->addWeek(),
+                'monthly' => now()->addMonth(),
+                default   => null,
+            };
+
             $this->report = Report::create([
-                'tenant_id'    => $tenantId,
-                'ad_account_id'=> $this->adAccountId,
-                'name'         => $this->name,
-                'status'       => 'draft',
-                'period_start' => $this->periodStart,
-                'period_end'   => $this->periodEnd,
-                'platform'     => $this->platform ?: null,
-                'industry'     => $this->industry ?: null,
-                'language'     => $this->language,
-                'created_by'   => auth()->id(),
+                'tenant_id'          => $tenantId,
+                'ad_account_id'      => $this->adAccountId,
+                'name'               => $this->name,
+                'status'             => 'draft',
+                'period_start'       => $this->periodStart,
+                'period_end'         => $this->periodEnd,
+                'platform'           => $this->platform ?: null,
+                'industry'           => $this->industry ?: null,
+                'language'           => $this->language,
+                'schedule_frequency' => $this->scheduleFrequency,
+                'delivery_emails'    => $emails ?: null,
+                'next_run_at'        => $nextRun,
+                'created_by'         => auth()->id(),
             ]);
         }
 

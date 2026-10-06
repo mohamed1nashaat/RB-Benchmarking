@@ -150,6 +150,12 @@ Schedule::command('reports:generate')
     ->onFailure($onFailure('reports:generate'))
     ->description('Generate scheduled reports that are due');
 
+// AI Reports: dispatch scheduled regeneration jobs
+Schedule::command('reports:dispatch-scheduled')
+    ->hourly()
+    ->onFailure($onFailure('reports:dispatch-scheduled'))
+    ->description('Dispatch AI report generation for scheduled reports due');
+
 // Sync Health Monitoring
 Schedule::command('sync:check-health')
     ->hourly()
