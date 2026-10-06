@@ -163,6 +163,7 @@ class SyncTikTokMetrics extends Command
             ];
 
             $this->monitoringService->recordSuccess('tiktok', $integration->id, $stats);
+            $integration->update(['last_sync_at' => now()]);
             $this->completeSyncProgress($stats);
 
         } catch (\Exception $e) {

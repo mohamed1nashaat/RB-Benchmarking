@@ -186,6 +186,7 @@ class SyncFacebookMetrics extends Command
             } else {
                 $this->monitoringService->recordSuccess('facebook', $integration->id, $stats);
             }
+            $integration->update(['last_sync_at' => now()]);
             $this->completeSyncProgress($stats);
 
         } catch (\Exception $e) {

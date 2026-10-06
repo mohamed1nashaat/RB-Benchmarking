@@ -142,6 +142,7 @@ class SyncSnapchatMetrics extends Command
             ];
 
             $this->monitoringService->recordSuccess('snapchat', $integration->id, $stats);
+            $integration->update(['last_sync_at' => now()]);
             $this->completeSyncProgress($stats);
 
             return Command::SUCCESS;
