@@ -3,6 +3,7 @@
 namespace App\Livewire\Pages;
 
 use App\Models\AdAccount;
+use App\Models\IndustryBenchmark;
 use App\Services\BenchmarkService;
 use App\Services\CurrencyConversionService;
 use Illuminate\Support\Facades\Cache;
@@ -78,6 +79,7 @@ class Benchmarks extends Component
     public bool $loading = false;
     public array $benchmarkData = [];
     public array $globalBenchmarkData = [];
+    public array $externalBenchmarkData = [];
 
     // Accounts modal
     public bool $showAccountsModal = false;
@@ -236,6 +238,16 @@ class Benchmarks extends Component
 
             // Load global benchmarks across all accounts for the same date range
             $this->globalBenchmarkData = $service->getGlobalBenchmarks($this->dateFrom, $this->dateTo, $filters);
+
+            // Load external industry benchmarks (seeded from WordStream/Meta/etc.)
+            $this->externalBenchmarkData = Cache::remember('external_benchmarks_by_industry', 3600, function () {
+                return IndustryBenchmark::whereIn('metric', ['ctr','cpc','cpm','cvr','cpl','cpa','roas'])
+                    ->whereIn('platform', ['facebook','google','tiktok'])
+                    ->get()
+                    ->groupBy('industry')
+                    ->map(fn($rows) => $rows->groupBy('metric')->map(fn($m) => round($m->avg('percentile_50'), 4)))
+                    ->toArray();
+            });
         } catch (\Throwable $e) {
             $this->benchmarkData = [];
             \Log::error('Benchmarks refresh error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -1097,6 +1109,7 @@ class Benchmarks extends Component
             'yourPerformanceIndicators' => $this->yourPerformanceIndicators,
             'columnConfig' => $this->getColumnConfig(),
             'visibleGroupCounts' => $visibleGroupCounts,
+            'externalBenchmarkData' => $this->externalBenchmarkData,
         ])->layout('layouts.app');
     }
 }

@@ -714,6 +714,7 @@
     "common.below_average": "أقل من المتوسط",
     "common.benchmark": "المعيار المدمج",
     "common.global_avg": "المتوسط العالمي",
+    "common.industry_std": "معيار الصناعة",
     "common.cached_db_data": "بيانات قاعدة البيانات المخزنة",
     "common.cancel": "إلغاء",
     "common.cancelling": "جارٍ الإلغاء...",

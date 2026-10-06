@@ -452,13 +452,16 @@
                                                                 <div class="h-full rounded-full transition-all duration-500" style="width: {{ $barPct }}%; background-color: {{ $barColor }};"></div>
                                                             </div>
                                                         @endif
-                                                        @if(isset($metric['benchmark']) || isset($globalBenchmarkData[$metricKey]))
-                                                            <div class="flex items-center justify-between text-[10px] mt-0.5">
+                                                        @php
+                                                            $extVal = $externalBenchmarkData[$industry['industry_slug'] ?? $industryKey][$metricKey] ?? null;
+                                                        @endphp
+                                                        @if(isset($metric['benchmark']) || $extVal !== null)
+                                                            <div class="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-white/5">
                                                                 @if(isset($metric['benchmark']))
-                                                                    <span style="color: rgba(255,255,255,0.3);">{{ __('common.benchmark') }}: {{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}</span>
+                                                                    <span class="text-gray-500">{{ __('common.benchmark') }}: <span class="text-gray-400">{{ $this->formatMetricValue($metricKey, $metric['benchmark']['avg'] ?? null) }}</span></span>
                                                                 @endif
-                                                                @if(isset($globalBenchmarkData[$metricKey]['avg']))
-                                                                    <span style="color: rgba(255,255,255,0.25);">{{ __('common.global_avg') }}: {{ $this->formatMetricValue($metricKey, $globalBenchmarkData[$metricKey]['avg']) }}</span>
+                                                                @if($extVal !== null)
+                                                                    <span class="text-teal-600 dark:text-teal-400 font-medium">{{ __('common.industry_std') }}: {{ $this->formatMetricValue($metricKey, $extVal) }}</span>
                                                                 @endif
                                                             </div>
                                                         @endif

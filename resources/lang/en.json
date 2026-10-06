@@ -533,6 +533,7 @@
     "common.below_average": "Below Avg",
     "common.benchmark": "Blended Benchmark",
     "common.global_avg": "Global Avg",
+    "common.industry_std": "Industry Std",
     "common.cached_db_data": "Cached DB data",
     "common.cancel": "Cancel",
     "common.cancelling": "Cancelling...",
