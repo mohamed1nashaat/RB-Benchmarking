@@ -11,6 +11,7 @@ use Str;
 class ReportDesigner extends Component
 {
     public Report $report;
+    public string $reportName = '';
 
     public array  $layout          = ['blocks' => []];
     public ?string $selectedBlockId = null;
@@ -34,11 +35,23 @@ class ReportDesigner extends Component
     public function mount(int $id): void
     {
         $this->report = Report::where('tenant_id', auth()->user()->tenant_id)->findOrFail($id);
+        $this->reportName = $this->report->name;
         $this->layout = $this->report->layout ?? ['blocks' => []];
 
         if (empty($this->layout['blocks'])) {
             $this->seedDefaultLayout();
         }
+    }
+
+    public function updateReportName(): void
+    {
+        $name = trim($this->reportName);
+        if (empty($name)) {
+            $this->reportName = $this->report->name;
+            return;
+        }
+        $this->report->update(['name' => $name]);
+        $this->dispatch('block-saved');
     }
 
     // ─── Widget Palette ───────────────────────────────────────────────────────

@@ -49,8 +49,13 @@
         </a>
         <div class="h-4 w-px bg-white/10"></div>
 
-        {{-- Report name --}}
-        <span class="text-sm font-semibold text-white truncate max-w-[220px]">{{ $report->name }}</span>
+        {{-- Report name (inline editable) --}}
+        <input wire:model="reportName"
+               wire:blur="updateReportName"
+               wire:keydown.enter="updateReportName"
+               type="text"
+               class="text-sm font-semibold text-white bg-transparent border border-transparent hover:border-white/20 focus:border-brand-500 focus:ring-0 focus:outline-none rounded px-1.5 py-0.5 max-w-[220px] truncate transition-colors"
+               title="Click to rename report" />
         <span class="text-[11px] text-gray-500 font-mono">{{ $report->periodLabel() }}</span>
         @if($report->client_name)
             <span class="text-[11px] text-gray-500">· {{ $report->client_name }}</span>
