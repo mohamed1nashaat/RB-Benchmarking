@@ -2164,5 +2164,18 @@
     "Δ Clicks": "Δ Clicks",
     "Δ Sessions": "Δ Sessions",
     "Δ Users": "Δ Users",
-    "Δ Views": "Δ Views"
+    "Δ Views": "Δ Views",
+    "Access Denied": "Access Denied",
+    "All Healthy": "All Healthy",
+    "All Industries": "All Industries",
+    "Client Performance": "Client Performance",
+    "Date Range": "Date Range",
+    "Google Ads API returned PERMISSION_DENIED. The manager account no longer has access to this account.": "Google Ads API returned PERMISSION_DENIED. The manager account no longer has access to this account.",
+    "Group By": "Group By",
+    "Industries": "Industries",
+    "No Integrations": "No Integrations",
+    "Re-auth Required": "Re-auth Required",
+    "Reconnect": "Reconnect",
+    "Some Issues": "Some Issues",
+    "Sync": "Sync"
 }

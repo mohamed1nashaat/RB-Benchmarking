@@ -2354,5 +2354,18 @@
     "Δ Clicks": "Δ النقرات",
     "Δ Sessions": "Δ الجلسات",
     "Δ Users": "Δ المستخدمين",
-    "Δ Views": "Δ المشاهدات"
+    "Δ Views": "Δ المشاهدات",
+    "Access Denied": "رفض الوصول",
+    "All Healthy": "كل شيء يعمل بشكل سليم",
+    "All Industries": "جميع القطاعات",
+    "Client Performance": "أداء العميل",
+    "Date Range": "نطاق التاريخ",
+    "Google Ads API returned PERMISSION_DENIED. The manager account no longer has access to this account.": "أعادت واجهة برمجة تطبيقات Google Ads خطأ PERMISSION_DENIED. لم يعد حساب المدير يملك صلاحية الوصول إلى هذا الحساب.",
+    "Group By": "تجميع حسب",
+    "Industries": "القطاعات",
+    "No Integrations": "لا توجد تكاملات",
+    "Re-auth Required": "إعادة المصادقة مطلوبة",
+    "Reconnect": "إعادة الاتصال",
+    "Some Issues": "بعض المشكلات",
+    "Sync": "مزامنة"
 }
