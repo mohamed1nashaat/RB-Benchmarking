@@ -49,7 +49,7 @@ class ReportBuilder extends Component
         return AdAccount::where('tenant_id', auth()->user()->tenant_id)
             ->where('status', 'active')
             ->orderBy('account_name')
-            ->get(['id', 'account_name', 'industry', 'platform'])
+            ->get(['id', 'account_name', 'industry'])
             ->toArray();
     }
 

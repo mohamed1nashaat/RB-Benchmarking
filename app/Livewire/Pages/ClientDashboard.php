@@ -122,6 +122,45 @@ class ClientDashboard extends Component
         }
     }
 
+    // ─── Report Designer Tab ──────────────────────────────────────────────────
+
+    public function getClientReportsProperty()
+    {
+        $adAccountIds = \App\Models\AdAccount::where('tenant_id', $this->clientId)
+            ->pluck('id');
+
+        return \App\Models\Report::where('tenant_id', auth()->user()->tenant_id)
+            ->where(function ($q) use ($adAccountIds) {
+                $q->whereIn('ad_account_id', $adAccountIds)
+                  ->orWhereNull('ad_account_id');
+            })
+            ->latest()
+            ->get();
+    }
+
+    public function createReportForClient(): void
+    {
+        $client = \App\Models\Tenant::find($this->clientId);
+        $name   = ($client?->name ?? 'Client') . ' — ' . now()->format('M Y');
+
+        $adAccountId = \App\Models\AdAccount::where('tenant_id', $this->clientId)
+            ->where('status', 'active')
+            ->value('id');
+
+        $report = \App\Models\Report::create([
+            'tenant_id'    => auth()->user()->tenant_id,
+            'ad_account_id'=> $adAccountId,
+            'name'         => $name,
+            'client_name'  => $client?->name,
+            'status'       => 'draft',
+            'period_start' => now()->subDays(30)->toDateString(),
+            'period_end'   => now()->toDateString(),
+            'created_by'   => auth()->id(),
+        ]);
+
+        $this->redirectRoute('report-designer', ['id' => $report->id]);
+    }
+
     public function updatedSelectedPeriod()
     {
         $this->dateFrom = '';
