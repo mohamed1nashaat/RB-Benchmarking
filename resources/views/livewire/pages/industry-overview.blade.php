@@ -372,11 +372,11 @@
                                             <div class="flex flex-wrap gap-1">
                                                 @php
                                                     $platformBadgeColors = [
-                                                        'facebook' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                                        'google' => 'bg-[#FDEBEC] text-[#9F2F2D]',
-                                                        'tiktok' => 'bg-[#F1F1EF] text-[#6B6B66]',
-                                                        'snapchat' => 'bg-[#FBF3DB] text-[#956400]',
-                                                        'linkedin' => 'bg-[#E1F3FE] text-[#1F6C9F]',
+                                                        'facebook' => 'bg-blue-500/15 text-blue-400',
+                                                        'google' => 'bg-red-500/15 text-red-400',
+                                                        'tiktok' => 'bg-white/8 text-gray-400',
+                                                        'snapchat' => 'bg-amber-500/15 text-amber-400',
+                                                        'linkedin' => 'bg-sky-500/15 text-sky-400',
                                                     ];
                                                     $platformShortNames = [
                                                         'facebook' => 'FB',
