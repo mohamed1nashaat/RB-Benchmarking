@@ -48,6 +48,8 @@ class Tenant extends Model
         'pm_type',
         'pm_last_four',
         'trial_ends_at',
+        'brand_color',
+        'report_footer_text',
     ];
 
     protected $casts = [

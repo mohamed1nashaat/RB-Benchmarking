@@ -41,6 +41,13 @@ class Settings extends Component
     // Display preferences
     public string $defaultDateRange = '30d';
 
+    // Report branding
+    public string $brandingLogoUrl = '';
+    public string $brandingColor = '#EF4444';
+    public string $brandingFooterText = '';
+    public bool $brandingSuccess = false;
+    public string $brandingError = '';
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -51,6 +58,13 @@ class Settings extends Component
         $this->inAppNotifications = session('pref_inApp', true);
         $this->weeklySummary = session('pref_weeklySummary', false);
         $this->defaultDateRange = session('pref_defaultDateRange', '30d');
+
+        $tenant = auth()->user()->tenant;
+        if ($tenant) {
+            $this->brandingLogoUrl    = $tenant->logo_url ?? '';
+            $this->brandingColor      = $tenant->brand_color ?? '#EF4444';
+            $this->brandingFooterText = $tenant->report_footer_text ?? '';
+        }
     }
 
     public function getUserProperty()
@@ -219,6 +233,34 @@ class Settings extends Component
     public function updatedDefaultDateRange(): void
     {
         session(['pref_defaultDateRange' => $this->defaultDateRange]);
+    }
+
+    // Report branding
+    public function saveBranding(): void
+    {
+        $this->brandingSuccess = false;
+        $this->brandingError   = '';
+
+        try {
+            $this->validate([
+                'brandingLogoUrl'    => 'nullable|url|max:500',
+                'brandingColor'      => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+                'brandingFooterText' => 'nullable|string|max:255',
+            ]);
+
+            $tenant = auth()->user()->tenant;
+            $tenant->update([
+                'logo_url'            => $this->brandingLogoUrl ?: null,
+                'brand_color'         => $this->brandingColor,
+                'report_footer_text'  => $this->brandingFooterText ?: null,
+            ]);
+
+            $this->brandingSuccess = true;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->brandingError = collect($e->errors())->flatten()->first();
+        } catch (\Exception $e) {
+            $this->brandingError = 'Failed to save branding settings.';
+        }
     }
 
     public function render()

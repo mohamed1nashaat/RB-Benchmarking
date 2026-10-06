@@ -340,6 +340,79 @@
                     </div>
                 </div>
             </div>
+
+            {{-- ── REPORT BRANDING ── --}}
+            <div class="card p-0 divide-y divide-gray-200 mt-6">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-base font-semibold tracking-tight text-gray-900">Report Branding</h3>
+                    <p class="mt-1 text-sm text-gray-500">Customize how your agency appears on exported PDF reports.</p>
+                </div>
+
+                <div class="px-4 py-5 sm:p-6 space-y-5">
+
+                    @if($brandingSuccess)
+                    <div class="flex items-center gap-x-2 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
+                        <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        Branding settings saved.
+                    </div>
+                    @endif
+
+                    @if($brandingError)
+                    <div class="flex items-center gap-x-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+                        {{ $brandingError }}
+                    </div>
+                    @endif
+
+                    {{-- Logo URL --}}
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1.5">Agency Logo URL</label>
+                        <input type="url" wire:model="brandingLogoUrl"
+                               placeholder="https://your-agency.com/logo.png"
+                               class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 text-neutral-900 placeholder-neutral-400">
+                        <p class="mt-1 text-xs text-neutral-400">Paste a publicly accessible image URL. Used on the PDF cover page. Leave empty to use your agency name as text.</p>
+                        @if($brandingLogoUrl)
+                        <div class="mt-2 flex items-center gap-x-3">
+                            <img src="{{ $brandingLogoUrl }}" alt="Logo preview" class="h-8 max-w-32 object-contain border border-neutral-200 rounded p-1 bg-neutral-50"
+                                 onerror="this.style.display='none'">
+                            <span class="text-xs text-neutral-400">Preview</span>
+                        </div>
+                        @endif
+                    </div>
+
+                    {{-- Brand Color --}}
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1.5">Brand Color</label>
+                        <div class="flex items-center gap-x-3">
+                            <input type="color" wire:model.live="brandingColor"
+                                   class="h-9 w-16 rounded-lg border border-neutral-200 cursor-pointer p-0.5">
+                            <input type="text" wire:model="brandingColor"
+                                   placeholder="#EF4444"
+                                   class="w-28 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 text-neutral-900 font-mono">
+                            <span class="text-xs text-neutral-400">Used as accent color on PDF reports</span>
+                        </div>
+                    </div>
+
+                    {{-- Footer Text --}}
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1.5">Report Footer Text</label>
+                        <input type="text" wire:model="brandingFooterText"
+                               placeholder="Prepared by Your Agency Name"
+                               maxlength="255"
+                               class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 text-neutral-900 placeholder-neutral-400">
+                        <p class="mt-1 text-xs text-neutral-400">Appears at the bottom of report cover pages. Defaults to "Powered by Red Bananas".</p>
+                    </div>
+
+                    <div class="pt-2">
+                        <button wire:click="saveBranding"
+                                wire:loading.attr="disabled"
+                                class="px-4 py-2 text-sm font-medium rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-60">
+                            <span wire:loading wire:target="saveBranding" class="inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1"></span>
+                            Save Branding
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         @endif
     </div>
 </div>

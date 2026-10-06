@@ -3,6 +3,12 @@
 <head>
     <meta charset="utf-8">
     <title>{{ $report->name }}</title>
+    @php
+        $brandColor  = $tenant->brand_color ?? '#EF4444';
+        $footerText  = $tenant->report_footer_text ?? 'Powered by Red Bananas';
+        $tenantLogo  = $tenant->getLogoUrl();
+        $tenantName  = $tenant->name ?? 'Red Bananas';
+    @endphp
     <style>
         @page {
             margin: 15mm 12mm 20mm 12mm;
@@ -26,8 +32,13 @@
             background: #ffffff;
         }
 
-        .page-break { page-break-after: always; }
+        .page-break  { page-break-after: always; }
         .avoid-break { page-break-inside: avoid; }
+
+        /* Dynamic brand classes */
+        .brand     { color: {{ $brandColor }}; }
+        .brand-bg  { background-color: {{ $brandColor }}; }
+        .brand-border { border-color: {{ $brandColor }}; }
 
         /* ── COVER ── */
         .cover-page {
@@ -36,6 +47,7 @@
             background-color: #111827;
             display: table;
             width: 100%;
+            position: relative;
         }
 
         .cover-content {
@@ -45,12 +57,28 @@
             padding: 40mm 20mm;
         }
 
+        .cover-logo {
+            margin-bottom: 24px;
+        }
+
+        .cover-logo img {
+            height: 44px;
+            max-width: 200px;
+        }
+
+        .cover-logo-text {
+            font-size: 18pt;
+            font-weight: 700;
+            color: {{ $brandColor }};
+            letter-spacing: 1px;
+        }
+
         .cover-tag {
             font-size: 8pt;
             font-weight: 700;
             letter-spacing: 3px;
             text-transform: uppercase;
-            color: #EF4444;
+            color: {{ $brandColor }};
             margin-bottom: 12px;
         }
 
@@ -78,19 +106,9 @@
             color: #6b7280;
         }
 
-        .cover-meta-row {
-            margin-bottom: 6px;
-        }
-
-        .cover-meta-label {
-            color: #9ca3af;
-            margin-right: 8px;
-        }
-
-        .cover-meta-value {
-            color: #d1d5db;
-            font-weight: 600;
-        }
+        .cover-meta-row   { margin-bottom: 6px; }
+        .cover-meta-label { color: #9ca3af; margin-right: 8px; }
+        .cover-meta-value { color: #d1d5db; font-weight: 600; }
 
         .cover-footer {
             position: absolute;
@@ -102,17 +120,11 @@
             color: #4b5563;
         }
 
-        .cover-footer span {
-            color: #EF4444;
-            font-weight: 700;
-        }
-
         /* ── SECTION HEADER ── */
         .section-header {
-            border-left: 4px solid #EF4444;
+            border-left: 4px solid {{ $brandColor }};
             padding: 4px 10px;
             margin-bottom: 12px;
-            margin-top: 0;
         }
 
         .section-header h2 {
@@ -129,28 +141,17 @@
         }
 
         /* ── CONTENT PAGE ── */
-        .content-page {
-            padding: 0;
-        }
+        .content-page { padding: 0; }
 
         .page-header {
             background-color: #f9fafb;
-            border-bottom: 2px solid #EF4444;
+            border-bottom: 2px solid {{ $brandColor }};
             padding: 8mm 12mm 6mm;
             margin-bottom: 8mm;
         }
 
-        .page-header-name {
-            font-size: 10pt;
-            font-weight: 700;
-            color: #111827;
-        }
-
-        .page-header-sub {
-            font-size: 8pt;
-            color: #6b7280;
-            margin-top: 2px;
-        }
+        .page-header-name { font-size: 10pt; font-weight: 700; color: #111827; }
+        .page-header-sub  { font-size: 8pt; color: #6b7280; margin-top: 2px; }
 
         /* ── EXECUTIVE SUMMARY ── */
         .summary-box {
@@ -191,33 +192,14 @@
             color: #374151;
         }
 
-        .metrics-table tr:nth-child(even) td {
-            background-color: #f9fafb;
-        }
+        .metrics-table tr:nth-child(even) td { background-color: #f9fafb; }
+        .metric-value { font-weight: 700; color: #111827; text-align: right; }
+        .metric-label { color: #6b7280; font-size: 8pt; }
 
-        .metric-value {
-            font-weight: 700;
-            color: #111827;
-            text-align: right;
-        }
+        /* ── METRICS GRID ── */
+        .metrics-grid { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
 
-        .metric-label {
-            color: #6b7280;
-            font-size: 8pt;
-        }
-
-        /* ── METRICS GRID (2-col) ── */
-        .metrics-grid {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 16px;
-        }
-
-        .metrics-grid td {
-            width: 25%;
-            vertical-align: top;
-            padding: 0 4px 8px 0;
-        }
+        .metrics-grid td { width: 25%; vertical-align: top; padding: 0 4px 8px 0; }
 
         .metric-card {
             background-color: #f9fafb;
@@ -241,13 +223,9 @@
             line-height: 1.1;
         }
 
-        .metric-card-unit {
-            font-size: 9pt;
-            font-weight: 400;
-            color: #6b7280;
-        }
+        .metric-card-unit { font-size: 9pt; font-weight: 400; color: #6b7280; }
 
-        /* ── ANALYSIS BODY ── */
+        /* ── ANALYSIS ── */
         .analysis-body {
             font-size: 9.5pt;
             line-height: 1.8;
@@ -258,18 +236,9 @@
         }
 
         /* ── RECOMMENDATIONS ── */
-        .rec-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
+        .rec-list  { margin: 0; padding: 0; list-style: none; }
 
-        .rec-item {
-            display: table;
-            width: 100%;
-            margin-bottom: 10px;
-            page-break-inside: avoid;
-        }
+        .rec-item  { display: table; width: 100%; margin-bottom: 10px; page-break-inside: avoid; }
 
         .rec-number {
             display: table-cell;
@@ -282,7 +251,7 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            background-color: #EF4444;
+            background-color: {{ $brandColor }};
             color: #ffffff;
             font-size: 7.5pt;
             font-weight: 700;
@@ -300,7 +269,7 @@
             color: #374151;
         }
 
-        /* ── FOOTER ── */
+        /* ── FIXED FOOTER ── */
         .content-footer {
             position: fixed;
             bottom: 0;
@@ -312,29 +281,32 @@
             color: #9ca3af;
         }
 
-        .content-footer-inner {
-            display: table;
-            width: 100%;
-        }
-
-        .content-footer-left {
-            display: table-cell;
-            text-align: left;
-        }
+        .content-footer-inner { display: table; width: 100%; }
+        .content-footer-left  { display: table-cell; text-align: left; }
 
         .content-footer-right {
             display: table-cell;
             text-align: right;
-            color: #EF4444;
+            color: {{ $brandColor }};
             font-weight: 700;
         }
     </style>
 </head>
 <body>
 
-{{-- ═══════════════════════════════ COVER PAGE ═══════════════════════════════ --}}
+{{-- ═══════════════ COVER PAGE ═══════════════ --}}
 <div class="cover-page">
     <div class="cover-content">
+
+        {{-- Logo: tenant logo if set, else text fallback --}}
+        <div class="cover-logo">
+            @if($tenantLogo)
+                <img src="{{ $tenantLogo }}" alt="{{ $tenantName }}">
+            @else
+                <div class="cover-logo-text">{{ $tenantName }}</div>
+            @endif
+        </div>
+
         <div class="cover-tag">AI Performance Report</div>
         <div class="cover-title">{{ $report->name }}</div>
         <div class="cover-subtitle">
@@ -360,24 +332,25 @@
             </div>
         </div>
     </div>
-    <div class="cover-footer">Powered by <span>Red Bananas</span> · AI-Driven Marketing Intelligence</div>
+    <div class="cover-footer">{{ $footerText }}</div>
 </div>
 
-{{-- ═══════════════════════════════ CONTENT PAGES ═══════════════════════════════ --}}
+{{-- ═══════════════ CONTENT PAGES ═══════════════ --}}
 <div class="content-page">
 
-    {{-- Fixed footer for all content pages --}}
+    {{-- Fixed footer --}}
     <div class="content-footer">
         <div class="content-footer-inner">
             <div class="content-footer-left">{{ $report->name }} &nbsp;·&nbsp; {{ $report->period_start->format('d M') }} – {{ $report->period_end->format('d M Y') }}</div>
-            <div class="content-footer-right">Red Bananas</div>
+            <div class="content-footer-right">{{ $tenantName }}</div>
         </div>
     </div>
 
     {{-- Page header --}}
     <div class="page-header">
         <div class="page-header-name">{{ $report->name }}</div>
-        <div class="page-header-sub">{{ $report->period_start->format('d M') }} – {{ $report->period_end->format('d M Y') }}
+        <div class="page-header-sub">
+            {{ $report->period_start->format('d M') }} – {{ $report->period_end->format('d M Y') }}
             @if($report->platform) &nbsp;·&nbsp; {{ ucfirst($report->platform) }} @endif
             @if($report->industry) &nbsp;·&nbsp; {{ ucwords(str_replace('_', ' ', $report->industry)) }} @endif
         </div>
@@ -407,36 +380,28 @@
         <table class="metrics-grid">
             <tr>
                 @if(isset($pd['spend']))
-                <td>
-                    <div class="metric-card">
-                        <div class="metric-card-label">Total Spend</div>
-                        <div class="metric-card-value">{{ number_format($pd['spend'], 0) }} <span class="metric-card-unit">SAR</span></div>
-                    </div>
-                </td>
+                <td><div class="metric-card">
+                    <div class="metric-card-label">Total Spend</div>
+                    <div class="metric-card-value">{{ number_format($pd['spend'], 0) }} <span class="metric-card-unit">SAR</span></div>
+                </div></td>
                 @endif
                 @if(isset($pd['leads']))
-                <td>
-                    <div class="metric-card">
-                        <div class="metric-card-label">Leads</div>
-                        <div class="metric-card-value">{{ number_format($pd['leads'], 0) }}</div>
-                    </div>
-                </td>
+                <td><div class="metric-card">
+                    <div class="metric-card-label">Leads</div>
+                    <div class="metric-card-value">{{ number_format($pd['leads'], 0) }}</div>
+                </div></td>
                 @endif
                 @if(isset($pd['impressions']))
-                <td>
-                    <div class="metric-card">
-                        <div class="metric-card-label">Impressions</div>
-                        <div class="metric-card-value">{{ number_format($pd['impressions'] / 1000, 1) }} <span class="metric-card-unit">K</span></div>
-                    </div>
-                </td>
+                <td><div class="metric-card">
+                    <div class="metric-card-label">Impressions</div>
+                    <div class="metric-card-value">{{ number_format($pd['impressions'] / 1000, 1) }} <span class="metric-card-unit">K</span></div>
+                </div></td>
                 @endif
                 @if(isset($pd['clicks']))
-                <td>
-                    <div class="metric-card">
-                        <div class="metric-card-label">Clicks</div>
-                        <div class="metric-card-value">{{ number_format($pd['clicks'], 0) }}</div>
-                    </div>
-                </td>
+                <td><div class="metric-card">
+                    <div class="metric-card-label">Clicks</div>
+                    <div class="metric-card-value">{{ number_format($pd['clicks'], 0) }}</div>
+                </div></td>
                 @endif
             </tr>
         </table>
@@ -444,21 +409,18 @@
         <table class="metrics-table">
             <thead>
                 <tr>
-                    <th>Metric</th>
-                    <th style="text-align:right;">Value</th>
-                    <th>Metric</th>
-                    <th style="text-align:right;">Value</th>
+                    <th>Metric</th><th style="text-align:right;">Value</th>
+                    <th>Metric</th><th style="text-align:right;">Value</th>
                 </tr>
             </thead>
             <tbody>
                 @php
                     $metricRows = [];
-                    if (isset($pd['ctr']))       $metricRows[] = ['CTR', number_format($pd['ctr'], 2) . '%'];
-                    if (isset($pd['cpl']))       $metricRows[] = ['CPL', 'SAR ' . number_format($pd['cpl'], 2)];
-                    if (isset($pd['cpc']))       $metricRows[] = ['CPC', 'SAR ' . number_format($pd['cpc'], 2)];
-                    if (isset($pd['cpm']))       $metricRows[] = ['CPM', 'SAR ' . number_format($pd['cpm'], 2)];
+                    if (isset($pd['ctr']))       $metricRows[] = ['CTR',       number_format($pd['ctr'], 2) . '%'];
+                    if (isset($pd['cpl']))       $metricRows[] = ['CPL',       'SAR ' . number_format($pd['cpl'], 2)];
+                    if (isset($pd['cpc']))       $metricRows[] = ['CPC',       'SAR ' . number_format($pd['cpc'], 2)];
+                    if (isset($pd['cpm']))       $metricRows[] = ['CPM',       'SAR ' . number_format($pd['cpm'], 2)];
                     if (isset($pd['campaigns'])) $metricRows[] = ['Campaigns', number_format($pd['campaigns'], 0)];
-                    // Pad to even
                     if (count($metricRows) % 2 !== 0) $metricRows[] = ['', ''];
                     $pairs = array_chunk($metricRows, 2);
                 @endphp
@@ -510,7 +472,7 @@
     <div style="margin: 8mm 12mm 0; border-top: 1px solid #e5e7eb; padding-top: 8px;">
         <table style="width: 100%; font-size: 7.5pt; color: #9ca3af;">
             <tr>
-                <td>Generated by Red Bananas AI Engine</td>
+                <td>{{ $footerText }}</td>
                 @if(isset($sections['full_narrative']))
                 <td style="text-align: center;">{{ str_word_count($sections['full_narrative']) }} words</td>
                 @endif

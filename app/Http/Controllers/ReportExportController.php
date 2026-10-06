@@ -9,16 +9,19 @@ class ReportExportController extends Controller
 {
     public function pdf(int $id)
     {
-        $report = Report::findOrFail($id);
+        $report = Report::findOrFail($id); // BelongsToTenant scope auto-applied
 
         if ($report->status !== 'ready') {
             abort(404, 'Report is not ready for export.');
         }
 
-        $pdf = Pdf::loadView('exports.report-pdf', compact('report'))
+        $tenant = auth()->user()->tenant;
+
+        $pdf = Pdf::loadView('exports.report-pdf', compact('report', 'tenant'))
             ->setPaper('a4', 'portrait')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
                 'defaultFont'          => 'DejaVu Sans',
             ]);
 
