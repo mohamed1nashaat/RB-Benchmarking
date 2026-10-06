@@ -1,18 +1,18 @@
-<div class="min-h-screen flex items-center justify-center bg-[#F7F6F3] px-4 py-12">
+<div class="min-h-screen flex items-center justify-center px-4 py-12" style="background-color: #0d0f16;">
     <div class="w-full max-w-sm">
         <div class="text-center mb-6">
-            <h2 class="text-xl font-semibold tracking-tight text-zinc-900">
-                {{ __('auth.register') }}
-            </h2>
-            <p class="mt-1 text-sm text-zinc-500">
+            <a href="/" class="inline-block mb-3">
+                <img src="/logo-dark.svg" alt="{{ __('app.name') }}" class="h-7 w-auto mx-auto">
+            </a>
+            <p class="text-sm text-gray-400">
                 {{ __('auth.register_tagline') }}
             </p>
         </div>
 
-        <div class="bg-white border border-[#EAEAEA] rounded-xl p-8">
+        <div class="rounded-xl p-8" style="background: linear-gradient(160deg,#1c2130,#161b22); border: 1px solid rgba(255,255,255,0.08); border-top-color: rgba(255,255,255,0.13);">
             <form class="space-y-5" wire:submit="register">
                 <div>
-                    <label for="name" class="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                    <label for="name" class="block text-[13px] font-medium text-gray-300 mb-1.5">
                         {{ __('auth.name') }}
                     </label>
                     <input
@@ -22,16 +22,16 @@
                         type="text"
                         autocomplete="name"
                         required
-                        class="block w-full px-3 py-2.5 border border-[#EAEAEA] rounded-lg text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
+                        class="block w-full px-3 py-2.5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 bg-white/5 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
                         placeholder="{{ __('auth.name') }}"
                     />
                     @error('name')
-                        <p class="mt-1.5 text-xs text-[#9F2F2D]">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="email" class="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                    <label for="email" class="block text-[13px] font-medium text-gray-300 mb-1.5">
                         {{ __('auth.email') }}
                     </label>
                     <input
@@ -41,16 +41,16 @@
                         type="email"
                         autocomplete="email"
                         required
-                        class="block w-full px-3 py-2.5 border border-[#EAEAEA] rounded-lg text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
+                        class="block w-full px-3 py-2.5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 bg-white/5 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
                         placeholder="you@redbananas.com"
                     />
                     @error('email')
-                        <p class="mt-1.5 text-xs text-[#9F2F2D]">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="password" class="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                    <label for="password" class="block text-[13px] font-medium text-gray-300 mb-1.5">
                         {{ __('auth.password') }}
                     </label>
                     <input
@@ -60,16 +60,16 @@
                         type="password"
                         autocomplete="new-password"
                         required
-                        class="block w-full px-3 py-2.5 border border-[#EAEAEA] rounded-lg text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
+                        class="block w-full px-3 py-2.5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 bg-white/5 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
                         placeholder="••••••••"
                     />
                     @error('password')
-                        <p class="mt-1.5 text-xs text-[#9F2F2D]">{{ $message }}</p>
+                        <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="password_confirmation" class="block text-[13px] font-medium text-zinc-700 mb-1.5">
+                    <label for="password_confirmation" class="block text-[13px] font-medium text-gray-300 mb-1.5">
                         {{ __('auth.confirm_password') }}
                     </label>
                     <input
@@ -79,7 +79,7 @@
                         type="password"
                         autocomplete="new-password"
                         required
-                        class="block w-full px-3 py-2.5 border border-[#EAEAEA] rounded-lg text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
+                        class="block w-full px-3 py-2.5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 bg-white/5 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
                         placeholder="••••••••"
                     />
                 </div>
@@ -87,7 +87,7 @@
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
-                    class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-semibold text-white bg-zinc-900 hover:bg-zinc-700 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-semibold text-white bg-brand-500 hover:bg-brand-400 active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span wire:loading wire:target="register" class="inline-block">
                         <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -100,22 +100,22 @@
                 </button>
 
                 @if($error)
-                    <div class="flex items-start gap-2.5 rounded-lg bg-[#FDEBEC] px-3.5 py-3" role="alert">
-                        <x-heroicon-o-exclamation-triangle class="h-4 w-4 mt-0.5 shrink-0 text-[#9F2F2D]" />
-                        <p class="text-[13px] font-medium text-[#9F2F2D]">{{ $error }}</p>
+                    <div class="flex items-start gap-2.5 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 py-3" role="alert">
+                        <x-heroicon-o-exclamation-triangle class="h-4 w-4 mt-0.5 shrink-0 text-red-400" />
+                        <p class="text-[13px] font-medium text-red-300">{{ $error }}</p>
                     </div>
                 @endif
             </form>
         </div>
 
         <div class="mt-6 text-center space-y-1">
-            <p class="text-sm text-zinc-500">
+            <p class="text-sm text-gray-400">
                 {{ __('auth.already_have_account') }}
-                <a href="{{ route('login') }}" class="font-medium text-brand-600 hover:text-brand-700 transition-colors">
+                <a href="{{ route('login') }}" class="font-medium text-brand-400 hover:text-brand-300 transition-colors">
                     {{ __('auth.login') }}
                 </a>
             </p>
-            <a href="{{ route('privacy-policy') }}" class="block text-[13px] text-zinc-400 hover:text-zinc-600 transition">
+            <a href="{{ route('privacy-policy') }}" class="block text-[13px] text-gray-500 hover:text-gray-300 transition">
                 {{ __('common.privacy_policy') }}
             </a>
         </div>
