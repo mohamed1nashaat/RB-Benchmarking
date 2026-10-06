@@ -1,10 +1,10 @@
 <div class="space-y-6">
     {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div class="rounded-xl bg-[#EDF3EC] p-4">
+        <div class="rounded-xl bg-green-500/15 border border-green-500/30 p-4">
             <div class="flex">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
-                <p class="ms-3 text-sm font-medium text-[#346538]">{{ session('message') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
+                <p class="ms-3 text-sm font-medium text-green-400">{{ session('message') }}</p>
             </div>
         </div>
     @endif
@@ -74,14 +74,14 @@
             $permissionDeniedCount = $accounts->getCollection()->where('status', 'permission_denied')->count();
         @endphp
         @if($permissionDeniedCount > 0 && empty($selectedAccounts))
-            <div class="rounded-xl border border-yellow-200 bg-[#FBF3DB] p-4">
+            <div class="rounded-xl border border-amber-500/30 bg-amber-500/15 p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-[#956400]" />
+                        <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-amber-400" />
                     </div>
                     <div class="ms-3">
-                        <h3 class="text-sm font-medium text-[#956400]">{{ __('pages.ad_accounts.google_ads_access_denied', ['count' => $permissionDeniedCount]) }}</h3>
-                        <p class="mt-1 text-sm text-[#956400]/80">
+                        <h3 class="text-sm font-medium text-amber-400">{{ __('pages.ad_accounts.google_ads_access_denied', ['count' => $permissionDeniedCount]) }}</h3>
+                        <p class="mt-1 text-sm text-amber-400/80">
                             {{ __('pages.ad_accounts.permission_denied_help') }}
                         </p>
                     </div>
@@ -194,8 +194,8 @@
         <div class="kpi-card">
             <div class="flex items-center gap-4">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-lg bg-[#F1F1EF] flex items-center justify-center">
-                        <x-heroicon-o-building-office class="h-5 w-5 text-[#6B6B66]" />
+                    <div class="h-10 w-10 rounded-lg bg-white/8 flex items-center justify-center">
+                        <x-heroicon-o-building-office class="h-5 w-5 text-gray-400" />
                     </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -208,8 +208,8 @@
         <div class="kpi-card">
             <div class="flex items-center gap-4">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-lg bg-[#EDF3EC] flex items-center justify-center">
-                        <x-heroicon-o-check-circle class="h-5 w-5 text-[#346538]" />
+                    <div class="h-10 w-10 rounded-lg bg-green-500/15 flex items-center justify-center">
+                        <x-heroicon-o-check-circle class="h-5 w-5 text-green-400" />
                     </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -225,8 +225,8 @@
         <div class="kpi-card">
             <div class="flex items-center gap-4">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-lg bg-[#F1F1EF] flex items-center justify-center">
-                        <x-heroicon-o-briefcase class="h-5 w-5 text-[#6B6B66]" />
+                    <div class="h-10 w-10 rounded-lg bg-white/8 flex items-center justify-center">
+                        <x-heroicon-o-briefcase class="h-5 w-5 text-gray-400" />
                     </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -242,8 +242,8 @@
         <div class="kpi-card">
             <div class="flex items-center gap-4">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-lg bg-[#F1F1EF] flex items-center justify-center">
-                        <x-heroicon-o-rocket-launch class="h-5 w-5 text-[#6B6B66]" />
+                    <div class="h-10 w-10 rounded-lg bg-white/8 flex items-center justify-center">
+                        <x-heroicon-o-rocket-launch class="h-5 w-5 text-gray-400" />
                     </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -259,8 +259,8 @@
         <div class="kpi-card">
             <div class="flex items-center gap-4">
                 <div class="flex-shrink-0">
-                    <div class="h-10 w-10 rounded-lg bg-[#EDF3EC] flex items-center justify-center">
-                        <x-heroicon-o-currency-dollar class="h-5 w-5 text-[#346538]" />
+                    <div class="h-10 w-10 rounded-lg bg-green-500/15 flex items-center justify-center">
+                        <x-heroicon-o-currency-dollar class="h-5 w-5 text-green-400" />
                     </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -431,12 +431,12 @@
                             <td>
                                 @php
                                     $platformClass = match($account->platform_name) {
-                                        'facebook' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                        'google' => 'bg-[#EDF3EC] text-[#346538]',
-                                        'tiktok' => 'bg-[#F1F1EF] text-[#6B6B66]',
-                                        'linkedin' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                        'snapchat' => 'bg-[#FBF3DB] text-[#956400]',
-                                        default => 'bg-[#F1F1EF] text-[#6B6B66]',
+                                        'facebook' => 'bg-brand-500/15 text-brand-400',
+                                        'google' => 'bg-green-500/15 text-green-400',
+                                        'tiktok' => 'badge-neutral',
+                                        'linkedin' => 'bg-brand-500/15 text-brand-400',
+                                        'snapchat' => 'bg-amber-500/15 text-amber-400',
+                                        default => 'badge-neutral',
                                     };
                                 @endphp
                                 <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 capitalize {{ $platformClass }}">
@@ -447,10 +447,10 @@
                             <td>
                                 @php
                                     $statusBadge = match($account->status) {
-                                        'active' => ['class' => 'bg-[#EDF3EC] text-[#346538]', 'label' => __('status.active')],
-                                        'inactive' => ['class' => 'bg-[#F1F1EF] text-[#6B6B66]', 'label' => __('status.inactive')],
-                                        'permission_denied' => ['class' => 'bg-[#FBF3DB] text-[#956400]', 'label' => __('Access Denied')],
-                                        default => ['class' => 'bg-[#FDEBEC] text-[#9F2F2D]', 'label' => $account->status],
+                                        'active' => ['class' => 'bg-green-500/15 text-green-400', 'label' => __('status.active')],
+                                        'inactive' => ['class' => 'badge-neutral', 'label' => __('status.inactive')],
+                                        'permission_denied' => ['class' => 'bg-amber-500/15 text-amber-400', 'label' => __('Access Denied')],
+                                        default => ['class' => 'bg-red-500/15 text-red-400', 'label' => $account->status],
                                     };
                                 @endphp
                                 <span title="{{ $account->status === 'permission_denied' ? __('Google Ads API returned PERMISSION_DENIED. The manager account no longer has access to this account.') : '' }}" class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $statusBadge['class'] }}">
@@ -462,9 +462,9 @@
                                 @php
                                     $vStatus = $account->data_verification_status ?? 'pending';
                                     $vClass = match($vStatus) {
-                                        'approved' => 'bg-[#EDF3EC] text-[#346538]',
-                                        'declined' => 'bg-[#FDEBEC] text-[#9F2F2D]',
-                                        default => 'bg-[#FBF3DB] text-[#956400]',
+                                        'approved' => 'bg-green-500/15 text-green-400',
+                                        'declined' => 'bg-red-500/15 text-red-400',
+                                        default => 'bg-amber-500/15 text-amber-400',
                                     };
                                 @endphp
                                 <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $vClass }}">

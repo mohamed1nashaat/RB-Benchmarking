@@ -1,18 +1,18 @@
 <div class="py-6">
     {{-- Flash Messages --}}
     @if (session()->has('success'))
-        <div class="mb-4 rounded-xl bg-[#EDF3EC] border border-white/10 p-4">
+        <div class="mb-4 rounded-xl bg-green-500/15 border border-green-500/30 p-4">
             <div class="flex">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
-                <p class="ms-3 text-sm text-[#346538]">{{ session('success') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
+                <p class="ms-3 text-sm text-green-400">{{ session('success') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="mb-4 rounded-xl bg-[#FDEBEC] border border-white/10 p-4">
+        <div class="mb-4 rounded-xl bg-red-500/15 border border-red-500/30 p-4">
             <div class="flex">
-                <x-heroicon-s-x-circle class="h-5 w-5 text-[#9F2F2D]" />
-                <p class="ms-3 text-sm text-[#9F2F2D]">{{ session('error') }}</p>
+                <x-heroicon-s-x-circle class="h-5 w-5 text-red-400" />
+                <p class="ms-3 text-sm text-red-400">{{ session('error') }}</p>
             </div>
         </div>
     @endif
@@ -58,7 +58,7 @@
             >
                 {{ __('pages.users.tabs.users') }}
                 @if($usersPaginated->total() > 0)
-                    <span class="ms-2 bg-[#F1F1EF] text-[#6B6B66] py-0.5 px-2 rounded-full text-xs font-semibold">
+                    <span class="ms-2 badge-neutral py-0.5 px-2 rounded-full text-xs font-semibold">
                         {{ $usersPaginated->total() }}
                     </span>
                 @endif
@@ -69,7 +69,7 @@
             >
                 {{ __('pages.users.tabs.invitations') }}
                 @if($invitationsList->count() > 0)
-                    <span class="ms-2 bg-[#FBF3DB] text-[#956400] py-0.5 px-2 rounded-full text-xs font-semibold">
+                    <span class="ms-2 bg-amber-500/15 text-amber-400 py-0.5 px-2 rounded-full text-xs font-semibold">
                         {{ $invitationsList->count() }}
                     </span>
                 @endif
@@ -189,7 +189,7 @@
                                                 <div class="text-sm font-medium text-white">
                                                     {{ $user->name }}
                                                     @if($user->id === 1 || $user->email === 'technical@redbananas.com')
-                                                        <span class="ms-2 bg-[#FBF3DB] text-[#956400] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">{{ __('common.super_admin') }}</span>
+                                                        <span class="ms-2 bg-amber-500/15 text-amber-400 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">{{ __('common.super_admin') }}</span>
                                                     @endif
                                                 </div>
                                                 <div class="text-sm text-gray-500">{{ $user->email }}</div>
@@ -199,7 +199,7 @@
                                     <td class="whitespace-nowrap">
                                         <div class="flex flex-wrap gap-1">
                                             @if($user->id === 1 || $user->email === 'technical@redbananas.com')
-                                                <span class="bg-[#FBF3DB] text-[#956400] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                                <span class="bg-amber-500/15 text-amber-400 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
                                                     {{ __('common.super_admin') }}
                                                 </span>
                                             @endif
@@ -210,7 +210,7 @@
                                                 @php
                                                     $roleForBadge = $this->getTenantRoleById($roleId);
                                                 @endphp
-                                                <span class="{{ $roleForBadge?->isAdmin() ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F1EF] text-[#6B6B66]' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                                <span class="{{ $roleForBadge?->isAdmin() ? 'bg-brand-500/15 text-brand-400' : 'badge-neutral' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
                                                     {{ $roleForBadge?->display_name ?? __('pages.roles.no_role_assigned') }}
                                                 </span>
                                             @endforeach
@@ -225,12 +225,12 @@
                                                 @php
                                                     $tenantRoleForBadge = $this->getTenantRoleById($tenant->pivot->tenant_role_id);
                                                 @endphp
-                                                <span class="{{ $tenantRoleForBadge?->isAdmin() ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F1EF] text-[#6B6B66]' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5" title="{{ $tenant->name }} ({{ $tenantRoleForBadge?->display_name ?? $tenant->pivot->role }})">
+                                                <span class="{{ $tenantRoleForBadge?->isAdmin() ? 'bg-brand-500/15 text-brand-400' : 'badge-neutral' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5" title="{{ $tenant->name }} ({{ $tenantRoleForBadge?->display_name ?? $tenant->pivot->role }})">
                                                     {{ $tenant->name }}
                                                 </span>
                                             @endforeach
                                             @if($user->tenants->count() > 3)
-                                                <span class="bg-[#F1F1EF] text-[#6B6B66] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                                <span class="badge-neutral rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
                                                     +{{ $user->tenants->count() - 3 }}
                                                 </span>
                                             @endif
@@ -366,7 +366,7 @@
                                             $userRole = $roles->firstWhere('id', $user->pivot->tenant_role_id);
                                         @endphp
                                         @if($user->id === auth()->id() || !$this->canManageUsers())
-                                            <span class="{{ $userRole?->isAdmin() ? 'bg-[#E1F3FE] text-[#1F6C9F]' : 'bg-[#F1F1EF] text-[#6B6B66]' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
+                                            <span class="{{ $userRole?->isAdmin() ? 'bg-brand-500/15 text-brand-400' : 'badge-neutral' }} rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5">
                                                 {{ $userRole?->display_name ?? __('roles.' . $user->pivot->role) }}
                                             </span>
                                         @else
@@ -442,7 +442,7 @@
                             <div class="text-sm font-medium text-white">{{ $invitation->email }}</div>
                             <div class="text-sm text-gray-500">
                                 @if($isSuperAdmin && $invitation->tenant)
-                                    <span class="bg-[#F1F1EF] text-[#6B6B66] rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 me-1">
+                                    <span class="badge-neutral rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 me-1">
                                         {{ $invitation->tenant->name }}
                                     </span>
                                 @endif
@@ -468,7 +468,7 @@
                                 <button
                                     wire:click="cancelInvitation({{ $invitation->id }})"
                                     @if($cancellingId === $invitation->id) disabled @endif
-                                    class="btn-secondary !py-1.5 !px-3 !text-red-600 hover:!bg-[#FDEBEC] disabled:opacity-50"
+                                    class="btn-secondary !py-1.5 !px-3 !text-red-600 hover:!bg-red-500/10 disabled:opacity-50"
                                 >
                                     {{ $cancellingId === $invitation->id ? __('common.cancelling') : __('common.cancel') }}
                                 </button>
@@ -532,7 +532,7 @@
                                                 type="radio"
                                                 wire:model="inviteRoleId"
                                                 value="{{ $roleOption->id }}"
-                                                class="h-4 w-4 text-white focus:ring-gray-900 border-white/15 mt-0.5"
+                                                class="h-4 w-4 text-white focus:ring-brand-500 border-white/15 mt-0.5"
                                             />
                                             <div class="ms-3">
                                                 <span class="block text-sm font-medium text-white">{{ $roleOption->display_name }}</span>
@@ -547,8 +547,8 @@
 
                             {{-- Error Message --}}
                             @if($inviteError)
-                                <div class="p-3 rounded-lg bg-[#FDEBEC] border border-white/10">
-                                    <p class="text-sm text-[#9F2F2D]">{{ $inviteError }}</p>
+                                <div class="p-3 rounded-lg bg-red-500/15 border border-red-500/30">
+                                    <p class="text-sm text-red-400">{{ $inviteError }}</p>
                                 </div>
                             @endif
                         </div>
@@ -590,7 +590,7 @@
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeRemoveDialog"></div>
                     <div class="relative bg-gray-900 border border-white/10 rounded-xl max-w-md w-full mx-auto p-6">
                         <div class="flex items-center gap-4 mb-4">
-                            <div class="flex-shrink-0 bg-[#FDEBEC] rounded-full p-3">
+                            <div class="flex-shrink-0 bg-red-500/15 rounded-full p-3">
                                 <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
                             </div>
                             <div class="text-start">
@@ -725,7 +725,7 @@
                                                 <button
                                                     type="button"
                                                     wire:click="removeTenantFromEditUser({{ $tenant->id }})"
-                                                    class="p-1 text-red-600 hover:text-red-900 rounded hover:bg-[#FDEBEC] transition-colors"
+                                                    class="p-1 text-red-600 hover:text-red-900 rounded hover:bg-red-500/10 transition-colors"
                                                     title="{{ __('common.remove') }}"
                                                 >
                                                     <x-heroicon-s-x-mark class="h-4 w-4" />
@@ -795,7 +795,7 @@
                 <div class="flex items-center justify-center min-h-screen p-4">
                     <div class="fixed inset-0 bg-black bg-opacity-25" wire:click="$set('showDeleteDialog', false)"></div>
                     <div class="relative w-full max-w-md bg-gray-900 border border-white/10 rounded-xl p-6">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FDEBEC]">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-500/15">
                             <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-600" />
                         </div>
                         <div class="mt-3 text-center">

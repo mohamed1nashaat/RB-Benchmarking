@@ -54,7 +54,7 @@
                             <div class="relative group">
                                 {{-- Avatar Image or Initials --}}
                                 @if($this->user->avatar_url)
-                                    <div class="w-20 h-20 rounded-full overflow-hidden ring-2 ring-gray-200">
+                                    <div class="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10">
                                         <img
                                             src="{{ $this->user->avatar_url }}"
                                             alt="Profile"
@@ -62,7 +62,7 @@
                                         />
                                     </div>
                                 @else
-                                    <div class="w-20 h-20 bg-white/8 rounded-full flex items-center justify-center ring-2 ring-gray-200">
+                                    <div class="w-20 h-20 bg-white/8 rounded-full flex items-center justify-center ring-2 ring-white/10">
                                         <span class="text-2xl font-semibold text-gray-300">{{ $this->userInitials }}</span>
                                     </div>
                                 @endif
@@ -117,25 +117,25 @@
 
                         {{-- Avatar Success/Error messages --}}
                         @if($avatarSuccess)
-                            <div class="bg-green-50 border border-green-200 rounded-md p-3">
-                                <p class="text-sm text-green-800">{{ __('pages.settings.profile.avatar_success') }}</p>
+                            <div class="bg-green-500/15 border border-green-500/30 rounded-lg p-3">
+                                <p class="text-sm text-green-400">{{ __('pages.settings.profile.avatar_success') }}</p>
                             </div>
                         @endif
                         @if($avatarError)
-                            <div class="bg-red-50 border border-red-200 rounded-md p-3">
-                                <p class="text-sm text-red-800">{{ $avatarError }}</p>
+                            <div class="bg-red-500/15 border border-red-500/30 rounded-lg p-3">
+                                <p class="text-sm text-red-400">{{ $avatarError }}</p>
                             </div>
                         @endif
 
                         {{-- Profile Success/Error messages --}}
                         @if($profileSuccess)
-                            <div class="bg-green-50 border border-green-200 rounded-md p-3">
-                                <p class="text-sm text-green-800">{{ __('pages.settings.profile.update_success') }}</p>
+                            <div class="bg-green-500/15 border border-green-500/30 rounded-lg p-3">
+                                <p class="text-sm text-green-400">{{ __('pages.settings.profile.update_success') }}</p>
                             </div>
                         @endif
                         @if($profileError)
-                            <div class="bg-red-50 border border-red-200 rounded-md p-3">
-                                <p class="text-sm text-red-800">{{ $profileError }}</p>
+                            <div class="bg-red-500/15 border border-red-500/30 rounded-lg p-3">
+                                <p class="text-sm text-red-400">{{ $profileError }}</p>
                             </div>
                         @endif
 
@@ -184,13 +184,13 @@
                     <div class="px-4 py-5 sm:p-6 space-y-4">
                         {{-- Success/Error messages --}}
                         @if($passwordSuccess)
-                            <div class="bg-green-50 border border-green-200 rounded-md p-3">
-                                <p class="text-sm text-green-800">{{ __('pages.settings.password.update_success') }}</p>
+                            <div class="bg-green-500/15 border border-green-500/30 rounded-lg p-3">
+                                <p class="text-sm text-green-400">{{ __('pages.settings.password.update_success') }}</p>
                             </div>
                         @endif
                         @if($passwordError)
-                            <div class="bg-red-50 border border-red-200 rounded-md p-3">
-                                <p class="text-sm text-red-800">{{ $passwordError }}</p>
+                            <div class="bg-red-500/15 border border-red-500/30 rounded-lg p-3">
+                                <p class="text-sm text-red-400">{{ $passwordError }}</p>
                             </div>
                         @endif
 
@@ -247,12 +247,12 @@
                             <button
                                 type="button"
                                 wire:click="$toggle('emailAlerts')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $emailAlerts ? 'bg-gray-900' : 'bg-white/8' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900 {{ $emailAlerts ? 'bg-brand-500' : 'bg-white/8' }}"
                                 role="switch"
                                 aria-checked="{{ $emailAlerts ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-gray-900 ring-0 transition duration-200 ease-in-out {{ $emailAlerts ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $emailAlerts ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -266,12 +266,12 @@
                             <button
                                 type="button"
                                 wire:click="$toggle('inAppNotifications')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $inAppNotifications ? 'bg-gray-900' : 'bg-white/8' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900 {{ $inAppNotifications ? 'bg-brand-500' : 'bg-white/8' }}"
                                 role="switch"
                                 aria-checked="{{ $inAppNotifications ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-gray-900 ring-0 transition duration-200 ease-in-out {{ $inAppNotifications ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $inAppNotifications ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -285,12 +285,12 @@
                             <button
                                 type="button"
                                 wire:click="$toggle('weeklySummary')"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 {{ $weeklySummary ? 'bg-gray-900' : 'bg-white/8' }}"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-gray-900 {{ $weeklySummary ? 'bg-brand-500' : 'bg-white/8' }}"
                                 role="switch"
                                 aria-checked="{{ $weeklySummary ? 'true' : 'false' }}"
                             >
                                 <span
-                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-gray-900 ring-0 transition duration-200 ease-in-out {{ $weeklySummary ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
+                                    class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out {{ $weeklySummary ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0' }}"
                                 ></span>
                             </button>
                         </div>
@@ -332,7 +332,7 @@
                                     <label class="micro-label block">{{ __('pages.settings.display.theme') }}</label>
                                     <p class="text-sm text-gray-500">{{ __('pages.settings.display.theme_light') }}</p>
                                 </div>
-                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#F1F1EF] text-[#6B6B66]">
+                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 badge-neutral">
                                     {{ __('common.coming_soon') }}
                                 </span>
                             </div>
@@ -351,55 +351,55 @@
                 <div class="px-4 py-5 sm:p-6 space-y-5">
 
                     @if($brandingSuccess)
-                    <div class="flex items-center gap-x-2 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
+                    <div class="flex items-center gap-x-2 px-4 py-3 rounded-lg bg-green-500/15 border border-green-500/30 text-green-400 text-sm">
                         <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                         Branding settings saved.
                     </div>
                     @endif
 
                     @if($brandingError)
-                    <div class="flex items-center gap-x-2 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+                    <div class="flex items-center gap-x-2 px-4 py-3 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-sm">
                         {{ $brandingError }}
                     </div>
                     @endif
 
                     {{-- Logo URL --}}
                     <div>
-                        <label class="block text-sm font-medium text-neutral-700 mb-1.5">Agency Logo URL</label>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">Agency Logo URL</label>
                         <input type="url" wire:model="brandingLogoUrl"
                                placeholder="https://your-agency.com/logo.png"
-                               class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 text-neutral-900 placeholder-neutral-400">
-                        <p class="mt-1 text-xs text-neutral-400">Paste a publicly accessible image URL. Used on the PDF cover page. Leave empty to use your agency name as text.</p>
+                               class="w-full px-3 py-2 text-sm border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 text-white placeholder-gray-500">
+                        <p class="mt-1 text-xs text-gray-500">Paste a publicly accessible image URL. Used on the PDF cover page. Leave empty to use your agency name as text.</p>
                         @if($brandingLogoUrl)
                         <div class="mt-2 flex items-center gap-x-3">
-                            <img src="{{ $brandingLogoUrl }}" alt="Logo preview" class="h-8 max-w-32 object-contain border border-neutral-200 rounded p-1 bg-neutral-50"
+                            <img src="{{ $brandingLogoUrl }}" alt="Logo preview" class="h-8 max-w-32 object-contain border border-white/10 rounded p-1 bg-gray-900"
                                  onerror="this.style.display='none'">
-                            <span class="text-xs text-neutral-400">Preview</span>
+                            <span class="text-xs text-gray-500">Preview</span>
                         </div>
                         @endif
                     </div>
 
                     {{-- Brand Color --}}
                     <div>
-                        <label class="block text-sm font-medium text-neutral-700 mb-1.5">Brand Color</label>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">Brand Color</label>
                         <div class="flex items-center gap-x-3">
                             <input type="color" wire:model.live="brandingColor"
-                                   class="h-9 w-16 rounded-lg border border-neutral-200 cursor-pointer p-0.5">
+                                   class="h-9 w-16 rounded-lg border border-white/10 cursor-pointer p-0.5">
                             <input type="text" wire:model="brandingColor"
                                    placeholder="#EF4444"
-                                   class="w-28 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 text-neutral-900 font-mono">
-                            <span class="text-xs text-neutral-400">Used as accent color on PDF reports</span>
+                                   class="w-28 px-3 py-2 text-sm border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 text-white font-mono">
+                            <span class="text-xs text-gray-500">Used as accent color on PDF reports</span>
                         </div>
                     </div>
 
                     {{-- Footer Text --}}
                     <div>
-                        <label class="block text-sm font-medium text-neutral-700 mb-1.5">Report Footer Text</label>
+                        <label class="block text-sm font-medium text-gray-300 mb-1.5">Report Footer Text</label>
                         <input type="text" wire:model="brandingFooterText"
                                placeholder="Prepared by Your Agency Name"
                                maxlength="255"
-                               class="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 text-neutral-900 placeholder-neutral-400">
-                        <p class="mt-1 text-xs text-neutral-400">Appears at the bottom of report cover pages. Defaults to "Powered by Red Bananas".</p>
+                               class="w-full px-3 py-2 text-sm border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 text-white placeholder-gray-500">
+                        <p class="mt-1 text-xs text-gray-500">Appears at the bottom of report cover pages. Defaults to "Powered by Red Bananas".</p>
                     </div>
 
                     <div class="pt-2">

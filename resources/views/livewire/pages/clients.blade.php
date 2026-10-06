@@ -1,18 +1,18 @@
 <div class="space-y-6">
     {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div class="rounded-xl border border-white/10 bg-[#EDF3EC] p-4">
+        <div class="rounded-xl border border-green-500/30 bg-green-500/15 p-4">
             <div class="flex items-center">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
-                <p class="ms-3 text-sm font-medium text-[#346538]">{{ session('message') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
+                <p class="ms-3 text-sm font-medium text-green-400">{{ session('message') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="rounded-xl border border-white/10 bg-[#FDEBEC] p-4">
+        <div class="rounded-xl border border-red-500/30 bg-red-500/15 p-4">
             <div class="flex items-center">
-                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-[#9F2F2D]" />
-                <p class="ms-3 text-sm font-medium text-[#9F2F2D]">{{ session('error') }}</p>
+                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-red-400" />
+                <p class="ms-3 text-sm font-medium text-red-400">{{ session('error') }}</p>
             </div>
         </div>
     @endif
@@ -489,13 +489,13 @@
             x-data x-on:keydown.escape.window="$wire.closeDeleteDialog()">
             <div class="relative top-20 mx-auto p-5 border border-white/10 rounded-xl w-full max-w-md bg-gray-900">
                 <div class="text-center">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FDEBEC] mb-4">
-                        <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-[#9F2F2D]" />
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-500/15 mb-4">
+                        <x-heroicon-o-exclamation-triangle class="h-6 w-6 text-red-400" />
                     </div>
                     <h3 class="text-lg font-semibold tracking-tight text-white mb-2">{{ __('pages.clients.delete_title', ['name' => $deletingClientName]) }}</h3>
                     @if($deletingClientAccountsCount > 0)
-                        <div class="bg-[#FBF3DB] border border-white/10 rounded-xl p-3 mb-4">
-                            <p class="text-sm text-[#956400]">{{ trans_choice('pages.clients.deactivate_instead_of_delete_message', $deletingClientAccountsCount, ['count' => $deletingClientAccountsCount]) }}</p>
+                        <div class="bg-amber-500/15 border border-amber-500/30 rounded-xl p-3 mb-4">
+                            <p class="text-sm text-amber-400">{{ trans_choice('pages.clients.deactivate_instead_of_delete_message', $deletingClientAccountsCount, ['count' => $deletingClientAccountsCount]) }}</p>
                         </div>
                     @else
                         <p class="text-sm text-gray-500 mb-4">{{ __('pages.clients.delete_confirm') }}</p>
@@ -535,7 +535,7 @@
                             $steps = [__('Select Accounts'), __('Review Suggestions'), __('Complete Details'), __('Review & Create')];
                         @endphp
                         @foreach($steps as $index => $stepLabel)<div class="flex items-center">
-                                <div class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium {{ $wizardStep > $index ? 'bg-[#EDF3EC] text-[#346538]' : ($wizardStep === $index ? 'bg-brand-600 text-white' : 'bg-white/8 text-gray-300') }}">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium {{ $wizardStep > $index ? 'bg-brand-500/15 text-brand-400' : ($wizardStep === $index ? 'bg-brand-600 text-white' : 'bg-white/8 text-gray-300') }}">
                                     @if($wizardStep > $index)
                                         <x-heroicon-o-check class="h-5 w-5" />
                                     @else
@@ -546,7 +546,7 @@
                                     {{ $stepLabel }}
                                 </span>
                                 @if($index < count($steps) - 1)
-                                    <div class="mx-4 w-12 h-0.5 {{ $wizardStep > $index ? 'bg-[#346538]' : 'bg-white/8' }}"></div>
+                                    <div class="mx-4 w-12 h-0.5 {{ $wizardStep > $index ? 'bg-brand-500' : 'bg-white/8' }}"></div>
                                 @endif
                             </div>
                         @endforeach
@@ -584,7 +584,7 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $account['status'] === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                                            <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $account['status'] === 'active' ? 'bg-green-500/15 text-green-400' : 'badge-neutral' }}">
                                                 {{ __('status.'.$account['status']) }}
                                             </span>
                                         </label>
@@ -604,12 +604,12 @@
                 @if($wizardStep === 1)
                     <div class="space-y-4">
                         @if($wizardSuggestions && isset($wizardSuggestions['suggested']))
-                            <div class="bg-[#EDF3EC] border border-white/10 rounded-xl p-4 mb-4">
+                            <div class="bg-brand-500/10 border border-brand-500/20 rounded-xl p-4 mb-4">
                                 <div class="flex">
-                                    <x-heroicon-o-light-bulb class="h-5 w-5 text-[#346538] mt-0.5" />
+                                    <x-heroicon-o-light-bulb class="h-5 w-5 text-green-400 mt-0.5" />
                                     <div class="ms-3">
-                                        <h4 class="text-sm font-medium text-[#346538]">{{ __('pages.clients.auto_detected_info') }}</h4>
-                                        <p class="text-xs text-[#346538] mt-1">
+                                        <h4 class="text-sm font-medium text-green-400">{{ __('pages.clients.auto_detected_info') }}</h4>
+                                        <p class="text-xs text-green-400 mt-1">
                                             {{ __('pages.clients.suggestions_description') }}
                                         </p>
                                     </div>
