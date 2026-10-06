@@ -52,15 +52,16 @@
         </button>
 
         {{-- Share --}}
-        @if($report->share_token)
-        <a href="{{ route('report-share', $report->share_token) }}" target="_blank"
-           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/8 text-gray-300 hover:bg-white/12 hover:text-white transition-colors">
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <button
+            wire:click="generateShareLink"
+            x-data
+            x-on:share-link-copied.window="navigator.clipboard.writeText($event.detail.url).then(() => { $el.querySelector('span').textContent = 'Copied!'; setTimeout(() => $el.querySelector('span').textContent = 'Share', 2000) })"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/8 text-gray-300 hover:bg-white/12 hover:text-white transition-colors">
+            <svg class="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/>
             </svg>
-            Share
-        </a>
-        @endif
+            <span>Share</span>
+        </button>
 
         {{-- Save indicator --}}
         <div wire:loading wire:target="save,addBlock,removeBlock,reorderBlocks"

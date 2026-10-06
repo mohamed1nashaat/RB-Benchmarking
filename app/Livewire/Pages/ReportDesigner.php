@@ -181,6 +181,15 @@ class ReportDesigner extends Component
         $this->preview = !$this->preview;
     }
 
+    public function generateShareLink(): void
+    {
+        if (!$this->report->share_token) {
+            $this->report->update(['share_token' => \Str::random(48)]);
+            $this->report->refresh();
+        }
+        $this->dispatch('share-link-copied', url: route('report-share', $this->report->share_token));
+    }
+
     // ─── Default Layout ───────────────────────────────────────────────────────
 
     private function seedDefaultLayout(): void
