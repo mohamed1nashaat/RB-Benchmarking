@@ -79,6 +79,10 @@
                 <x-heroicon-s-plus class="me-3 h-5 w-5 text-gray-400" />
                 {{ __('navigation.integrations') }}
             </a>
+            <a href="/billing" @click="open = false" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-950">
+                <x-heroicon-s-credit-card class="me-3 h-5 w-5 text-gray-400" />
+                {{ __('navigation.billing') }}
+            </a>
             <a href="/settings" @click="open = false" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-950">
                 <x-heroicon-s-cog-6-tooth class="me-3 h-5 w-5 text-gray-400" />
                 {{ __('navigation.settings') }}

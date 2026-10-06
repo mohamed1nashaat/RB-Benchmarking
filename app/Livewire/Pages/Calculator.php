@@ -25,7 +25,12 @@ class Calculator extends Component
     public string $error = '';
     public string $selectedScenario = 'average';
 
-    public const ALLOWED_INDUSTRIES = ['real_estate', 'retail', 'ecommerce', 'e_commerce_retail'];
+    public const ALLOWED_INDUSTRIES = [
+        'automotive', 'e_commerce_retail', 'education', 'fashion_luxury',
+        'finance_insurance', 'fmcg_cpg', 'food_beverage', 'government_public_sector',
+        'healthcare', 'hospitality_food_services', 'professional_services',
+        'real_estate', 'technology', 'travel_destinations',
+    ];
 
     public array $availableModes = [
         'budget_to_results' => 'Budget → Results',
