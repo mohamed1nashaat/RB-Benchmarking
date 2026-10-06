@@ -196,3 +196,9 @@ Schedule::command('snapchat:backfill-metrics --full-history')
     ->timezone('America/Los_Angeles')
     ->onFailure($onFailure('snapchat:backfill-metrics'))
     ->description('Monthly Snapchat full history backfill');
+
+// AI: Nightly embedding of ad metrics into vector store
+Schedule::command('ai:embed-metrics --days=30')
+    ->dailyAt('02:30')
+    ->onFailure($onFailure('ai:embed-metrics'))
+    ->description('Nightly AI vector embedding of ad metrics and benchmarks');

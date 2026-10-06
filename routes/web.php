@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\SnapchatIntegrationController;
 use App\Http\Controllers\Api\TikTokIntegrationController;
 use App\Http\Controllers\Api\TwitterIntegrationController;
 use App\Http\Controllers\AdAccountExportController;
+use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\SeoReportExportController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -50,6 +51,7 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
     Route::get('/spend-verification', Pages\SpendVerification::class)->middleware('super-admin')->name('spend-verification');
     Route::get('/benchmarks', Pages\Benchmarks::class)->name('benchmarks');
     Route::get('/global-benchmarks', Pages\GlobalBenchmarks::class)->name('global-benchmarks');
+    Route::post('/ai/chat', [AiChatController::class, 'stream'])->name('ai.chat')->middleware('throttle:20,1');
     Route::get('/calculator', Pages\Calculator::class)->name('calculator');
     Route::get('/industry-overview', Pages\IndustryOverview::class)->middleware('super-admin')->name('industry-overview');
     Route::get('/industry-management', Pages\IndustryManagement::class)->middleware('super-admin')->name('industry-management');

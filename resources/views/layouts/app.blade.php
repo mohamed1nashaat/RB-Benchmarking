@@ -37,6 +37,7 @@
         <x-footer />
     </div>
 
+    <livewire:components.ai-chat />
     @livewireScripts
 </body>
 </html>
