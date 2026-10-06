@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\TwitterIntegrationController;
 use App\Http\Controllers\AdAccountExportController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\SeoReportExportController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -142,4 +143,8 @@ Route::middleware(['auth', 'set-locale', 'client-portal'])->prefix('portal')->na
     Route::get('/reports', Pages\Portal\PortalReports::class)->name('reports');
     Route::get('/media-plans', Pages\Portal\PortalMediaPlans::class)->name('media-plans');
 });
+
+// Stripe webhook — no CSRF, no auth required
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->name('cashier.webhook');
 

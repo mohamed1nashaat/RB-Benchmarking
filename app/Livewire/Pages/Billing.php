@@ -4,6 +4,7 @@ namespace App\Livewire\Pages;
 
 use App\Models\SubscriptionPlan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Billing extends Component
@@ -48,13 +49,36 @@ class Billing extends Component
         }
 
         $tenant = Auth::user()->tenant;
-        $checkout = $tenant->newSubscription('default', $plan->stripe_price_id)
-            ->checkout([
-                'success_url' => url('/billing?subscribed=1'),
-                'cancel_url'  => url('/billing'),
-            ]);
 
-        $this->redirect($checkout->url);
+        try {
+            $checkout = $tenant->newSubscription('default', $plan->stripe_price_id)
+                ->checkout([
+                    'success_url' => url('/billing?subscribed=1'),
+                    'cancel_url'  => url('/billing'),
+                ]);
+
+            $this->redirect($checkout->url);
+        } catch (\Exception $e) {
+            Log::error('Stripe checkout failed', ['error' => $e->getMessage(), 'plan' => $plan->slug]);
+            session()->flash('error', 'Could not create checkout session: ' . $e->getMessage());
+        }
+    }
+
+    public function openBillingPortal(): void
+    {
+        $tenant = Auth::user()->tenant ?? null;
+        if (!$tenant || !config('cashier.key')) {
+            session()->flash('info', 'Add STRIPE_KEY to .env to enable the billing portal.');
+            return;
+        }
+
+        try {
+            $url = $tenant->billingPortalUrl(url('/billing'));
+            $this->redirect($url);
+        } catch (\Exception $e) {
+            Log::error('Stripe billing portal failed', ['error' => $e->getMessage()]);
+            session()->flash('error', 'Could not open billing portal: ' . $e->getMessage());
+        }
     }
 
     public function render()

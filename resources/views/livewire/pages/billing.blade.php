@@ -16,6 +16,15 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="flex items-center gap-x-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+            <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/>
+            </svg>
+            {{ session('error') }}
+        </div>
+    @endif
+
     @if(request('subscribed'))
         <div class="flex items-center gap-x-3 px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm">
             <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -26,9 +35,9 @@
     @endif
 
     {{-- Current Plan Status --}}
-    <div class="bg-white border border-neutral-200 rounded-xl p-5 flex items-center justify-between gap-x-4">
+    <div class="bg-white border border-neutral-200 rounded-xl p-5 flex items-center justify-between gap-x-4 flex-wrap gap-y-3">
         <div class="flex items-center gap-x-3">
-            <div class="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center">
+            <div class="h-9 w-9 rounded-lg bg-primary-50 flex items-center justify-center flex-shrink-0">
                 <svg class="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/>
                 </svg>
@@ -36,23 +45,58 @@
             <div>
                 <p class="text-sm font-medium text-neutral-900">{{ __('billing.current_plan') }}</p>
                 @if($this->activePlan)
-                    <p class="text-xs text-green-600 mt-0.5">
-                        Active · {{ ucfirst($this->activePlan->stripe_status ?? 'active') }}
+                    @php
+                        $subStatus = $this->activePlan->stripe_status ?? 'active';
+                        $statusColor = match($subStatus) {
+                            'active'   => 'text-green-600',
+                            'past_due' => 'text-amber-600',
+                            'canceled', 'cancelled' => 'text-red-500',
+                            default    => 'text-neutral-500',
+                        };
+                        // Try to get next billing date — only works when Stripe keys configured
+                        $nextBilling = null;
+                        try {
+                            $stripeSub = $this->activePlan->asStripeSubscription();
+                            $nextBilling = $stripeSub?->current_period_end
+                                ? \Carbon\Carbon::createFromTimestamp($stripeSub->current_period_end)->format('d M Y')
+                                : null;
+                        } catch (\Throwable) {}
+                    @endphp
+                    <p class="text-xs {{ $statusColor }} mt-0.5 capitalize">
+                        {{ ucfirst($subStatus) }}
+                        @if($nextBilling) · Renews {{ $nextBilling }} @endif
                     </p>
                 @else
-                    <p class="text-xs text-neutral-400 mt-0.5">{{ __('billing.free_trial') }}</p>
+                    <p class="text-xs text-neutral-400 mt-0.5">{{ __('billing.free_trial') }} — select a plan below to subscribe</p>
                 @endif
             </div>
         </div>
-        @if($this->activePlan)
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border border-green-200 bg-green-50 text-green-700">
-                Subscribed
-            </span>
-        @else
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500">
-                No active plan
-            </span>
-        @endif
+        <div class="flex items-center gap-x-2">
+            @if($this->activePlan)
+                @php
+                    $subStatus = $this->activePlan->stripe_status ?? 'active';
+                    $badgeClass = match($subStatus) {
+                        'active'   => 'border-green-200 bg-green-50 text-green-700',
+                        'past_due' => 'border-amber-200 bg-amber-50 text-amber-700',
+                        'canceled', 'cancelled' => 'border-red-200 bg-red-50 text-red-600',
+                        default    => 'border-neutral-200 bg-neutral-50 text-neutral-500',
+                    };
+                @endphp
+                <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border {{ $badgeClass }} capitalize">
+                    {{ ucfirst($subStatus) }}
+                </span>
+                <button wire:click="openBillingPortal"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center gap-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors">
+                    <span wire:loading wire:target="openBillingPortal" class="inline-block h-3 w-3 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin"></span>
+                    Manage / Cancel
+                </button>
+            @else
+                <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border border-neutral-200 bg-neutral-50 text-neutral-500">
+                    No active plan
+                </span>
+            @endif
+        </div>
     </div>
 
     {{-- Billing interval toggle --}}
