@@ -6,7 +6,7 @@
                 $teads = $dashboardData['teads_daily'] ?? [];
                 $exec = $dashboardData['executive_summary'] ?? [];
                 $healthLabels = ['healthy' => __('pages.client_dashboard.health_healthy'), 'needs_attention' => __('pages.client_dashboard.health_needs_attention'), 'critical' => __('pages.client_dashboard.health_critical')];
-                $healthClasses = ['healthy' => 'bg-[#EDF3EC] text-[#346538]', 'needs_attention' => 'bg-[#FBF3DB] text-[#956400]', 'critical' => 'bg-[#FDEBEC] text-[#9F2F2D]'];
+                $healthClasses = ['healthy' => 'bg-green-500/15 text-green-400', 'needs_attention' => 'bg-amber-500/15 text-amber-400', 'critical' => 'bg-red-500/15 text-red-400'];
             @endphp
 
             {{-- Filters Panel --}}
@@ -213,12 +213,12 @@
                                 $platformSpend = $platformAccounts->sum('total_spend');
                                 $platformCampaigns = $platformAccounts->sum(fn($a) => count($a['campaigns'] ?? []));
                                 $platformColor = match(strtolower($platform)) {
-                                    'facebook' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                    'google' => 'bg-[#F1F1EF] text-[#6B6B66]',
-                                    'tiktok' => 'bg-zinc-900 text-white',
-                                    'snapchat' => 'bg-[#FBF3DB] text-[#956400]',
-                                    'linkedin' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                    default => 'bg-[#F1F1EF] text-[#6B6B66]',
+                                    'facebook' => 'bg-brand-500/15 text-brand-400',
+                                    'google' => 'bg-white/8 text-gray-300',
+                                    'tiktok' => 'bg-white/8 text-white',
+                                    'snapchat' => 'bg-amber-500/15 text-amber-400',
+                                    'linkedin' => 'bg-brand-500/15 text-brand-400',
+                                    default => 'bg-white/8 text-gray-300',
                                 };
                             @endphp
                             <div class="card p-3 {{ $platformColor }}">
@@ -313,7 +313,7 @@
                                                 <x-heroicon-o-pencil class="h-4 w-4" />
                                             </button>
                                         @endif
-                                        <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $account['status'] === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                                        <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $account['status'] === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-white/8 text-gray-400' }}">
                                             {{ __('status.' . $account['status']) }}
                                         </span>
                                         <span class="text-sm font-semibold text-white">{{ fmtCurrency($account['total_spend'] ?? 0) }}</span>
@@ -377,7 +377,7 @@
                                                             </td>
                                                             <td class="text-end text-gray-200 font-medium">{{ fmtCurrency($campaign['spend'] ?? 0) }}</td>
                                                             <td class="text-end">
-                                                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ ($campaign['status'] ?? '') === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                                                                <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ ($campaign['status'] ?? '') === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-white/8 text-gray-400' }}">
                                                                     {{ $campaign['status'] ? __('status.' . $campaign['status']) : __('common.unknown') }}
                                                                 </span>
                                                             </td>
@@ -416,58 +416,58 @@
                     {{-- Platform KPIs --}}
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         @if($platformKey === 'snapchat')
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Swipes') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['swipes']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Swipes') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['swipes']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpa'], 0) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpa'], 0) }}</div></div>
                             @else
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Native Leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['native_leads']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversion Sign Ups') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['sign_ups']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPL Snap') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpl'], 1) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Native Leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['native_leads']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Conversion Sign Ups') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['sign_ups']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('CPL Snap') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpl'], 1) }}</div></div>
                             @endif
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPM Snap') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 2) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('CPM Snap') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 2) }}</div></div>
                         @elseif($platformKey === 'facebook')
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Total spent Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Link clicks Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['link_clicks']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Total spent Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Impressions Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Link clicks Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['link_clicks']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpa'], 0) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('CPA') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpa'], 0) }}</div></div>
                             @else
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Website Leads Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['website_leads']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('CPM Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 1) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Cost per On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ $platform['on_facebook_leads'] > 0 ? number_format($platform['spend'] / $platform['on_facebook_leads'], 1) : '-' }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['on_facebook_leads']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('sign_up') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['sign_ups']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Website Leads Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['website_leads']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('CPM Meta') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 1) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Cost per On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ $platform['on_facebook_leads'] > 0 ? number_format($platform['spend'] / $platform['on_facebook_leads'], 1) : '-' }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('On-Facebook leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['on_facebook_leads']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('sign_up') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['sign_ups']) }}</div></div>
                             @endif
                         @elseif($platformKey === 'google')
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Cost') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Average cpm') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 0) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['clicks']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Cost') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Average cpm') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['cpm'], 0) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['clicks']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
                             @endif
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Ctr') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['ctr'], 0) }}%</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Average cpc') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ $platform['clicks'] > 0 ? number_format($platform['spend'] / $platform['clicks'], 0) : '-' }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Ctr') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['ctr'], 0) }}%</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Average cpc') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ $platform['clicks'] > 0 ? number_format($platform['spend'] / $platform['clicks'], 0) : '-' }}</div></div>
                         @else
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
-                            <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['clicks']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Spend') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['spend']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Impressions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['impressions']) }}</div></div>
+                            <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Clicks') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['clicks']) }}</div></div>
                             @if($dashboardData['is_ecommerce'])
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Conversions') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['conversions']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Revenue') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtCurrency($platform['revenue']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('ROAS') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ number_format($platform['roas'], 1) }}x</div></div>
                             @else
-                                <div class="bg-[#F7F6F3] rounded-lg p-3"><div class="micro-label">{{ __('Leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['blended_leads']) }}</div></div>
+                                <div class="bg-white/5 rounded-lg p-3"><div class="micro-label">{{ __('Leads') }}</div><div class="text-xl font-semibold tracking-tight text-white">{{ fmtNum($platform['blended_leads']) }}</div></div>
                             @endif
                         @endif
                     </div>

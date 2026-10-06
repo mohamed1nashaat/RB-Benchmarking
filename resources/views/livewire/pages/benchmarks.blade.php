@@ -10,8 +10,8 @@
                 <p class="mt-0.5 text-sm text-gray-500">
                     {{ __('pages.benchmarks.description') }}
                     @if($autoRefreshEnabled)
-                        <span class="inline-flex items-center gap-1 ms-2 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-[#EDF3EC] text-[#346538]">
-                            <span class="w-1.5 h-1.5 bg-[#346538] rounded-full animate-pulse"></span>
+                        <span class="inline-flex items-center gap-1 ms-2 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-green-500/15 text-green-400">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
                             {{ __('pages.benchmarks.live_data') }}
                         </span>
                     @endif
@@ -623,7 +623,7 @@
                                                     <span>{{ $col['label'] }}</span>
                                                 @endif
                                                 <div @mousedown.prevent="startResize($event, '{{ $key }}')" class="absolute end-0 top-0 bottom-0 w-3 cursor-col-resize z-20 group" title="{{ __('common.drag_to_resize') }}">
-                                                    <div class="absolute end-1 top-1 bottom-1 w-px bg-gray-300 group-hover:bg-gray-500 transition-colors"></div>
+                                                    <div class="absolute end-1 top-1 bottom-1 w-px bg-white/20 group-hover:bg-white/40 transition-colors"></div>
                                                 </div>
                                             </th>
                                         @endif
@@ -783,7 +783,7 @@
 
     {{-- Accounts Modal — proven pattern: @if conditional, backdrop on container, simple centered panel --}}
     @if($showAccountsModal)
-    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+    <div class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-50"
          x-data="{
              liveSpend: {},
              loadingSpend: false,
@@ -969,7 +969,7 @@
                                             </div>
                                         @endif
                                         @if($account['integration_status'] === 'needs_reauth')
-                                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FBF3DB] text-[#956400] border border-white/10">
+                                            <span class="inline-flex items-center mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-white/10">
                                                 <x-heroicon-o-exclamation-triangle class="h-3 w-3 me-0.5" />
                                                 {{ __('common.reauth') }}
                                             </span>
@@ -1088,7 +1088,7 @@
                                                                     <span class="text-xs text-gray-400 capitalize">{{ $campaign['objective'] }}</span>
                                                                 @endif
                                                                 @if($campaign['funnel_stage'])
-                                                                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#F1F1EF] text-[#6B6B66]">{{ $campaign['funnel_stage'] }}</span>
+                                                                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-white/8 text-gray-400">{{ $campaign['funnel_stage'] }}</span>
                                                                 @endif
                                                                 <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium {{ ($campaign['status'] ?? '') === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-white/5 text-gray-300' }}">
                                                                     {{ ucfirst($campaign['status'] ?? 'unknown') }}
