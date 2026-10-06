@@ -18,7 +18,7 @@ class GlobalBenchmarks extends Component
         'snapchat'  => 'Snapchat',
     ];
 
-    public array $metrics = ['ctr', 'cpc', 'cpm', 'cpl', 'cpa', 'roas'];
+    public array $metrics = ['ctr', 'cpc', 'cpm', 'cvr', 'cpl', 'cpa', 'roas'];
 
     public array $metricLabels = [
         'ctr'  => 'CTR',

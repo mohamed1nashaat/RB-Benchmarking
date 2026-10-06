@@ -31,10 +31,14 @@ class Reports extends Component
             ->when($this->search, fn ($q) => $q->where('name', 'like', '%' . $this->search . '%'))
             ->latest();
 
+        $tenantId = auth()->user()->tenant_id;
+
         return view('livewire.pages.reports', [
-            'reports'     => $query->paginate(20),
-            'totalCount'  => Report::where('tenant_id', auth()->user()->tenant_id)->count(),
-            'readyCount'  => Report::where('tenant_id', auth()->user()->tenant_id)->where('status', 'ready')->count(),
+            'reports'          => $query->paginate(20),
+            'totalCount'       => Report::where('tenant_id', $tenantId)->count(),
+            'readyCount'       => Report::where('tenant_id', $tenantId)->where('status', 'ready')->count(),
+            'generatingCount'  => Report::where('tenant_id', $tenantId)->where('status', 'generating')->count(),
+            'sentCount'        => Report::where('tenant_id', $tenantId)->whereNotNull('sent_at')->count(),
         ])->layout('layouts.app');
     }
 }

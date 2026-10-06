@@ -96,7 +96,7 @@
                             <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08);">
                                 <th class="text-start px-5 py-3.5 font-semibold text-xs uppercase tracking-wider text-gray-400 min-w-[180px]">{{ __('filters.industry') }}</th>
                                 @foreach($this->metrics as $metric)
-                                    <th class="text-center px-4 py-3.5 font-semibold text-xs uppercase tracking-wider text-gray-400 min-w-[140px]">
+                                    <th class="text-center px-4 py-3.5 font-semibold text-xs uppercase tracking-wider text-gray-400 min-w-[120px]">
                                         {{ $this->metricLabels[$metric] ?? strtoupper($metric) }}
                                     </th>
                                 @endforeach

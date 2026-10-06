@@ -26,15 +26,11 @@
             <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mt-1">Ready</div>
         </div>
         <div class="bg-gray-900 px-5 py-4">
-            <div class="text-2xl font-bold tracking-tight font-mono">
-                {{ \App\Models\Report::where('tenant_id', auth()->user()->tenant_id)->where('status', 'generating')->count() }}
-            </div>
+            <div class="text-2xl font-bold tracking-tight font-mono">{{ $generatingCount }}</div>
             <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mt-1">Generating</div>
         </div>
         <div class="bg-gray-900 px-5 py-4">
-            <div class="text-2xl font-bold tracking-tight font-mono">
-                {{ \App\Models\Report::where('tenant_id', auth()->user()->tenant_id)->whereNotNull('sent_at')->count() }}
-            </div>
+            <div class="text-2xl font-bold tracking-tight font-mono">{{ $sentCount }}</div>
             <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mt-1">Sent</div>
         </div>
     </div>
@@ -131,6 +127,15 @@
                             </td>
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-2 justify-end">
+                                    @if($report->status === 'ready')
+                                    <a href="{{ route('report-view', $report->id) }}"
+                                       class="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-colors">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                        </svg>
+                                        View
+                                    </a>
+                                    @endif
                                     <a href="{{ route('report-designer', ['id' => $report->id]) }}"
                                        class="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-md bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 hover:text-brand-300 transition-colors">
                                         <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
