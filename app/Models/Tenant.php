@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Cashier\Billable;
 
 class Tenant extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Billable;
 
     protected static function booted(): void
     {
@@ -43,13 +44,18 @@ class Tenant extends Model
         'subscription_tier',
         'monthly_budget',
         'notes',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at',
     ];
 
     protected $casts = [
-        'settings' => 'array',
+        'settings'            => 'array',
         'contract_start_date' => 'date',
-        'contract_end_date' => 'date',
-        'monthly_budget' => 'decimal:2',
+        'contract_end_date'   => 'date',
+        'monthly_budget'      => 'decimal:2',
+        'trial_ends_at'       => 'datetime',
     ];
 
     public function users(): BelongsToMany

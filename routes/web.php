@@ -123,6 +123,7 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
         $data = $response->getData(true);
         return redirect($data['oauth_url'] ?? '/integrations?error=oauth_failed');
     })->name('auth.twitter.redirect');
+    Route::get('/billing', Pages\Billing::class)->name('billing');
     Route::get('/settings', Pages\Settings::class)->name('settings');
     Route::get('/users', Pages\Users::class)->middleware('can:view_users')->name('users');
     Route::get('/roles', Pages\RoleManagement::class)->middleware('can:manage_roles')->name('roles');
