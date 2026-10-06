@@ -41,6 +41,9 @@ class ReportBuilder extends Component
             $this->periodEnd   = now()->format('Y-m-d');
             $this->periodStart = now()->subDays(30)->format('Y-m-d');
             $this->name        = 'Performance Report — ' . now()->format('M Y');
+            if ($accountId = request()->query('ad_account_id')) {
+                $this->adAccountId = (int) $accountId;
+            }
         }
     }
 
