@@ -135,3 +135,10 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
     })->name('logout');
 });
 
+// Client Portal — read-only view for agency clients
+Route::middleware(['auth', 'set-locale', 'client-portal'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/', Pages\Portal\Dashboard::class)->name('dashboard');
+    Route::get('/reports', Pages\Portal\PortalReports::class)->name('reports');
+    Route::get('/media-plans', Pages\Portal\PortalMediaPlans::class)->name('media-plans');
+});
+

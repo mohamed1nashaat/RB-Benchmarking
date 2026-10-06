@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'super-admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
             'csp' => ContentSecurityPolicy::class,
             'request-id' => AddRequestId::class,
+            'client-portal' => \App\Http\Middleware\ClientPortal::class,
         ]);
 
         $middleware->api(prepend: [
