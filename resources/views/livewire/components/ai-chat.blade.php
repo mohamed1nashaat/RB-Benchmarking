@@ -91,8 +91,8 @@
         {{-- Header --}}
         <div class="flex items-center justify-between px-4 py-3 border-b" style="border-color: rgba(255,255,255,0.08); background: #0d0f16;">
             <div class="flex items-center gap-2.5">
-                <div class="h-7 w-7 rounded-lg flex items-center justify-center" style="background: rgba(239,100,37,0.2);">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#EF6425">
+                <div class="h-7 w-7 rounded-lg flex items-center justify-center" style="background: rgba(239,68,68,0.2);">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#EF4444">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                     </svg>
                 </div>
@@ -131,8 +131,8 @@
         >
             @if(empty($messages))
                 <div class="flex flex-col items-center justify-center h-full gap-3 text-center px-4">
-                    <div class="h-10 w-10 rounded-xl flex items-center justify-center" style="background: rgba(239,100,37,0.15);">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#EF6425">
+                    <div class="h-10 w-10 rounded-xl flex items-center justify-center" style="background: rgba(239,68,68,0.15);">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="#EF4444">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                         </svg>
                     </div>
@@ -146,7 +146,7 @@
             @foreach($messages as $i => $message)
                 @if($message['role'] === 'user')
                     <div class="flex justify-end">
-                        <div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-tr-sm text-xs leading-relaxed" style="background: #EF6425; color: white;">
+                        <div class="max-w-[85%] px-3 py-2 rounded-2xl rounded-tr-sm text-xs leading-relaxed" style="background: #EF4444; color: white;">
                             {{ $message['content'] }}
                         </div>
                     </div>
@@ -177,7 +177,7 @@
                     placeholder="Ask about your campaigns…"
                     :disabled="streaming"
                     class="flex-1 resize-none rounded-xl px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-1"
-                    style="background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.1); max-height: 96px; scrollbar-width: thin; --tw-ring-color: rgba(239,100,37,0.5);"
+                    style="background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.1); max-height: 96px; scrollbar-width: thin; --tw-ring-color: rgba(239,68,68,0.5);"
                     placeholder="Ask about your campaigns…"
                     x-on:keydown.enter.prevent.stop="if (!$event.shiftKey && !streaming) { $wire.sendMessage() }"
                     x-on:input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, 96) + 'px'"
@@ -186,7 +186,7 @@
                     type="submit"
                     :disabled="streaming"
                     class="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-opacity"
-                    style="background: #EF6425;"
+                    style="background: #EF4444;"
                     :style="streaming ? 'opacity:0.5;cursor:not-allowed' : 'opacity:1;cursor:pointer'"
                 >
                     <svg x-show="!streaming" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="white">
@@ -205,7 +205,7 @@
     <button
         @click="open = !open"
         class="h-13 w-13 rounded-full shadow-lg flex items-center justify-center transition-all duration-200"
-        style="width:52px;height:52px;background:#EF6425;box-shadow:0 4px 24px rgba(239,100,37,0.45);"
+        style="width:52px;height:52px;background:#EF4444;box-shadow:0 4px 24px rgba(239,68,68,0.45);"
         onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'"
         title="AI Analyst"
     >
