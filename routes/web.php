@@ -38,6 +38,7 @@ Route::get('/privacy', fn () => redirect('/privacy-policy'));
 Route::view('/terms-of-service', 'pages.terms-of-service')->name('terms-of-service');
 Route::get('/terms', fn () => redirect('/terms-of-service'));
 Route::get('/invitation/{token}', AcceptInvitation::class)->name('accept-invitation');
+Route::get('/r/{token}', Pages\SharedReport::class)->name('report-share');
 
 // OAuth callbacks — controller redirects
 Route::get('/facebook-callback', [FacebookIntegrationController::class, 'handleCallback'])->name('facebook-callback');

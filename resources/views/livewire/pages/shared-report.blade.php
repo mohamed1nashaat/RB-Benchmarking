@@ -22,38 +22,33 @@
     ];
 @endphp
 
-<div style="background:#0d0f16; min-height:100vh; display:flex; flex-direction:column;">
+<div class="flex flex-col h-screen overflow-hidden" style="background:#0d0f16;">
 
     {{-- TOP BAR --}}
-    <div class="flex-shrink-0 flex items-center justify-between px-6 h-14 border-b border-white/8"
+    <div class="flex items-center gap-4 px-6 h-14 border-b border-white/8 flex-shrink-0"
          style="background:#161b22;">
-        <div class="flex items-center gap-3 min-w-0">
-            @if($report->client_name)
-                <span class="text-xs font-semibold px-2 py-1 rounded-md bg-white/8 text-gray-300">
-                    {{ $report->client_name }}
-                </span>
-                <span class="text-white/15">·</span>
-            @endif
-            <span class="text-sm font-semibold text-white truncate">{{ $report->name }}</span>
-            <span class="text-[11px] text-gray-500 font-mono flex-shrink-0">{{ $report->periodLabel() }}</span>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+                <p class="text-base font-bold text-white truncate">{{ $report->name }}</p>
+                @if($report->client_name)
+                    <span class="text-sm text-gray-500">— {{ $report->client_name }}</span>
+                @endif
+                <span class="text-xs font-mono text-gray-600">{{ $report->periodLabel() }}</span>
+            </div>
         </div>
+
+        {{-- RB Benchmarks watermark --}}
         <div class="flex items-center gap-2 flex-shrink-0">
             <span class="text-[11px] text-gray-600">Powered by</span>
-            <span class="text-xs font-bold tracking-tight text-white">RB <span class="text-brand-400">Benchmarks</span></span>
+            <span class="text-sm font-bold text-brand-400 tracking-tight">RB Benchmarks</span>
         </div>
     </div>
 
     {{-- CANVAS --}}
-    <div class="flex-1 overflow-y-auto px-6 py-8 max-w-5xl mx-auto w-full">
+    <div class="flex-1 overflow-y-auto px-6 py-8">
+        <div class="max-w-5xl mx-auto space-y-4">
 
-        @if(empty($layout['blocks']))
-        <div class="flex flex-col items-center justify-center h-64 text-center">
-            <p class="text-sm text-gray-500">This report has no content yet.</p>
-        </div>
-        @endif
-
-        <div class="space-y-4">
-            @foreach($layout['blocks'] as $block)
+            @forelse($layout['blocks'] as $block)
             @php $cfg = $block['config'] ?? []; @endphp
 
             <div class="rounded-xl border border-white/8" style="background:#161b22;">
@@ -67,16 +62,16 @@
                     <div class="grid gap-4" style="grid-template-columns: repeat({{ min(count($cfg['metrics'] ?? ['spend','impressions','ctr','cpl']), 4) }}, 1fr)">
                         @foreach($cfg['metrics'] ?? ['spend','impressions','ctr','cpl'] as $metric)
                         @php
-                            $lbl   = $kpiLabels[$metric] ?? ['label'=>strtoupper($metric),'format'=>'number'];
-                            $val   = $kpis[$metric] ?? 0;
-                            $fmt   = $lbl['format'] ?? 'number';
-                            $disp  = $fmt === 'currency' ? 'SAR ' . number_format($val, 0) : ($fmt === 'percent' ? $val . '%' : number_format($val, 0));
-                            $bm    = $bmarks[$metric] ?? null;
-                            $p50   = $bm ? (float)$bm['p50'] : null;
-                            $costMetrics = ['cpc','cpm','cpl','cpa'];
+                            $lbl  = $kpiLabels[$metric] ?? ['label'=>strtoupper($metric),'format'=>'number'];
+                            $val  = $kpis[$metric] ?? 0;
+                            $fmt  = $lbl['format'] ?? 'number';
+                            $disp = $fmt === 'currency' ? 'SAR '.number_format($val,0) : ($fmt === 'percent' ? $val.'%' : number_format($val,0));
+                            $bm   = $bmarks[$metric] ?? null;
+                            $p50  = $bm ? (float)$bm['p50'] : null;
+                            $costM = in_array($metric, ['cpc','cpm','cpl','cpa']);
                             $aboveBm = null;
                             if ($p50 !== null && $p50 > 0) {
-                                $aboveBm = in_array($metric, $costMetrics) ? ($val <= $p50) : ($val >= $p50);
+                                $aboveBm = $costM ? ($val <= $p50) : ($val >= $p50);
                             }
                         @endphp
                         <div class="rounded-lg bg-white/4 border border-white/8 px-4 py-3">
@@ -110,8 +105,7 @@
                     <p class="text-sm font-semibold text-gray-100 mb-4">{{ $chartTitle }}</p>
                     <div class="h-48" wire:ignore>
                         <canvas id="{{ $chartId }}"
-                            x-data
-                            x-init="
+                            x-data x-init="
                                 const ctx = document.getElementById('{{ $chartId }}').getContext('2d');
                                 new Chart(ctx, {
                                     type: 'line',
@@ -131,7 +125,7 @@
                                     options: {
                                         responsive: true,
                                         maintainAspectRatio: false,
-                                        plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+                                        plugins: { legend: { display: false } },
                                         scales: {
                                             x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } },
                                             y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }
@@ -157,19 +151,13 @@
                     <p class="text-sm font-semibold text-gray-100 mb-4">{{ $barTitle }}</p>
                     <div class="h-48" wire:ignore>
                         <canvas id="{{ $barId }}"
-                            x-data
-                            x-init="
+                            x-data x-init="
                                 const ctx = document.getElementById('{{ $barId }}').getContext('2d');
                                 new Chart(ctx, {
                                     type: 'bar',
                                     data: {
                                         labels: {{ $barLabels }},
-                                        datasets: [{
-                                            data: {{ $barValues }},
-                                            backgroundColor: {{ $barColors }},
-                                            borderRadius: 6,
-                                            borderSkipped: false
-                                        }]
+                                        datasets: [{ data: {{ $barValues }}, backgroundColor: {{ $barColors }}, borderRadius: 6, borderSkipped: false }]
                                     },
                                     options: {
                                         responsive: true,
@@ -195,7 +183,7 @@
                 <div class="p-5">
                     <p class="text-sm font-semibold text-gray-100 mb-4">{{ $bmTitle }}</p>
                     @if(empty($bmarks))
-                        <p class="text-xs text-gray-500 py-4 text-center">No benchmark data configured for this report.</p>
+                        <p class="text-xs text-gray-500 py-4 text-center">No benchmark data available for this report.</p>
                     @else
                     <table class="w-full text-sm">
                         <thead>
@@ -203,8 +191,8 @@
                                 <th class="text-start pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Metric</th>
                                 <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Your Result</th>
                                 <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">P25</th>
-                                <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-yellow-500/70">P50 Median</th>
-                                <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-green-500/70">P75 Top</th>
+                                <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-yellow-500/70">P50 Avg</th>
+                                <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-green-500/70">P75 Best</th>
                                 <th class="text-center pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">vs Median</th>
                             </tr>
                         </thead>
@@ -220,9 +208,9 @@
                                 $beats = $costM ? ($val2 > 0 && $val2 <= $p502) : ($val2 >= $p502);
                                 $fmt2  = $lbl2['format'] ?? 'number';
                                 $fmtV  = fn($v) => match($fmt2) {
-                                    'currency' => 'SAR '.number_format($v, 0),
-                                    'percent'  => number_format($v, 2).'%',
-                                    default    => number_format($v, 0)
+                                    'currency' => 'SAR '.number_format($v,0),
+                                    'percent'  => number_format($v,2).'%',
+                                    default    => number_format($v,0)
                                 };
                                 $diff     = $p502 > 0 ? round((($val2 - $p502) / $p502) * 100) : 0;
                                 $diffDisp = ($diff > 0 ? '+' : '') . $diff . '%';
@@ -263,7 +251,7 @@
                                 <tr class="border-b border-white/8">
                                     <th class="text-start pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Campaign</th>
                                     <th class="text-end pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Spend</th>
-                                    <th class="text-end pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Impr.</th>
+                                    <th class="text-end pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Impressions</th>
                                     <th class="text-end pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Clicks</th>
                                     <th class="text-end pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">CTR</th>
                                     <th class="text-end pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500">Leads</th>
@@ -275,16 +263,16 @@
                                 <tr>
                                     <td class="py-2.5 font-medium text-gray-200 max-w-xs truncate">
                                         <div class="flex items-center gap-2">
-                                            <span class="h-2 w-2 rounded-full flex-shrink-0" style="background: {{ $platformColors[$camp['platform']] ?? '#6b7280' }}"></span>
+                                            <span class="h-2 w-2 rounded-full flex-shrink-0" style="background:{{ $platformColors[$camp['platform']] ?? '#6b7280' }}"></span>
                                             {{ $camp['name'] }}
                                         </div>
                                     </td>
-                                    <td class="py-2.5 text-end font-mono text-gray-200">{{ number_format($camp['spend'], 0) }}</td>
-                                    <td class="py-2.5 text-end font-mono text-gray-400 text-xs">{{ number_format($camp['impressions'], 0) }}</td>
-                                    <td class="py-2.5 text-end font-mono text-gray-400 text-xs">{{ number_format($camp['clicks'], 0) }}</td>
+                                    <td class="py-2.5 text-end font-mono text-gray-200">{{ number_format($camp['spend'],0) }}</td>
+                                    <td class="py-2.5 text-end font-mono text-gray-400 text-xs">{{ number_format($camp['impressions'],0) }}</td>
+                                    <td class="py-2.5 text-end font-mono text-gray-400 text-xs">{{ number_format($camp['clicks'],0) }}</td>
                                     <td class="py-2.5 text-end font-mono text-gray-300">{{ $camp['ctr'] }}%</td>
-                                    <td class="py-2.5 text-end font-mono text-gray-300">{{ number_format($camp['leads'], 0) }}</td>
-                                    <td class="py-2.5 text-end font-mono text-gray-300">{{ $camp['cpl'] > 0 ? number_format($camp['cpl'], 0) : '—' }}</td>
+                                    <td class="py-2.5 text-end font-mono text-gray-300">{{ number_format($camp['leads'],0) }}</td>
+                                    <td class="py-2.5 text-end font-mono text-gray-300">{{ $camp['cpl'] > 0 ? number_format($camp['cpl'],0) : '—' }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -304,18 +292,13 @@
                     <p class="text-sm font-semibold text-gray-100 mb-4">{{ $splitTitle }}</p>
                     <div class="space-y-3">
                         @foreach($splits as $sp)
-                        @php
-                            $spVal = $sp[$splitMetric] ?? 0;
-                            $spPct = $maxSplit > 0 ? round(($spVal / $maxSplit) * 100) : 0;
-                        @endphp
+                        @php $spVal = $sp[$splitMetric] ?? 0; $spPct = $maxSplit > 0 ? round(($spVal/$maxSplit)*100) : 0; @endphp
                         <div class="flex items-center gap-3">
                             <div class="w-24 text-sm text-gray-300 flex-shrink-0">{{ $platformLabels[$sp['platform']] ?? $sp['platform'] }}</div>
                             <div class="flex-1 h-6 bg-white/5 rounded-md overflow-hidden">
                                 <div class="h-full rounded-md" style="width:{{ $spPct }}%; background:{{ $platformColors[$sp['platform']] ?? '#6b7280' }}20; border-right: 2px solid {{ $platformColors[$sp['platform']] ?? '#6b7280' }}"></div>
                             </div>
-                            <div class="w-28 text-right font-mono text-sm text-white flex-shrink-0">
-                                {{ $splitMetric === 'spend' ? 'SAR '.number_format($spVal, 0) : number_format($spVal, 0) }}
-                            </div>
+                            <div class="w-28 text-right font-mono text-sm text-white flex-shrink-0">{{ $splitMetric === 'spend' ? 'SAR '.number_format($spVal,0) : number_format($spVal,0) }}</div>
                             <div class="w-10 text-right text-xs text-gray-500">{{ $sp['pct'] }}%</div>
                         </div>
                         @endforeach
@@ -325,13 +308,8 @@
                 {{-- AI SUMMARY --}}
                 @elseif($block['type'] === 'ai_summary')
                 @php
-                    $aiSection = $cfg['section'] ?? 'executive_summary';
-                    $aiTitle   = $cfg['title'] ?? 'Executive Summary';
-                    $aiText    = match($aiSection) {
-                        'executive_summary' => $report->executive_summary,
-                        'full_narrative'    => $report->sections['full_narrative'] ?? null,
-                        default             => $report->executive_summary,
-                    };
+                    $aiTitle = $cfg['title'] ?? 'Executive Summary';
+                    $aiText  = $report->executive_summary;
                 @endphp
                 <div class="p-5">
                     <div class="flex items-center gap-2 mb-3">
@@ -346,7 +324,7 @@
                     @if($aiText)
                         <p class="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{{ $aiText }}</p>
                     @else
-                        <p class="text-xs text-gray-500 italic">AI summary not yet generated.</p>
+                        <p class="text-xs text-gray-500 italic">AI analysis not yet generated for this report.</p>
                     @endif
                 </div>
 
@@ -355,11 +333,11 @@
                 <div class="px-5 py-4">
                     @php $level = $cfg['level'] ?? 'h2'; @endphp
                     @if($level === 'h1')
-                        <h1 class="text-2xl font-bold text-white">{{ $cfg['content'] ?? 'Section' }}</h1>
+                        <h1 class="text-2xl font-bold text-white">{{ $cfg['content'] ?? '' }}</h1>
                     @elseif($level === 'h3')
-                        <h3 class="text-base font-semibold text-gray-200">{{ $cfg['content'] ?? 'Section' }}</h3>
+                        <h3 class="text-base font-semibold text-gray-200">{{ $cfg['content'] ?? '' }}</h3>
                     @else
-                        <h2 class="text-lg font-bold text-white">{{ $cfg['content'] ?? 'Section' }}</h2>
+                        <h2 class="text-lg font-bold text-white">{{ $cfg['content'] ?? '' }}</h2>
                     @endif
                 </div>
 
@@ -368,20 +346,20 @@
                 <div class="py-3 px-5">
                     <div class="border-t border-white/8"></div>
                 </div>
-
                 @endif
+
             </div>
-            @endforeach
+            @empty
+            <div class="flex flex-col items-center justify-center h-64 text-center">
+                <p class="text-sm text-gray-500">This report has no content blocks.</p>
+            </div>
+            @endforelse
+
+            {{-- Powered by footer --}}
+            <div class="pt-8 pb-4 text-center">
+                <p class="text-xs text-gray-700">Generated with <span class="text-brand-500/60 font-semibold">RB Benchmarks</span> · {{ now()->format('d M Y') }}</p>
+            </div>
         </div>
-
-        <div class="h-16"></div>
-    </div>
-
-    {{-- FOOTER WATERMARK --}}
-    <div class="flex-shrink-0 flex items-center justify-center py-4 border-t border-white/5">
-        <p class="text-[11px] text-gray-600">
-            Powered by <span class="text-gray-500 font-semibold">RB Benchmarks</span> — MENA Performance Intelligence
-        </p>
     </div>
 </div>
 
