@@ -659,6 +659,8 @@ html[data-theme="light"] .alert-info { background: #fef2f2 !important; border-co
 /* Raw Tailwind bg utilities */
 html[data-theme="light"] .bg-gray-950 { background-color: #F7F6F3 !important; }
 html[data-theme="light"] .bg-gray-900 { background-color: #ffffff !important; }
+html[data-theme="light"] .bg-\[\#161b22\] { background-color: #ffffff !important; }
+html[data-theme="light"] .bg-\[\#0d0f16\] { background-color: #F7F6F3 !important; }
 html[data-theme="light"] .bg-gray-800\/50 { background-color: rgba(241,241,239,0.5) !important; }
 html[data-theme="light"] .bg-gray-800 { background-color: #F1F1EF !important; }
 html[data-theme="light"] .bg-gray-700 { background-color: #EAEAEA !important; }

@@ -1,4 +1,4 @@
-<div class="force-dark max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
     {{-- Header --}}
     <div class="flex items-center gap-x-3">
