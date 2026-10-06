@@ -156,6 +156,7 @@ class SyncGoogleAdsCampaigns extends Command
             } else {
                 $this->monitoringService->recordSuccess('google', $integration->id, $stats);
             }
+            $integration->update(['last_sync_at' => now()]);
             $this->completeSyncProgress($stats);
 
         } catch (\Exception $e) {
