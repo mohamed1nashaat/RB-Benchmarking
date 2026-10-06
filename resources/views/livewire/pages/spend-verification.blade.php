@@ -193,12 +193,12 @@
                             <td class="whitespace-nowrap">
                                 @php
                                     $platformClass = match($row->platform) {
-                                        'facebook' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                        'google' => 'bg-[#EDF3EC] text-[#346538]',
-                                        'tiktok' => 'bg-[#F1F1EF] text-[#6B6B66]',
-                                        'linkedin' => 'bg-[#E1F3FE] text-[#1F6C9F]',
-                                        'snapchat' => 'bg-[#FBF3DB] text-[#956400]',
-                                        default => 'bg-[#F1F1EF] text-[#6B6B66]',
+                                        'facebook' => 'bg-brand-500/15 text-brand-400',
+                                        'google' => 'bg-green-500/15 text-green-400',
+                                        'tiktok' => 'bg-white/8 text-gray-400',
+                                        'linkedin' => 'bg-brand-500/15 text-brand-400',
+                                        'snapchat' => 'bg-amber-500/15 text-amber-400',
+                                        default => 'bg-white/8 text-gray-400',
                                     };
                                 @endphp
                                 <span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 capitalize {{ $platformClass }}">
@@ -271,9 +271,9 @@
                                 @php
                                     $vStatus = $row->data_verification_status ?? 'pending';
                                     $vClass = match($vStatus) {
-                                        'approved' => 'bg-[#EDF3EC] text-[#346538]',
-                                        'declined' => 'bg-[#FDEBEC] text-[#9F2F2D]',
-                                        default => 'bg-[#FBF3DB] text-[#956400]',
+                                        'approved' => 'bg-green-500/15 text-green-400',
+                                        'declined' => 'bg-red-500/15 text-red-400',
+                                        default => 'bg-amber-500/15 text-amber-400',
                                     };
                                 @endphp
                                 <div class="inline-flex items-center gap-x-1.5">
@@ -282,12 +282,12 @@
                                     </span>
                                     <button wire:click="openVerificationModal('approved', [{{ $row->ad_account_id }}])"
                                         title="{{ __('buttons.approve') }}"
-                                        class="inline-flex items-center justify-center w-6 h-6 rounded-md text-[#346538] hover:bg-[#EDF3EC] transition-colors">
+                                        class="inline-flex items-center justify-center w-6 h-6 rounded-md text-green-400 hover:bg-green-500/15 transition-colors">
                                         <x-heroicon-o-check class="h-4 w-4" />
                                     </button>
                                     <button wire:click="openVerificationModal('declined', [{{ $row->ad_account_id }}])"
                                         title="{{ __('buttons.reject') }}"
-                                        class="inline-flex items-center justify-center w-6 h-6 rounded-md text-[#9F2F2D] hover:bg-[#FDEBEC] transition-colors">
+                                        class="inline-flex items-center justify-center w-6 h-6 rounded-md text-red-400 hover:bg-red-500/15 transition-colors">
                                         <x-heroicon-o-x-mark class="h-4 w-4" />
                                     </button>
                                 </div>
@@ -313,7 +313,7 @@
 
     {{-- Verification Modal --}}
     @if($showVerificationModal)
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" x-data x-on:keydown.escape.window="$wire.closeVerificationModal()">
+        <div class="fixed inset-0 bg-black/60 overflow-y-auto h-full w-full z-50" x-data x-on:keydown.escape.window="$wire.closeVerificationModal()">
             <div class="relative top-20 mx-auto p-5 w-96 border border-white/10 rounded-xl bg-gray-900">
                 <div class="mt-3">
                     <h3 class="text-base font-semibold tracking-tight text-white mb-4">

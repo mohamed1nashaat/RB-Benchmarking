@@ -214,7 +214,7 @@
                                             <div>
                                                 <div class="score-circle">
                                                     <svg width="90" height="90" viewBox="0 0 90 90">
-                                                        <circle cx="45" cy="45" r="36" fill="none" stroke="#EFEEEC" stroke-width="6"/>
+                                                        <circle cx="45" cy="45" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
                                                         <circle cx="45" cy="45" r="36" fill="none" stroke="{{ $color }}" stroke-width="6"
                                                                 stroke-dasharray="{{ $circumference }}" stroke-dashoffset="{{ $offset }}"
                                                                 stroke-linecap="round"/>

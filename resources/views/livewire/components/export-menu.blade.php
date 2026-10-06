@@ -44,7 +44,7 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute end-0 z-10 mt-2 w-48 sm:w-56 origin-top-right rounded-md bg-gray-900 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        class="absolute end-0 z-10 mt-2 w-48 sm:w-56 origin-top-right rounded-md bg-gray-900 border border-white/10 focus:outline-none"
         x-cloak
     >
         <div class="py-1">
@@ -72,7 +72,7 @@
     <div
         x-show="toast.show"
         x-transition
-        class="fixed bottom-4 end-4 z-50 flex items-center p-4 rounded-md shadow-lg"
+        class="fixed bottom-4 end-4 z-50 flex items-center p-4 rounded-md"
         :class="toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'"
         x-cloak
     >

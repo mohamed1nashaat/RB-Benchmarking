@@ -20,7 +20,7 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute end-0 z-50 mt-2 w-48 origin-top-right rounded-md shadow-lg bg-gray-900 ring-1 ring-black ring-opacity-5 focus:outline-none"
+        class="absolute end-0 z-50 mt-2 w-48 origin-top-right rounded-md bg-gray-900 border border-white/10 focus:outline-none"
         x-cloak
     >
         <div class="py-1">

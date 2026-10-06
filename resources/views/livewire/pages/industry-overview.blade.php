@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-[#F7F6F3]">
+<div class="min-h-screen">
     <div class="px-4 sm:px-6 lg:px-8 py-6">
 
         {{-- Page Header --}}
@@ -39,7 +39,7 @@
                     @foreach($datePresets as $dp)
                         <button
                             wire:click="applyDatePreset('{{ $dp['value'] }}')"
-                            class="px-3 py-1.5 text-xs font-semibold rounded-full transition-colors {{ $preset === $dp['value'] ? 'bg-brand-600 text-white' : 'bg-[#F1F1EF] text-[#6B6B66] hover:bg-white/8' }}"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-full transition-colors {{ $preset === $dp['value'] ? 'bg-brand-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/8' }}"
                         >
                             {{ $dp['label'] }}
                         </button>
@@ -114,7 +114,7 @@
                 {{-- Industries --}}
                 <div class="kpi-card">
                     <div class="flex items-center gap-x-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-[#F1F1EF] text-[#6B6B66]">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-white/8 text-gray-400">
                             <x-heroicon-s-squares-2x2 class="w-6 h-6" />
                         </div>
                         <div class="min-w-0">
@@ -127,7 +127,7 @@
                 {{-- Accounts --}}
                 <div class="kpi-card">
                     <div class="flex items-center gap-x-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-[#EDF3EC] text-[#346538]">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-green-500/15 text-green-400">
                             <x-heroicon-s-users class="w-6 h-6" />
                         </div>
                         <div class="min-w-0">
@@ -140,7 +140,7 @@
                 {{-- Total Spend --}}
                 <div class="kpi-card">
                     <div class="flex items-center gap-x-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-[#FBF3DB] text-[#956400]">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-amber-500/15 text-amber-400">
                             <x-heroicon-s-currency-dollar class="w-6 h-6" />
                         </div>
                         <div class="min-w-0">
@@ -153,7 +153,7 @@
                 {{-- Total Clicks --}}
                 <div class="kpi-card">
                     <div class="flex items-center gap-x-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-[#E1F3FE] text-[#1F6C9F]">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-brand-500/15 text-brand-400">
                             <x-heroicon-s-cursor-arrow-rays class="w-6 h-6" />
                         </div>
                         <div class="min-w-0">
@@ -166,7 +166,7 @@
                 {{-- Avg CTR --}}
                 <div class="kpi-card">
                     <div class="flex items-center gap-x-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-[#F1F1EF] text-[#6B6B66]">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-white/8 text-gray-400">
                             <x-heroicon-s-chart-bar class="w-6 h-6" />
                         </div>
                         <div class="min-w-0">
@@ -179,7 +179,7 @@
                 {{-- Avg CPC --}}
                 <div class="kpi-card">
                     <div class="flex items-center gap-x-3">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-[#FBF3DB] text-[#956400]">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-amber-500/15 text-amber-400">
                             <x-heroicon-s-banknotes class="w-6 h-6" />
                         </div>
                         <div class="min-w-0">
@@ -193,12 +193,12 @@
 
         {{-- Error State --}}
         @if($error)
-            <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+            <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-6 mb-6">
                 <div class="flex">
                     <x-heroicon-s-x-circle class="w-5 h-5 text-red-400" />
                     <div class="ms-3">
-                        <h3 class="text-sm font-semibold text-red-800">{{ __('pages.industry_overview.error_loading') }}</h3>
-                        <p class="text-sm text-red-700 mt-1">{{ $error }}</p>
+                        <h3 class="text-sm font-semibold text-red-400">{{ __('pages.industry_overview.error_loading') }}</h3>
+                        <p class="text-sm text-red-400/80 mt-1">{{ $error }}</p>
                     </div>
                 </div>
             </div>
@@ -213,7 +213,7 @@
                             <h3 class="text-sm font-semibold text-white">{{ __('pages.industry_overview.top_industries_by', ['metric' => __(('kpis.' . $currentMetric))]) }}</h3>
                             <div class="flex flex-wrap gap-1">
                                 @foreach(['spend' => __('kpis.spend'), 'clicks' => __('alerts.metrics.clicks'), 'impressions' => __('alerts.metrics.impressions'), 'leads' => __('alerts.metrics.leads')] as $key => $label)
-                                    <button wire:click="$set('currentMetric', '{{ $key }}')" class="px-2.5 py-1 text-xs font-semibold rounded-full transition-colors {{ $currentMetric === $key ? 'bg-brand-600 text-white' : 'bg-[#F1F1EF] text-[#6B6B66] hover:bg-white/8' }}">
+                                    <button wire:click="$set('currentMetric', '{{ $key }}')" class="px-2.5 py-1 text-xs font-semibold rounded-full transition-colors {{ $currentMetric === $key ? 'bg-brand-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/8' }}">
                                         {{ $label }}
                                     </button>
                                 @endforeach
@@ -386,7 +386,7 @@
                                                         'linkedin' => 'LI',
                                                     ];
                                                 @endphp
-                                                @foreach($item['platform_counts'] ?? [] as $p => $cnt)<span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $platformBadgeColors[$p] ?? 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                                                @foreach($item['platform_counts'] ?? [] as $p => $cnt)<span class="inline-flex items-center rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $platformBadgeColors[$p] ?? 'bg-white/8 text-gray-400' }}">
                                                         {{ $platformShortNames[$p] ?? strtoupper(substr($p, 0, 2)) }} {{ $cnt }}
                                                     </span>
                                                 @endforeach

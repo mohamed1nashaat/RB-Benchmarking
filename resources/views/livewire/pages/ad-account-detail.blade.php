@@ -1,18 +1,18 @@
 <div class="space-y-6">
     {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div class="rounded-xl bg-[#EDF3EC] p-4">
+        <div class="rounded-xl bg-green-500/10 border border-green-500/20 p-4">
             <div class="flex">
-                <x-heroicon-s-check-circle class="h-5 w-5 text-[#346538]" />
-                <p class="ms-3 text-sm font-medium text-[#346538]">{{ session('message') }}</p>
+                <x-heroicon-s-check-circle class="h-5 w-5 text-green-400" />
+                <p class="ms-3 text-sm font-medium text-green-400">{{ session('message') }}</p>
             </div>
         </div>
     @endif
     @if (session()->has('error'))
-        <div class="rounded-xl bg-[#FDEBEC] p-4">
+        <div class="rounded-xl bg-red-500/10 border border-red-500/20 p-4">
             <div class="flex">
-                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-[#9F2F2D]" />
-                <p class="ms-3 text-sm font-medium text-[#9F2F2D]">{{ session('error') }}</p>
+                <x-heroicon-s-exclamation-triangle class="h-5 w-5 text-red-400" />
+                <p class="ms-3 text-sm font-medium text-red-400">{{ session('error') }}</p>
             </div>
         </div>
     @endif
@@ -39,7 +39,7 @@
                         <h1 class="section-title">{{ $adAccount['account_name'] }}</h1>
                         <p class="text-sm text-gray-500">{{ $adAccount['platform'] }} &bull; {{ $adAccount['external_account_id'] }}</p>
                     </div>
-                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $adAccount['status'] === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $adAccount['status'] === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-white/8 text-gray-400' }}">
                         {{ $adAccount['status'] }}
                     </span>
                 </div>
@@ -104,7 +104,7 @@
                     <dd class="mt-1 text-sm text-white sm:mt-0 sm:col-span-2">
                         <span class="font-semibold text-white">SR {{ number_format($adAccount['total_spend_sar'] ?? 0, 2) }}</span>
                         @if($filterStartDate && $filterEndDate)
-                            <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-[#E1F3FE] text-[#1F6C9F]">
+                            <span class="ms-2 rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 bg-brand-500/15 text-brand-400">
                                 {{ $filterStartDate }} {{ __('common.to') }} {{ $filterEndDate }}
                             </span>
                         @else
@@ -145,19 +145,19 @@
                                 class="btn-secondary gap-x-2 cursor-pointer">
                                 @if(($syncProgress['status'] ?? '') === 'queued')
                                     <span class="relative flex h-2.5 w-2.5">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#956400] opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#956400]"></span>
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
                                     </span>
-                                    <span class="text-[#956400]">{{ __('pages.ad_accounts.queued') }}</span>
+                                    <span class="text-amber-400">{{ __('pages.ad_accounts.queued') }}</span>
                                 @elseif(($syncProgress['status'] ?? '') === 'running')
                                     <x-heroicon-o-arrow-path class="h-4 w-4 text-white animate-spin" />
                                     <span class="text-gray-200 truncate max-w-[180px]">{{ $syncProgress['current_step'] ?? __('pages.ad_accounts.syncing') }}</span>
                                 @elseif(($syncProgress['status'] ?? '') === 'completed')
-                                    <x-heroicon-s-check-circle class="h-4 w-4 text-[#346538]" />
-                                    <span class="text-[#346538]">{{ __('pages.ad_accounts.sync_complete') }}</span>
+                                    <x-heroicon-s-check-circle class="h-4 w-4 text-green-400" />
+                                    <span class="text-green-400">{{ __('pages.ad_accounts.sync_complete') }}</span>
                                 @elseif(($syncProgress['status'] ?? '') === 'failed')
-                                    <x-heroicon-s-x-circle class="h-4 w-4 text-[#9F2F2D]" />
-                                    <span class="text-[#9F2F2D]">{{ __('pages.ad_accounts.sync_failed') }}</span>
+                                    <x-heroicon-s-x-circle class="h-4 w-4 text-red-400" />
+                                    <span class="text-red-400">{{ __('pages.ad_accounts.sync_failed') }}</span>
                                 @endif
                             </button>
                         @else
@@ -174,8 +174,8 @@
 
             {{-- Bulk Actions Bar --}}
             @if(count($selectedCampaigns) > 0)
-                <div class="mx-4 mb-4 mt-4 p-3 bg-[#E1F3FE] rounded-xl flex items-center gap-4">
-                    <span class="text-sm font-medium text-[#1F6C9F]">
+                <div class="mx-4 mb-4 mt-4 p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl flex items-center gap-4">
+                    <span class="text-sm font-medium text-brand-400">
                         {{ __('pages.ad_accounts.campaigns_selected', ['count' => count($selectedCampaigns)]) }}
                     </span>
                     <div class="flex items-center gap-2">
@@ -295,7 +295,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $campaign['status'] === 'active' ? 'bg-[#EDF3EC] text-[#346538]' : 'bg-[#F1F1EF] text-[#6B6B66]' }}">
+                                    <span class="rounded-full text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 {{ $campaign['status'] === 'active' ? 'bg-green-500/15 text-green-400' : 'bg-white/8 text-gray-400' }}">
                                         {{ $campaign['status'] }}
                                     </span>
                                 </td>
@@ -346,7 +346,7 @@
     @if($showSyncModal)
         <div class="fixed inset-0 z-50 overflow-y-auto" x-data x-init="$el.focus()" @keydown.escape.window="$wire.closeSyncModal()">
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="closeSyncModal"></div>
+                <div class="fixed inset-0 bg-black/60 transition-opacity" wire:click="closeSyncModal"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
                 <div class="inline-block align-bottom bg-gray-900 border border-white/10 rounded-xl px-4 pt-5 pb-4 text-start overflow-hidden sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
 
@@ -358,14 +358,14 @@
                     {{-- QUEUED STATE --}}
                     @if($progressStatus === 'queued')
                         <div wire:poll.2s="pollSyncProgress">
-                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FBF3DB]">
-                                <div class="h-5 w-5 rounded-full bg-[#956400] animate-pulse"></div>
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-amber-500/15">
+                                <div class="h-5 w-5 rounded-full bg-amber-500 animate-pulse"></div>
                             </div>
                             <div class="mt-3 text-center sm:mt-5">
                                 <h3 class="text-base font-semibold tracking-tight text-white">
                                     {{ __('pages.ad_accounts.sync_for_platform', ['platform' => $platformName]) }}
                                 </h3>
-                                <p class="mt-2 text-sm text-[#956400] font-medium">
+                                <p class="mt-2 text-sm text-amber-400 font-medium">
                                     {{ __('pages.ad_accounts.sync_queued') }}
                                 </p>
                                 <p class="mt-1 text-xs text-gray-400">
@@ -377,14 +377,14 @@
                     {{-- RUNNING STATE --}}
                     @elseif($progressStatus === 'running')
                         <div wire:poll.2s="pollSyncProgress">
-                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#E1F3FE]">
-                                <x-heroicon-o-arrow-path class="h-6 w-6 text-[#1F6C9F] animate-spin" />
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-brand-500/15">
+                                <x-heroicon-o-arrow-path class="h-6 w-6 text-brand-400 animate-spin" />
                             </div>
                             <div class="mt-3 text-center sm:mt-5">
                                 <h3 class="text-base font-semibold tracking-tight text-white">
                                     {{ __('pages.ad_accounts.sync_for_platform', ['platform' => $platformName]) }}
                                 </h3>
-                                <p class="mt-2 text-sm text-[#1F6C9F] font-medium">
+                                <p class="mt-2 text-sm text-brand-400 font-medium">
                                     {{ $syncProgress['current_step'] ?? __('pages.ad_accounts.syncing') }}
                                 </p>
                             </div>
@@ -397,11 +397,11 @@
                                             <div class="flex items-start text-xs">
                                                 <div class="flex-shrink-0 mt-0.5 me-2">
                                                     @if(($step['type'] ?? 'info') === 'success')
-                                                        <div class="h-3 w-3 rounded-full bg-[#346538]"></div>
+                                                        <div class="h-3 w-3 rounded-full bg-green-500"></div>
                                                     @elseif(($step['type'] ?? 'info') === 'error')
-                                                        <div class="h-3 w-3 rounded-full bg-[#9F2F2D]"></div>
+                                                        <div class="h-3 w-3 rounded-full bg-red-500"></div>
                                                     @else
-                                                        <div class="h-3 w-3 rounded-full bg-gray-300"></div>
+                                                        <div class="h-3 w-3 rounded-full bg-gray-500"></div>
                                                     @endif
                                                 </div>
                                                 <span class="text-gray-200">{{ $step['message'] }}</span>
@@ -414,12 +414,12 @@
 
                     {{-- COMPLETED STATE --}}
                     @elseif($progressStatus === 'completed')
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#EDF3EC]">
-                            <x-heroicon-s-check-circle class="h-6 w-6 text-[#346538]" />
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-500/15">
+                            <x-heroicon-s-check-circle class="h-6 w-6 text-green-400" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
                             <h3 class="text-base font-semibold tracking-tight text-white">{{ __('pages.ad_accounts.sync_complete') }}</h3>
-                            <p class="mt-1 text-sm text-[#346538] font-medium">
+                            <p class="mt-1 text-sm text-green-400 font-medium">
                                 {{ __('pages.ad_accounts.sync_success_message', ['platform' => $platformName]) }}
                             </p>
                         </div>
@@ -446,9 +446,9 @@
                                     </div>
                                 @endif
                                 @if(isset($syncProgress['stats']['errors']) && $syncProgress['stats']['errors'] > 0)
-                                    <div class="bg-[#FDEBEC] rounded-xl p-3 text-center">
-                                        <p class="stat-num text-[#9F2F2D]">{{ $syncProgress['stats']['errors'] }}</p>
-                                        <p class="text-xs text-[#9F2F2D]">{{ __('common.errors') }}</p>
+                                    <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+                                        <p class="stat-num text-red-400">{{ $syncProgress['stats']['errors'] }}</p>
+                                        <p class="text-xs text-red-400">{{ __('common.errors') }}</p>
                                     </div>
                                 @endif
                             </div>
@@ -464,11 +464,11 @@
                                             <div class="flex items-start text-xs">
                                                 <div class="flex-shrink-0 mt-0.5 me-2">
                                                     @if(($step['type'] ?? 'info') === 'success')
-                                                        <div class="h-2.5 w-2.5 rounded-full bg-[#346538]"></div>
+                                                        <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
                                                     @elseif(($step['type'] ?? 'info') === 'error')
-                                                        <div class="h-2.5 w-2.5 rounded-full bg-[#9F2F2D]"></div>
+                                                        <div class="h-2.5 w-2.5 rounded-full bg-red-500"></div>
                                                     @else
-                                                        <div class="h-2.5 w-2.5 rounded-full bg-gray-300"></div>
+                                                        <div class="h-2.5 w-2.5 rounded-full bg-gray-500"></div>
                                                     @endif
                                                 </div>
                                                 <span class="text-gray-300">{{ $step['message'] }}</span>
@@ -487,12 +487,12 @@
 
                     {{-- FAILED STATE --}}
                     @elseif($progressStatus === 'failed')
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-[#FDEBEC]">
-                            <x-heroicon-s-x-circle class="h-6 w-6 text-[#9F2F2D]" />
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-500/15">
+                            <x-heroicon-s-x-circle class="h-6 w-6 text-red-400" />
                         </div>
                         <div class="mt-3 text-center sm:mt-5">
                             <h3 class="text-base font-semibold tracking-tight text-white">{{ __("Sync Failed") }}</h3>
-                            <p class="mt-2 text-sm text-[#9F2F2D]">
+                            <p class="mt-2 text-sm text-red-400">
                                 {{ $syncProgress['error'] ?? __('pages.ad_accounts.sync_unknown_error') }}
                             </p>
                         </div>
@@ -507,11 +507,11 @@
                                             <div class="flex items-start text-xs">
                                                 <div class="flex-shrink-0 mt-0.5 me-2">
                                                     @if(($step['type'] ?? 'info') === 'success')
-                                                        <div class="h-2.5 w-2.5 rounded-full bg-[#346538]"></div>
+                                                        <div class="h-2.5 w-2.5 rounded-full bg-green-500"></div>
                                                     @elseif(($step['type'] ?? 'info') === 'error')
-                                                        <div class="h-2.5 w-2.5 rounded-full bg-[#9F2F2D]"></div>
+                                                        <div class="h-2.5 w-2.5 rounded-full bg-red-500"></div>
                                                     @else
-                                                        <div class="h-2.5 w-2.5 rounded-full bg-gray-300"></div>
+                                                        <div class="h-2.5 w-2.5 rounded-full bg-gray-500"></div>
                                                     @endif
                                                 </div>
                                                 <span class="text-gray-300">{{ $step['message'] }}</span>
