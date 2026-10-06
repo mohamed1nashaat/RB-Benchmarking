@@ -2,13 +2,13 @@
     <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {{-- Page Header --}}
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">{{ __('pages.global_benchmarks.title') }}</h1>
-            <p class="mt-1 text-sm text-gray-500">{{ __('pages.global_benchmarks.description') }}</p>
+        <div class="mb-6">
+            <h1 class="text-xl font-semibold tracking-tight text-gray-900">{{ __('pages.global_benchmarks.title') }}</h1>
+            <p class="mt-0.5 text-sm text-gray-500">{{ __('pages.global_benchmarks.description') }}</p>
         </div>
 
         {{-- Filters --}}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
+        <div class="card p-4 mb-6">
             <div class="flex flex-wrap items-center gap-4">
 
                 {{-- Platform Tabs --}}
@@ -16,7 +16,7 @@
                     @foreach($this->platforms as $slug => $label)
                         <button
                             wire:click="$set('selectedPlatform', '{{ $slug }}')"
-                            class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $selectedPlatform === $slug ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
+                            class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $selectedPlatform === $slug ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
                         >
                             {{ $label }}
                         </button>
@@ -24,11 +24,11 @@
                 </div>
 
                 {{-- Industry Filter --}}
-                <div class="flex items-center gap-2 ml-auto">
+                <div class="flex items-center gap-2 ms-auto">
                     <label class="text-sm font-medium text-gray-600">{{ __('filters.industry') }}:</label>
                     <select
                         wire:model.live="selectedIndustry"
-                        class="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        class="input-field py-1.5"
                     >
                         <option value="">{{ __('filters.all') }}</option>
                         @foreach($availableIndustries as $ind)
@@ -41,7 +41,7 @@
         </div>
 
         {{-- Benchmarks Table --}}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+        <div class="card overflow-hidden mb-6">
             @if(empty($tableData))
                 <div class="text-center py-16 text-gray-400">
                     <x-heroicon-o-chart-bar class="h-12 w-12 mx-auto mb-3 opacity-40" />
@@ -72,15 +72,15 @@
                                                 @php $b = $metricData[$metric]; @endphp
                                                 <div class="flex flex-col items-center gap-0.5">
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                        <span class="mr-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_excellent') }}</span>
+                                                        <span class="me-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_excellent') }}</span>
                                                         {{ number_format($b->percentile_75, 2) }}
                                                     </span>
                                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                        <span class="mr-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_avg') }}</span>
+                                                        <span class="me-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_avg') }}</span>
                                                         {{ number_format($b->percentile_50, 2) }}
                                                     </span>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                                                        <span class="mr-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_good') }}</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                                        <span class="me-1 text-gray-400 text-[10px]">{{ __('pages.global_benchmarks.percentile_good') }}</span>
                                                         {{ number_format($b->percentile_25, 2) }}
                                                     </span>
                                                 </div>
@@ -99,12 +99,12 @@
 
         {{-- Sources Panel --}}
         @if(!empty($sources))
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <div class="card p-5">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ __('pages.global_benchmarks.sources_label') }}</h3>
                 <div class="flex flex-wrap gap-2">
                     @foreach($sources as $source)
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                            <x-heroicon-o-document-text class="h-3 w-3 mr-1.5 opacity-60" />
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                            <x-heroicon-o-document-text class="h-3 w-3 me-1.5 opacity-60" />
                             {{ $source }}
                         </span>
                     @endforeach

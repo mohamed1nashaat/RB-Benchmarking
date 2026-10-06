@@ -14,12 +14,14 @@ class OllamaService
     private string $host;
     private string $model;
     private string $embedModel;
+    private ?string $apiKey;
 
     public function __construct()
     {
         $this->host       = rtrim(config('services.ollama.host', 'http://localhost:11434'), '/');
         $this->model      = config('services.ollama.model', 'llama3.1:70b');
         $this->embedModel = config('services.ollama.embed_model', 'nomic-embed-text');
+        $this->apiKey     = config('services.ollama.api_key') ?: null;
     }
 
     /**
@@ -82,7 +84,7 @@ class OllamaService
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_HTTPHEADER     => $this->buildHeaders(),
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT        => 120,
             CURLOPT_CONNECTTIMEOUT => 5,
@@ -149,7 +151,7 @@ class OllamaService
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_HTTPHEADER     => $this->buildHeaders(),
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT        => 120,
             CURLOPT_CONNECTTIMEOUT => 5,
@@ -267,6 +269,15 @@ class OllamaService
         return implode("\n", $lines);
     }
 
+    private function buildHeaders(): array
+    {
+        $headers = ['Content-Type: application/json'];
+        if ($this->apiKey) {
+            $headers[] = 'Authorization: Bearer ' . $this->apiKey;
+        }
+        return $headers;
+    }
+
     /**
      * Generic cURL request to Ollama API. Returns decoded JSON array.
      * Throws \RuntimeException on network/parse failure.
@@ -277,7 +288,7 @@ class OllamaService
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => json_encode($data),
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_HTTPHEADER     => $this->buildHeaders(),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 60,
             CURLOPT_CONNECTTIMEOUT => 5,

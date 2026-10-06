@@ -79,6 +79,7 @@ return [
         'host'        => env('OLLAMA_HOST', 'http://localhost:11434'),
         'model'       => env('OLLAMA_MODEL', 'llama3.1:70b'),
         'embed_model' => env('OLLAMA_EMBED_MODEL', 'nomic-embed-text'),
+        'api_key'     => env('OLLAMA_API_KEY'),
     ],
 
 ];
