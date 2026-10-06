@@ -4,6 +4,7 @@
         ['name' => 'global-benchmarks', 'href' => '/global-benchmarks', 'label' => 'navigation.global_benchmarks'],
         ['name' => 'calculator', 'href' => '/calculator', 'label' => 'navigation.calculator'],
         ['name' => 'reports', 'href' => '/reports', 'label' => 'navigation.reports'],
+        ['name' => 'media-planner', 'href' => '/media-planner', 'label' => 'navigation.media_planner'],
     ];
 
     if (auth()->check() && auth()->user()->isSuperAdmin()) {
