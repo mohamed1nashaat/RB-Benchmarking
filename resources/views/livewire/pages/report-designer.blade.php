@@ -1,5 +1,5 @@
 @php
-    $data    = $this->widgetData->dataForReport($report);
+    $data    = $widgetData->dataForReport($report);
     $kpis    = $data['kpis'];
     $trend   = $data['trend'];
     $splits  = $data['platform_split'];
@@ -39,8 +39,35 @@
         {{-- Report name --}}
         <span class="text-sm font-semibold text-white truncate max-w-[220px]">{{ $report->name }}</span>
         <span class="text-[11px] text-gray-500 font-mono">{{ $report->periodLabel() }}</span>
+        @if($report->client_name)
+            <span class="text-[11px] text-gray-500">· {{ $report->client_name }}</span>
+        @endif
 
         <div class="flex-1"></div>
+
+        {{-- PDF export --}}
+        <a href="{{ route('report-pdf', $report->id) }}" target="_blank"
+           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/8 text-gray-300 hover:bg-white/12 hover:text-white transition-colors">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+            </svg>
+            PDF
+        </a>
+
+        {{-- Generate AI --}}
+        @if($report->ad_account_id)
+        <button wire:click="generateAi"
+                wire:loading.attr="disabled"
+                wire:target="generateAi"
+                x-data
+                x-on:ai-generating.window="$el.querySelector('span').textContent = 'Queued ✓'; setTimeout(() => $el.querySelector('span').textContent = 'Generate AI', 3000)"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white/8 text-gray-300 hover:bg-white/12 hover:text-white transition-colors">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/>
+            </svg>
+            <span>Generate AI</span>
+        </button>
+        @endif
 
         {{-- Preview toggle --}}
         <button wire:click="togglePreview"

@@ -22,11 +22,6 @@ class SharedReport extends Component
         $this->report = Report::where('share_token', $token)->firstOrFail();
     }
 
-    public function getWidgetDataProperty(): ReportWidgetDataService
-    {
-        return $this->widgetData;
-    }
-
     public function render()
     {
         return view('livewire.pages.shared-report', [

@@ -15,7 +15,6 @@ class ReportDesigner extends Component
     public array  $layout          = ['blocks' => []];
     public ?string $selectedBlockId = null;
     public bool   $preview         = false;
-    public bool   $saved           = false;
 
     // Config panel live-edit fields
     public string $cfgTitle    = '';
@@ -167,13 +166,13 @@ class ReportDesigner extends Component
     private function autoSave(): void
     {
         $this->report->update(['layout' => $this->layout]);
+        $this->dispatch('block-saved');
     }
 
     public function save(): void
     {
         $this->report->update(['layout' => $this->layout]);
-        $this->saved = true;
-        $this->dispatch('saved');
+        $this->dispatch('block-saved');
     }
 
     public function togglePreview(): void
@@ -204,13 +203,6 @@ class ReportDesigner extends Component
             ],
         ];
         $this->autoSave();
-    }
-
-    // ─── Computed Data ────────────────────────────────────────────────────────
-
-    public function getWidgetDataProperty(): array
-    {
-        return $this->widgetData->dataForReport($this->report);
     }
 
     public function render()
