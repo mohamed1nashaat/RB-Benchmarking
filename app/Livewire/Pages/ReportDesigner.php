@@ -180,6 +180,17 @@ class ReportDesigner extends Component
         $this->preview = !$this->preview;
     }
 
+    public function generateAi(): void
+    {
+        if (!$this->report->ad_account_id) {
+            return;
+        }
+
+        $this->report->update(['status' => 'generating']);
+        \App\Jobs\GenerateReport::dispatch($this->report->id);
+        $this->dispatch('ai-generating');
+    }
+
     public function generateShareLink(): void
     {
         if (!$this->report->share_token) {

@@ -95,15 +95,13 @@
              class="flex items-center gap-1 text-[11px] text-gray-500">
             <span class="h-1 w-1 rounded-full bg-amber-400 animate-pulse"></span> Saving…
         </div>
-        @if($saved)
-        <div x-data="{show:true}" x-init="setTimeout(()=>show=false,2000)" x-show="show"
+        <div x-data="{show:false}" x-on:block-saved.window="show=true; clearTimeout($data._t); $data._t=setTimeout(()=>show=false,2000)" x-show="show"
              class="text-[11px] text-green-400 flex items-center gap-1">
             <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
             </svg>
             Saved
         </div>
-        @endif
     </div>
 
     {{-- ═══ LAYOUT (below top bar) ════════════════════════════════════════════ --}}
@@ -129,6 +127,9 @@
                 @endforeach
             </div>
             @endforeach
+            <div class="mt-4 px-3 pb-2">
+                <p class="text-[10px] text-gray-700 leading-relaxed">Drag blocks to reorder. Click Edit to configure. Changes auto-save.</p>
+            </div>
         </div>
         @endunless
 
