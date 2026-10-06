@@ -20,9 +20,9 @@
     {{-- Header --}}
     <div class="flex items-center justify-between gap-4">
         <div class="min-w-0">
-            <h2 class="section-title">
+            <h1 class="text-xl font-semibold tracking-tight text-gray-900">
                 {{ __('pages.clients.title') }}
-            </h2>
+            </h1>
             <p class="mt-1 text-sm text-gray-500">
                 {{ __('pages.clients.description') }}
             </p>

@@ -2,9 +2,9 @@
     {{-- Header --}}
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
-            <h2 class="section-title">
+            <h1 class="text-xl font-semibold tracking-tight text-gray-900">
                 {{ __('pages.spend_verification.title') }}
-            </h2>
+            </h1>
             <p class="mt-1 text-sm text-gray-500">
                 {{ __('pages.spend_verification.description') }}
             </p>

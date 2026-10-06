@@ -3,9 +3,9 @@
     <div class="md:flex md:items-center md:justify-between">
         <div class="flex-1 min-w-0">
             <div class="flex items-center">
-                <h2 class="section-title">
+                <h1 class="text-xl font-semibold tracking-tight text-gray-900">
                     {{ __('navigation.integrations') }}
-                </h2>
+                </h1>
                 <div class="ms-3 flex items-center">
                     @php
                         $allHealthy = collect($integrations)->where('status', 'active')->count() === count($integrations) && count($integrations) > 0;

@@ -65,7 +65,7 @@
                         x-transition:leave="transition duration-150 ease-in"
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 -translate-y-1"
-                        class="absolute top-14 inset-x-0 border-t border-neutral-200 bg-white shadow-sm"
+                        class="absolute top-14 inset-x-0 border-t border-neutral-200 bg-white"
                         x-cloak
                     >
                         <div class="px-4 py-3 space-y-0.5">

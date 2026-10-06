@@ -10,19 +10,19 @@
         {{-- Page Header + Mode Toggle --}}
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-                <h2 class="section-title">{{ __('pages.calculator.hero_title') }}</h2>
-                <p class="mt-1 text-sm text-gray-500">{{ __('pages.calculator.hero_description') }}</p>
+                <h1 class="text-xl font-semibold tracking-tight text-gray-900">{{ __('pages.calculator.hero_title') }}</h1>
+                <p class="mt-0.5 text-sm text-gray-500">{{ __('pages.calculator.hero_description') }}</p>
             </div>
             {{-- Simple / Advanced toggle --}}
             <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-auto">
                 <button type="button"
                         wire:click="$set('viewMode', 'simple')"
-                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'simple' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'simple' ? 'bg-white text-gray-900 border border-gray-200' : 'text-gray-500 hover:text-gray-700' }}">
                     {{ __('pages.calculator.mode_simple') }}
                 </button>
                 <button type="button"
                         wire:click="$set('viewMode', 'advanced')"
-                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'advanced' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                        class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors {{ $viewMode === 'advanced' ? 'bg-white text-gray-900 border border-gray-200' : 'text-gray-500 hover:text-gray-700' }}">
                     {{ __('pages.calculator.mode_advanced') }}
                 </button>
             </div>
