@@ -62,6 +62,9 @@ Route::middleware(['auth', 'set-locale', 'web-tenant', 'csp'])->group(function (
     Route::get('/clients/{id}/seo-report/excel', [SeoReportExportController::class, 'excel'])->name('client-seo-report-excel');
     Route::get('/campaigns/{campaignId}/metrics', Pages\CampaignMetrics::class)->name('campaign-metrics');
     Route::get('/integrations', Pages\Integrations::class)->name('integrations');
+    Route::get('/reports', Pages\Reports::class)->name('reports');
+    Route::get('/reports/create', Pages\ReportBuilder::class)->name('report-builder');
+    Route::get('/reports/{id}', Pages\ReportBuilder::class)->name('report-view');
 
     // OAuth redirect routes for platform connections
     Route::get('/auth/facebook/redirect', function (Request $request) {

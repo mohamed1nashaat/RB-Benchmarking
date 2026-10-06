@@ -3,6 +3,7 @@
         ['name' => 'benchmarks', 'href' => '/benchmarks', 'label' => 'navigation.benchmarks'],
         ['name' => 'global-benchmarks', 'href' => '/global-benchmarks', 'label' => 'navigation.global_benchmarks'],
         ['name' => 'calculator', 'href' => '/calculator', 'label' => 'navigation.calculator'],
+        ['name' => 'reports', 'href' => '/reports', 'label' => 'navigation.reports'],
     ];
 
     if (auth()->check() && auth()->user()->isSuperAdmin()) {
