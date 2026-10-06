@@ -16,6 +16,7 @@ class ReportBuilder extends Component
     public ?int   $adAccountId  = null;
     public string $platform    = '';
     public string $industry    = '';
+    public string $language    = 'en';
 
     public ?Report $report     = null;
     public bool $generating    = false;
@@ -30,6 +31,7 @@ class ReportBuilder extends Component
             $this->adAccountId = $this->report->ad_account_id;
             $this->platform    = $this->report->platform ?? '';
             $this->industry    = $this->report->industry ?? '';
+            $this->language    = $this->report->language ?? 'en';
             $this->step        = $this->report->isReady() ? 3 : 2;
         } else {
             $this->periodEnd   = now()->format('Y-m-d');
@@ -65,6 +67,7 @@ class ReportBuilder extends Component
                 'name'        => 'required|string|max:255',
                 'periodStart' => 'required|date',
                 'periodEnd'   => 'required|date|after_or_equal:periodStart',
+                'language'    => 'required|in:en,ar',
             ]);
 
             $tenantId = auth()->user()->tenant_id;
@@ -78,6 +81,7 @@ class ReportBuilder extends Component
                 'period_end'   => $this->periodEnd,
                 'platform'     => $this->platform ?: null,
                 'industry'     => $this->industry ?: null,
+                'language'     => $this->language,
                 'created_by'   => auth()->id(),
             ]);
         }

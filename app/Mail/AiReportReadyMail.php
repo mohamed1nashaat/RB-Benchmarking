@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Report;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class AiReportReadyMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(public Report $report) {}
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'Your AI Report is Ready: ' . $this->report->name,
+        );
+    }
+
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.ai-report-ready',
+        );
+    }
+}

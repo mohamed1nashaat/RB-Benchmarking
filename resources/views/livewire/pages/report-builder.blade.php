@@ -104,6 +104,21 @@
                         </select>
                     </div>
                 </div>
+
+                {{-- Language toggle --}}
+                <div>
+                    <label class="block text-[13px] font-medium text-neutral-700 mb-1.5">Report language</label>
+                    <div class="flex rounded-md border border-neutral-200 overflow-hidden w-fit">
+                        <button type="button" wire:click="$set('language','en')"
+                                class="{{ $language === 'en' ? 'bg-brand-600 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50' }} px-5 py-2 text-sm font-medium transition-colors">
+                            English
+                        </button>
+                        <button type="button" wire:click="$set('language','ar')"
+                                class="{{ $language === 'ar' ? 'bg-brand-600 text-white' : 'bg-white text-neutral-700 hover:bg-neutral-50' }} px-5 py-2 text-sm font-medium transition-colors border-l border-neutral-200">
+                            العربية
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="px-6 py-4 flex justify-end">

@@ -26,6 +26,7 @@ class Report extends Model
         'metadata',
         'created_by',
         'sent_at',
+        'language',
     ];
 
     protected $casts = [

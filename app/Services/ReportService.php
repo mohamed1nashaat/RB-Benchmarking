@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\AiReportReadyMail;
 use App\Models\AdMetric;
 use App\Models\IndustryBenchmark;
 use App\Models\Report;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ReportService
 {
@@ -48,8 +50,23 @@ Format each section clearly with the heading on its own line followed by the con
                     'model'        => config('services.ollama.model', 'llama3.1:70b'),
                     'period'       => $report->periodLabel(),
                     'word_count'   => str_word_count($narrative),
+                    'language'     => $report->language ?? 'en',
                 ],
             ]);
+
+            // Notify the report creator by email
+            try {
+                $report->load('creator');
+                if ($report->creator?->email) {
+                    Mail::to($report->creator->email)->queue(new AiReportReadyMail($report));
+                    $report->update(['sent_at' => now()]);
+                }
+            } catch (\Throwable $mailEx) {
+                Log::warning('Failed to queue report ready email', [
+                    'report_id' => $report->id,
+                    'error'     => $mailEx->getMessage(),
+                ]);
+            }
         } catch (\Throwable $e) {
             $report->update([
                 'status'   => 'failed',
@@ -119,6 +136,11 @@ Format each section clearly with the heading on its own line followed by the con
     private function buildSystemPrompt(Report $report, array $metrics): string
     {
         $bm = $metrics['benchmarks'] ?? [];
+
+        if (($report->language ?? 'en') === 'ar') {
+            return $this->buildArabicSystemPrompt($report, $metrics, $bm);
+        }
+
         $lines = [
             'You are an expert marketing analyst at Red Bananas, a MENA-focused performance marketing agency.',
             'You write clear, data-driven client reports in English with specific numbers and actionable advice.',
@@ -165,6 +187,49 @@ Format each section clearly with the heading on its own line followed by the con
 
         $lines[] = '';
         $lines[] = 'Today: ' . now()->format('Y-m-d') . '. Write for a marketing manager, not a technical audience.';
+
+        return implode("\n", $lines);
+    }
+
+    private function buildArabicSystemPrompt(Report $report, array $metrics, array $bm): string
+    {
+        $lines = [
+            'أنت محلل إعلانات رقمية خبير في وكالة ريد بانانا للتسويق الرقمي في منطقة الشرق الأوسط وشمال أفريقيا.',
+            'تكتب تقارير أداء الحملات الإعلانية باللغة العربية الفصحى بأسلوب واضح ومهني.',
+            'العملة المستخدمة هي الريال السعودي (SAR). استخدم دائماً معايير السوق الإقليمية للمقارنة.',
+            '',
+            '=== سياق التقرير ===',
+            'العميل: ' . ($report->adAccount?->account_name ?? 'جميع الحسابات'),
+            'الفترة: ' . $report->periodLabel(),
+            'المنصة: ' . ucfirst($report->platform ?? 'جميع المنصات'),
+            'القطاع: ' . ($report->industry ?? 'غير محدد'),
+            '',
+            '=== أداء الحملات ===',
+            'عدد الحملات النشطة: ' . $metrics['campaigns'],
+            'إجمالي الإنفاق: SAR ' . number_format($metrics['spend'], 2),
+            'عدد الظهور: ' . number_format($metrics['impressions']),
+            'عدد النقرات: ' . number_format($metrics['clicks']),
+            'نسبة النقر (CTR): ' . $metrics['ctr'] . '%',
+            'تكلفة النقرة (CPC): SAR ' . $metrics['cpc'],
+            'تكلفة الألف ظهور (CPM): SAR ' . $metrics['cpm'],
+            'عدد العملاء المحتملين: ' . number_format($metrics['leads']),
+            $metrics['cpl'] > 0 ? 'تكلفة العميل المحتمل (CPL): SAR ' . $metrics['cpl'] : 'تكلفة العميل المحتمل: غير متاح',
+        ];
+
+        if (!empty($bm)) {
+            $lines[] = '';
+            $lines[] = '=== معايير القطاع في منطقة الشرق الأوسط ===';
+            foreach ($bm as $metric => $percentiles) {
+                $lines[] = strtoupper($metric) . ': P25=' . $percentiles['p25'] . '  P50=' . $percentiles['p50'] . '  P75=' . $percentiles['p75'];
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'اكتب التقرير بالكامل باللغة العربية مع الأقسام التالية:';
+        $lines[] = '1. الملخص التنفيذي (جملتان إلى ثلاث جمل، أبرز الأرقام الرئيسية)';
+        $lines[] = '2. تحليل الأداء (تفصيل شامل مقارنةً بمعايير السوق)';
+        $lines[] = '3. التوصيات (ثلاث توصيات محددة مع التأثير المتوقع بالريال السعودي)';
+        $lines[] = 'اليوم: ' . now()->format('Y-m-d') . '. اكتب للمدير التسويقي وليس للمختص التقني.';
 
         return implode("\n", $lines);
     }
