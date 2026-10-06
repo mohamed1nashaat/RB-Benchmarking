@@ -138,10 +138,12 @@
                                         </svg>
                                         Design
                                     </a>
-                                    <a href="{{ route('report-builder', ['id' => $report->id]) }}"
+                                    @if($report->share_token)
+                                    <a href="{{ route('report-share', $report->share_token) }}" target="_blank"
                                        class="text-xs font-medium text-gray-400 hover:text-white transition-colors">
-                                        {{ $report->isReady() ? __('common.view') : __('common.edit') }}
+                                        Share
                                     </a>
+                                    @endif
                                     <button wire:click="deleteReport({{ $report->id }})"
                                             wire:confirm="Delete this report?"
                                             class="text-xs font-medium text-gray-500 hover:text-red-400 transition-colors">

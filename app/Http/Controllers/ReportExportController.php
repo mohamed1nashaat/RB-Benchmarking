@@ -11,10 +11,6 @@ class ReportExportController extends Controller
     {
         $report = Report::findOrFail($id); // BelongsToTenant scope auto-applied
 
-        if ($report->status !== 'ready') {
-            abort(404, 'Report is not ready for export.');
-        }
-
         $tenant = auth()->user()->tenant;
 
         $pdf = Pdf::loadView('exports.report-pdf', compact('report', 'tenant'))

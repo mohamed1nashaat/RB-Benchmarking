@@ -20,6 +20,18 @@
         'snapchat'  => 'Snapchat',
         'linkedin'  => 'LinkedIn',
     ];
+
+    $weeklyTrend = (function(array $t): array {
+        $buckets = []; $keys = ['spend','clicks','leads','impr'];
+        foreach ($t['labels'] as $i => $lbl) {
+            $week = \Carbon\Carbon::createFromFormat('d M', $lbl . ' ' . now()->year)->startOfWeek()->format('d M');
+            if (!isset($buckets[$week])) { $buckets[$week] = array_fill_keys($keys, 0); }
+            foreach ($keys as $k) { $buckets[$week][$k] += ($t[$k][$i] ?? 0); }
+        }
+        $out = ['labels'=>[], 'spend'=>[], 'clicks'=>[], 'leads'=>[], 'impr'=>[]];
+        foreach ($buckets as $w => $vals) { $out['labels'][] = $w; foreach ($keys as $k) { $out[$k][] = $vals[$k]; } }
+        return $out;
+    })($trend);
 @endphp
 
 <div class="flex flex-col h-screen overflow-hidden" style="background:#0d0f16;">
@@ -95,11 +107,13 @@
                 {{-- TREND LINE CHART --}}
                 @elseif($block['type'] === 'chart_line')
                 @php
-                    $chartMetric = $cfg['metric'] ?? 'spend';
-                    $chartTitle  = $cfg['title'] ?? 'Trend';
-                    $chartData   = json_encode($trend[$chartMetric] ?? []);
-                    $chartLabels = json_encode($trend['labels'] ?? []);
-                    $chartId     = 'chart_' . $block['id'];
+                    $chartMetric  = $cfg['metric'] ?? 'spend';
+                    $chartTitle   = $cfg['title'] ?? 'Trend';
+                    $chartGrain   = $cfg['grain'] ?? 'day';
+                    $trendSrc     = $chartGrain === 'week' ? $weeklyTrend : $trend;
+                    $chartData    = json_encode($trendSrc[$chartMetric] ?? []);
+                    $chartLabels  = json_encode($trendSrc['labels'] ?? []);
+                    $chartId      = 'chart_' . $block['id'];
                 @endphp
                 <div class="p-5">
                     <p class="text-sm font-semibold text-gray-100 mb-4">{{ $chartTitle }}</p>

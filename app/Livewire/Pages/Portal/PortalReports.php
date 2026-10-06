@@ -12,7 +12,7 @@ class PortalReports extends Component
     {
         $adAccountId = Auth::user()->client_ad_account_id;
 
-        $reports = Report::where('status', 'ready')
+        $reports = Report::where(fn ($q) => $q->where('status', 'ready')->orWhereNotNull('share_token'))
             ->when($adAccountId, fn ($q) => $q->where('ad_account_id', $adAccountId))
             ->latest()
             ->get();

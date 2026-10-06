@@ -187,7 +187,7 @@ class ReportDesigner extends Component
         }
 
         $this->report->update(['status' => 'generating']);
-        \App\Jobs\GenerateReport::dispatch($this->report->id);
+        \App\Jobs\GenerateReport::dispatch($this->report);
         $this->dispatch('ai-generating');
     }
 
