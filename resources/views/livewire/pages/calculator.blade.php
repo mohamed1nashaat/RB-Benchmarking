@@ -160,66 +160,110 @@
                             $resultMode          = $result['input']['mode'] ?? $calculationMode;
                         @endphp
 
-                        {{-- Estimated Budget Range (target mode) --}}
-                        @if(!empty($result['budget']))
+                        @if($resultMode === 'target_to_budget' && !empty($result['budget']))
+                            {{-- TARGET MODE: Budget needed per performance scenario --}}
+                            @php
+                                $targetNum = $result['input']['target'] ?? $targetResults ?? 0;
+                                $scenarioBudgetConfig = [
+                                    'excellent' => ['label' => __('pages.calculator.scenarios.excellent'), 'color' => 'text-green-400'],
+                                    'good'      => ['label' => __('pages.calculator.scenarios.good'),      'color' => 'text-teal-400'],
+                                    'average'   => ['label' => __('pages.calculator.scenarios.average'),   'color' => 'text-amber-400'],
+                                    'poor'      => ['label' => __('pages.calculator.scenarios.poor'),      'color' => 'text-red-400'],
+                                ];
+                            @endphp
+
+                            {{-- Recommended budget hero --}}
                             <div class="card p-6 mb-4">
-                                <p class="text-sm text-gray-500 mb-1">{{ __('pages.calculator.estimated_budget') }}</p>
-                                <div class="flex items-center gap-3 flex-wrap">
-                                    <span class="text-2xl font-bold text-white">{{ $this->formatCurrency($result['budget']['poor'] ?? 0) }}</span>
-                                    <span class="text-gray-400 text-xl">→</span>
-                                    <span class="text-2xl font-bold text-white">{{ $this->formatCurrency($result['budget']['excellent'] ?? 0) }}</span>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">{{ __('pages.calculator.estimated_budget') }}</p>
+                                <p class="text-3xl font-bold text-white mb-1">{{ $this->formatCurrency($result['budget']['average'] ?? 0) }}</p>
+                                <p class="text-sm text-gray-500">{{ __('pages.calculator.to_achieve') }} <span class="text-white font-semibold">{{ $this->formatNumber($targetNum) }} {{ $primaryLabel }}</span> {{ __('pages.calculator.at_average_performance') }}</p>
+                            </div>
+
+                            {{-- Budget by scenario grid --}}
+                            <div class="card p-5 mb-4">
+                                <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-3">{{ __('pages.calculator.budget_by_scenario') }}</p>
+                                <div class="grid grid-cols-4 gap-2">
+                                    @foreach($scenarioBudgetConfig as $scenarioKey => $meta)
+                                        @php $scenarioBudget = $result['budget'][$scenarioKey] ?? null; @endphp
+                                        <div class="text-center p-3 rounded-lg {{ $scenarioKey === 'average' ? 'bg-white/8 ring-1 ring-white/15' : 'bg-gray-950' }}">
+                                            <p class="text-xs font-semibold {{ $meta['color'] }} mb-2">{{ $meta['label'] }}</p>
+                                            <p class="text-base font-bold text-white leading-tight">{{ $scenarioBudget ? $this->formatCurrency($scenarioBudget) : '-' }}</p>
+                                            @if($scenarioKey === 'average')
+                                                <p class="text-[10px] text-gray-400 mt-1">recommended</p>
+                                            @endif
+                                        </div>
+                                    @endforeach
                                 </div>
-                                <p class="text-xs text-gray-400 mt-2">{{ __('pages.calculator.budget_range') }} ({{ __('pages.calculator.scenarios.poor') }} → {{ __('pages.calculator.scenarios.excellent') }})</p>
+                            </div>
+
+                            {{-- Secondary metrics at recommended (average) budget --}}
+                            <div class="grid grid-cols-3 gap-4 mb-4">
+                                <div class="card p-4">
+                                    <p class="text-xs text-gray-500 mb-1">{{ __('kpis.impressions') }}</p>
+                                    <p class="text-sm text-gray-400">{{ __('pages.calculator.at_avg_budget') }}</p>
+                                    <p class="text-lg font-bold text-white">{{ $this->formatNumber($averagePrediction['impressions']['value'] ?? 0) }}</p>
+                                </div>
+                                <div class="card p-4">
+                                    <p class="text-xs text-gray-500 mb-1">{{ __('kpis.clicks') }}</p>
+                                    <p class="text-sm text-gray-400">{{ __('pages.calculator.at_avg_budget') }}</p>
+                                    <p class="text-lg font-bold text-white">{{ $this->formatNumber($averagePrediction['clicks']['value'] ?? 0) }}</p>
+                                </div>
+                                <div class="card p-4">
+                                    <p class="text-xs text-gray-500 mb-1">{{ __('pages.calculator.cost_per_result') }}</p>
+                                    <p class="text-sm text-gray-400">{{ __('pages.calculator.at_avg_budget') }}</p>
+                                    <p class="text-lg font-bold text-white">{{ $averagePrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
+                                </div>
+                            </div>
+
+                        @else
+                            {{-- BUDGET MODE: Results range across scenarios --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                {{-- Primary Result Range --}}
+                                <div class="card p-5 sm:col-span-3">
+                                    <p class="text-sm font-medium text-gray-500 mb-3">{{ $primaryLabel }} {{ __('pages.calculator.range') }}</p>
+                                    <div class="flex items-center justify-between gap-4">
+                                        <div class="text-center">
+                                            <p class="text-xs text-red-500 font-medium mb-1">{{ __('pages.calculator.scenarios.poor') }}</p>
+                                            <p class="text-2xl font-bold text-white">{{ $this->formatNumber($poorPrediction['primary_result']['value'] ?? 0) }}</p>
+                                        </div>
+                                        <div class="flex-1 h-2 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-full"></div>
+                                        <div class="text-center">
+                                            <p class="text-xs text-amber-500 font-medium mb-1">{{ __('pages.calculator.scenarios.average') }}</p>
+                                            <p class="text-2xl font-bold text-white">{{ $this->formatNumber($averagePrediction['primary_result']['value'] ?? 0) }}</p>
+                                        </div>
+                                        <div class="flex-1 h-2 bg-gradient-to-r from-yellow-200 to-green-200 rounded-full"></div>
+                                        <div class="text-center">
+                                            <p class="text-xs text-green-600 font-medium mb-1">{{ __('pages.calculator.scenarios.excellent') }}</p>
+                                            <p class="text-2xl font-bold text-white">{{ $this->formatNumber($excellentPrediction['primary_result']['value'] ?? 0) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Impressions --}}
+                                <div class="card p-4">
+                                    <p class="text-xs text-gray-500 mb-1">{{ __('kpis.impressions') }}</p>
+                                    <p class="text-sm font-semibold text-gray-500">{{ $this->formatNumber($poorPrediction['impressions']['value'] ?? 0) }}</p>
+                                    <p class="text-xs text-gray-400">→</p>
+                                    <p class="text-lg font-bold text-white">{{ $this->formatNumber($excellentPrediction['impressions']['value'] ?? 0) }}</p>
+                                </div>
+
+                                {{-- Clicks --}}
+                                <div class="card p-4">
+                                    <p class="text-xs text-gray-500 mb-1">{{ __('kpis.clicks') }}</p>
+                                    <p class="text-sm font-semibold text-gray-500">{{ $this->formatNumber($poorPrediction['clicks']['value'] ?? 0) }}</p>
+                                    <p class="text-xs text-gray-400">→</p>
+                                    <p class="text-lg font-bold text-white">{{ $this->formatNumber($excellentPrediction['clicks']['value'] ?? 0) }}</p>
+                                </div>
+
+                                {{-- Cost per result --}}
+                                <div class="card p-4">
+                                    <p class="text-xs text-gray-500 mb-1">{{ __('pages.calculator.cost_per_result') }}</p>
+                                    <p class="text-sm font-semibold text-gray-500">{{ $excellentPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
+                                    <p class="text-xs text-gray-400">→</p>
+                                    <p class="text-lg font-bold text-white">{{ $poorPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
+                                </div>
                             </div>
                         @endif
-
-                        {{-- Results Range Cards --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                            {{-- Primary Result Range --}}
-                            <div class="card p-5 sm:col-span-3">
-                                <p class="text-sm font-medium text-gray-500 mb-3">{{ $primaryLabel }} {{ __('pages.calculator.range') }}</p>
-                                <div class="flex items-center justify-between gap-4">
-                                    <div class="text-center">
-                                        <p class="text-xs text-red-500 font-medium mb-1">{{ __('pages.calculator.scenarios.poor') }}</p>
-                                        <p class="text-2xl font-bold text-white">{{ $this->formatNumber($poorPrediction['primary_result']['value'] ?? 0) }}</p>
-                                    </div>
-                                    <div class="flex-1 h-2 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-full"></div>
-                                    <div class="text-center">
-                                        <p class="text-xs text-amber-500 font-medium mb-1">{{ __('pages.calculator.scenarios.average') }}</p>
-                                        <p class="text-2xl font-bold text-white">{{ $this->formatNumber($averagePrediction['primary_result']['value'] ?? 0) }}</p>
-                                    </div>
-                                    <div class="flex-1 h-2 bg-gradient-to-r from-yellow-200 to-green-200 rounded-full"></div>
-                                    <div class="text-center">
-                                        <p class="text-xs text-green-600 font-medium mb-1">{{ __('pages.calculator.scenarios.excellent') }}</p>
-                                        <p class="text-2xl font-bold text-white">{{ $this->formatNumber($excellentPrediction['primary_result']['value'] ?? 0) }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Impressions --}}
-                            <div class="card p-4">
-                                <p class="text-xs text-gray-500 mb-1">{{ __('kpis.impressions') }}</p>
-                                <p class="text-sm font-semibold text-gray-500">{{ $this->formatNumber($poorPrediction['impressions']['value'] ?? 0) }}</p>
-                                <p class="text-xs text-gray-400">→</p>
-                                <p class="text-lg font-bold text-white">{{ $this->formatNumber($excellentPrediction['impressions']['value'] ?? 0) }}</p>
-                            </div>
-
-                            {{-- Clicks --}}
-                            <div class="card p-4">
-                                <p class="text-xs text-gray-500 mb-1">{{ __('kpis.clicks') }}</p>
-                                <p class="text-sm font-semibold text-gray-500">{{ $this->formatNumber($poorPrediction['clicks']['value'] ?? 0) }}</p>
-                                <p class="text-xs text-gray-400">→</p>
-                                <p class="text-lg font-bold text-white">{{ $this->formatNumber($excellentPrediction['clicks']['value'] ?? 0) }}</p>
-                            </div>
-
-                            {{-- Cost per result --}}
-                            <div class="card p-4">
-                                <p class="text-xs text-gray-500 mb-1">{{ __('pages.calculator.cost_per_result') }}</p>
-                                <p class="text-sm font-semibold text-gray-500">{{ $excellentPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
-                                <p class="text-xs text-gray-400">→</p>
-                                <p class="text-lg font-bold text-white">{{ $poorPrediction['cost_per_result']['cost_per_conversion'] ?? '-' }}</p>
-                            </div>
-                        </div>
 
                         {{-- Hint to switch to advanced --}}
                         <p class="text-xs text-gray-400 text-center">
@@ -508,6 +552,7 @@
 
                         {{-- Recommended Budget (target mode) --}}
                         @if(!empty($result['budget']))
+                            @php $targetNum = $result['input']['target'] ?? $targetResults ?? 0; @endphp
                             <div class="kpi-card">
                                 <div class="flex items-center gap-4">
                                     <div class="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
@@ -518,11 +563,16 @@
                                         <p class="kpi-value">{{ $this->formatCurrency($result['budget']['recommended']) }}</p>
                                     </div>
                                 </div>
-                                <div class="mt-4 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-                                    <span>{{ __('pages.calculator.budget_range') }}:</span>
-                                    <span class="font-medium text-white">{{ $this->formatCurrency($result['budget']['poor'] ?? 0) }}</span>
-                                    <span>&rarr;</span>
-                                    <span class="font-medium text-white">{{ $this->formatCurrency($result['budget']['excellent'] ?? 0) }}</span>
+                                <p class="mt-2 text-sm text-gray-500">
+                                    {{ __('pages.calculator.to_achieve') }} <span class="font-semibold text-white">{{ $this->formatNumber($targetNum) }} {{ $primaryLabel }}</span> {{ __('pages.calculator.at_average_performance') }}
+                                </p>
+                                <div class="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
+                                    @foreach(['excellent' => ['text-green-400', __('pages.calculator.scenarios.excellent')], 'good' => ['text-teal-400', __('pages.calculator.scenarios.good')], 'average' => ['text-amber-400', __('pages.calculator.scenarios.average')], 'poor' => ['text-red-400', __('pages.calculator.scenarios.poor')]] as $s => [$color, $lbl])
+                                        <div class="{{ $s === 'average' ? 'bg-white/8 rounded-md p-1.5' : '' }}">
+                                            <p class="font-semibold {{ $color }} mb-0.5">{{ $lbl }}</p>
+                                            <p class="font-medium text-white">{{ $result['budget'][$s] ? $this->formatCurrency($result['budget'][$s]) : '-' }}</p>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                         @endif
@@ -635,7 +685,10 @@
                                     ];
                                 @endphp
                                 @foreach($result['predictions'] as $scenario => $prediction)
-                                    @php $config = $scenarioConfig[$scenario] ?? ['label' => ucfirst($scenario), 'icon' => 'chart-bar']; @endphp
+                                    @php
+                                        $config = $scenarioConfig[$scenario] ?? ['label' => ucfirst($scenario), 'icon' => 'chart-bar'];
+                                        $scenarioBudgetAmt = $result['budget'][$scenario] ?? null;
+                                    @endphp
                                     <div class="card cursor-pointer {{ $selectedScenario === $scenario ? 'ring-2 ring-gray-900' : '' }}"
                                          wire:click="$set('selectedScenario', '{{ $scenario }}')">
                                         <div class="px-4 py-3 bg-gray-950 border-b border-white/10 flex items-center justify-between">
@@ -653,19 +706,33 @@
                                             @endif
                                         </div>
                                         <div class="p-5 space-y-4">
-                                            <div class="text-center">
-                                                <p class="text-sm text-gray-500">{{ $prediction['primary_result']['label'] ?? $primaryLabel }}</p>
-                                                <p class="stat-num">{{ $this->formatNumber($prediction['primary_result']['value'] ?? 0) }}</p>
-                                            </div>
+                                            @if($resultMode === 'target_to_budget' && $scenarioBudgetAmt)
+                                                {{-- TARGET MODE: primary = budget needed --}}
+                                                <div class="text-center">
+                                                    <p class="text-xs text-gray-500 uppercase tracking-wide">{{ __('pages.calculator.budget_needed') }}</p>
+                                                    <p class="stat-num">{{ $this->formatCurrency($scenarioBudgetAmt) }}</p>
+                                                    <p class="text-xs text-gray-500 mt-1">
+                                                        {{ __('pages.calculator.to_achieve') }} <span class="text-white font-semibold">{{ $this->formatNumber($result['input']['target'] ?? 0) }} {{ $primaryLabel }}</span>
+                                                    </p>
+                                                </div>
+                                            @else
+                                                {{-- BUDGET MODE: primary = leads/conversions expected --}}
+                                                <div class="text-center">
+                                                    <p class="text-sm text-gray-500">{{ $prediction['primary_result']['label'] ?? $primaryLabel }}</p>
+                                                    <p class="stat-num">{{ $this->formatNumber($prediction['primary_result']['value'] ?? 0) }}</p>
+                                                </div>
+                                            @endif
                                             <div class="grid grid-cols-2 gap-3 text-sm">
-                                                <div class="bg-gray-950 rounded-lg p-2">
-                                                    <p class="text-xs text-gray-500">{{ __('kpis.impressions') }}</p>
-                                                    <p class="font-semibold text-white">{{ $this->formatNumber($prediction['impressions']['value'] ?? 0) }}</p>
-                                                </div>
-                                                <div class="bg-gray-950 rounded-lg p-2">
-                                                    <p class="text-xs text-gray-500">{{ __('kpis.clicks') }}</p>
-                                                    <p class="font-semibold text-white">{{ $this->formatNumber($prediction['clicks']['value'] ?? 0) }}</p>
-                                                </div>
+                                                @if($resultMode !== 'target_to_budget')
+                                                    <div class="bg-gray-950 rounded-lg p-2">
+                                                        <p class="text-xs text-gray-500">{{ __('kpis.impressions') }}</p>
+                                                        <p class="font-semibold text-white">{{ $this->formatNumber($prediction['impressions']['value'] ?? 0) }}</p>
+                                                    </div>
+                                                    <div class="bg-gray-950 rounded-lg p-2">
+                                                        <p class="text-xs text-gray-500">{{ __('kpis.clicks') }}</p>
+                                                        <p class="font-semibold text-white">{{ $this->formatNumber($prediction['clicks']['value'] ?? 0) }}</p>
+                                                    </div>
+                                                @endif
                                                 <div class="bg-gray-950 rounded-lg p-2">
                                                     <p class="text-xs text-gray-500">CTR</p>
                                                     <p class="font-semibold text-white">{{ $prediction['metrics']['ctr'] ?? '-' }}</p>
