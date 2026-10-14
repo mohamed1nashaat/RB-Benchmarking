@@ -9,6 +9,12 @@
                 </h1>
                 <p class="mt-0.5 text-sm text-gray-500">
                     {{ __('pages.benchmarks.description') }}
+                    @if($latestSyncAt)
+                        <span class="inline-flex items-center gap-1 ms-2 text-[11px] text-gray-600">
+                            <x-heroicon-o-clock class="h-3 w-3" />
+                            {{ __('pages.benchmarks.data_as_of', ['time' => $latestSyncAt]) }}
+                        </span>
+                    @endif
                     @if($autoRefreshEnabled)
                         <span class="inline-flex items-center gap-1 ms-2 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-green-500/15 text-green-400">
                             <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>

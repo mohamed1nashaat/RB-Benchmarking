@@ -9,6 +9,7 @@ use App\Services\CurrencyConversionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Carbon\Carbon;
 
@@ -80,6 +81,7 @@ class Benchmarks extends Component
     public array $benchmarkData = [];
     public array $globalBenchmarkData = [];
     public array $externalBenchmarkData = [];
+    public ?string $latestSyncAt = null;
 
     // Accounts modal
     public bool $showAccountsModal = false;
@@ -249,6 +251,14 @@ class Benchmarks extends Component
                     ->map(fn($rows) => $rows->groupBy('metric')->map(fn($m) => round($m->avg('percentile_50'), 4)))
                     ->toArray();
             });
+
+            // Data freshness: most recent sync across all accounts in range
+            $latestSync = DB::table('ad_accounts as a')
+                ->join('ad_metrics as m', 'm.ad_account_id', '=', 'a.id')
+                ->whereBetween('m.date', [$this->dateFrom, $this->dateTo])
+                ->max('a.last_metrics_sync_at');
+            $this->latestSyncAt = $latestSync ? Carbon::parse($latestSync)->diffForHumans() : null;
+
         } catch (\Throwable $e) {
             $this->benchmarkData = [];
             \Log::error('Benchmarks refresh error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -1080,6 +1090,48 @@ class Benchmarks extends Component
             $options[$key] = array_values($values);
         }
         return $options;
+    }
+
+    #[On('export-requested')]
+    public function handleExport(string $type): mixed
+    {
+        if ($type !== 'csv') {
+            return null;
+        }
+
+        $rows = $this->getFilteredTableData();
+        $headers = [
+            'Industry', 'Country', 'Category', 'Sub-Category', 'Funnel Stage', 'Objective',
+            'Spend (SAR)', 'Impressions', 'Clicks', 'Leads', 'Conversions', 'Installs',
+            'CPM', 'CPC', 'CTR (%)', 'CPL', 'CPA', 'CPI',
+        ];
+
+        $csv = implode(',', $headers) . "\n";
+        foreach ($rows as $row) {
+            $csv .= implode(',', [
+                '"' . str_replace('"', '""', $row['industry'] ?? '') . '"',
+                '"' . str_replace('"', '""', $row['country'] ?? '') . '"',
+                '"' . str_replace('"', '""', $row['category'] ?? '') . '"',
+                '"' . str_replace('"', '""', $row['sub_category'] ?? '') . '"',
+                '"' . str_replace('"', '""', $row['funnel_stage'] ?? '') . '"',
+                '"' . str_replace('"', '""', $row['campaignObjective'] ?? '') . '"',
+                round($row['total_spend'] ?? 0, 2),
+                $row['total_impressions'] ?? 0,
+                $row['total_clicks'] ?? 0,
+                $row['total_leads'] ?? 0,
+                $row['total_conversions'] ?? 0,
+                $row['total_installs'] ?? 0,
+                round($row['cpm'] ?? 0, 2),
+                round($row['cpc'] ?? 0, 2),
+                round($row['ctr'] ?? 0, 2),
+                round($row['cpl'] ?? 0, 2),
+                round($row['cpa'] ?? 0, 2),
+                round($row['cpi'] ?? 0, 2),
+            ]) . "\n";
+        }
+
+        $filename = 'benchmarks-' . now()->format('Y-m-d') . '.csv';
+        return $this->stream($filename, $csv, ['Content-Type' => 'text/csv']);
     }
 
     public function render()

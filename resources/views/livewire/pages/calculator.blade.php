@@ -126,6 +126,12 @@
                                     <span wire:loading wire:target="calculate">{{ __('pages.calculator.calculating') }}...</span>
                                 </button>
                             </form>
+                            @if($hasResult)
+                                <button type="button" wire:click="resetForm" class="btn-secondary w-full mt-2">
+                                    <x-heroicon-o-arrow-uturn-left class="h-4 w-4 me-1.5" />
+                                    {{ __('pages.calculator.reset') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -474,6 +480,12 @@
                                     <span wire:loading wire:target="calculate">{{ __('pages.calculator.calculating') }}...</span>
                                 </button>
                             </form>
+                            @if($hasResult)
+                                <button type="button" wire:click="resetForm" class="btn-secondary w-full mt-2">
+                                    <x-heroicon-o-arrow-uturn-left class="h-4 w-4 me-1.5" />
+                                    {{ __('pages.calculator.reset') }}
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </div>

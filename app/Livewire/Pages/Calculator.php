@@ -84,6 +84,18 @@ class Calculator extends Component
         }
     }
 
+    public function resetForm(): void
+    {
+        $this->reset(['result', 'error', 'hasResult', 'loading', 'targetResults', 'monthlyBudget',
+                       'platform', 'country', 'funnelStage', 'userJourney', 'selectedScenario']);
+        $this->objective = 'leads';
+        $this->calculationMode = 'budget_to_results';
+        $available = $this->getWhitelistedIndustries();
+        if (!empty($available)) {
+            $this->industry = array_key_first($available);
+        }
+    }
+
     public function calculate(): void
     {
         $this->reset(['result', 'error', 'hasResult']);
