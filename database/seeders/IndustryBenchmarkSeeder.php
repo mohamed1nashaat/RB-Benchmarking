@@ -27,6 +27,14 @@ class IndustryBenchmarkSeeder extends Seeder
         'Snapchat Ads Benchmarks 2026',
     ];
 
+    private array $platformSource = [
+        'google'   => 'TwoMinuteReports Google Ads 2025',
+        'facebook' => 'TwoMinuteReports Facebook Ads 2025',
+        'tiktok'   => 'TwoMinuteReports TikTok Ads 2025',
+        'linkedin' => 'LinkedIn Marketing Solutions 2026',
+        'snapchat' => 'Snapchat Ads Benchmarks 2026',
+    ];
+
     public function run(): void
     {
         DB::table('industry_benchmarks')->truncate();
@@ -388,7 +396,7 @@ class IndustryBenchmarkSeeder extends Seeder
             'percentile_75'     => round($p50 * 1.38, 2),
             'percentile_90'     => round($p50 * 1.95, 2),
             'sample_size'       => $sampleSize,
-            'source'            => $this->fiveSources[0],
+            'source'            => $this->platformSource[$platform] ?? $this->fiveSources[0],
             'sources'           => json_encode($this->fiveSources),
             'region'            => 'global',
             'data_period_start' => '2025-01-01',
