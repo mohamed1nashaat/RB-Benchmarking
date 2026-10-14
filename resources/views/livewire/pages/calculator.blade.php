@@ -265,6 +265,36 @@
                             </div>
                         @endif
 
+                        {{-- Data Quality Warning (simple mode) --}}
+                        @if(!empty($result['benchmark_info']))
+                            @php
+                                $sqDataPoints = $result['benchmark_info']['data_points'] ?? 0;
+                                $sqConvPoints = $result['benchmark_info']['conversion_data_points'] ?? 0;
+                                $sqObjFiltered = $result['benchmark_info']['objective_filtered'] ?? false;
+                                $sqCheck = $sqConvPoints > 0 ? $sqConvPoints : $sqDataPoints;
+                                $sqLowData = $sqCheck > 0 && $sqCheck < 5;
+                            @endphp
+                            @if($sqObjFiltered || $sqLowData)
+                                <div class="rounded-lg border px-4 py-3 flex items-start gap-3
+                                    {{ $sqLowData ? 'bg-amber-500/8 border-amber-500/20' : 'bg-brand-500/8 border-brand-500/20' }}">
+                                    <x-heroicon-o-information-circle class="h-5 w-5 flex-shrink-0 mt-0.5 {{ $sqLowData ? 'text-amber-400' : 'text-brand-400' }}" />
+                                    <div class="text-sm space-y-1">
+                                        @if($sqObjFiltered)
+                                            <p class="{{ $sqLowData ? 'text-amber-300' : 'text-brand-300' }} font-medium">
+                                                {{ __('pages.calculator.objective_filtered_notice') }}
+                                            </p>
+                                        @endif
+                                        @if($sqLowData)
+                                            <p class="text-amber-300 font-medium">
+                                                {{ __('pages.calculator.low_data_warning', ['count' => $sqCheck]) }}
+                                            </p>
+                                            <p class="text-amber-400/70">{{ __('pages.calculator.low_data_hint') }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+
                         {{-- Hint to switch to advanced --}}
                         <p class="text-xs text-gray-400 text-center">
                             {{ __('pages.calculator.advanced_hint') }}
