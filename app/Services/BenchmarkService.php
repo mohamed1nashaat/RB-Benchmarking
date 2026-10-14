@@ -540,15 +540,34 @@ class BenchmarkService
                     $count = count($values);
 
                     if ($count >= 1) {
-                        // Calculate percentiles for more realistic benchmarks
-                        $p25Index = max(0, floor($count * 0.25) - 1);
-                        $p50Index = max(0, floor($count * 0.50) - 1);
-                        $p75Index = max(0, floor($count * 0.75) - 1);
+                        // For very small samples (2–3), the index-based percentile formula collapses
+                        // all three percentiles to the minimum value. Use explicit min/mean/max instead.
+                        if ($count <= 3) {
+                            $minVal = round($values[0], 2);
+                            $maxVal = round($values[$count - 1], 2);
+                            $avgVal = $count === 2
+                                ? round(array_sum($values) / 2, 2)
+                                : round($values[1], 2); // middle of 3
+                            $p25 = $minVal;
+                            $p50 = $avgVal;
+                            $p75 = $maxVal;
+                        } else {
+                            // Standard percentile calculation for 4+ data points
+                            $p25Index = max(0, floor($count * 0.25) - 1);
+                            $p50Index = max(0, floor($count * 0.50) - 1);
+                            $p75Index = max(0, floor($count * 0.75) - 1);
+                            $minVal = round($values[$p25Index], 2);
+                            $avgVal = round($values[$p50Index], 2);
+                            $maxVal = round($values[$p75Index], 2);
+                            $p25 = $minVal;
+                            $p50 = $avgVal;
+                            $p75 = $maxVal;
+                        }
 
                         $benchmarks[$metric] = [
-                            'min' => round($values[$p25Index], 2),
-                            'max' => round($values[$p75Index], 2),
-                            'avg' => round($values[$p50Index], 2),
+                            'min' => $minVal,
+                            'max' => $maxVal,
+                            'avg' => $avgVal,
                             'data_points' => $count,
                             'outliers_removed' => $outlierCount,
                             'range' => [
@@ -556,17 +575,17 @@ class BenchmarkService
                                 'highest' => round(max($values), 2),
                             ],
                             'calculation' => [
-                                'method' => 'percentile_with_outlier_filtering',
+                                'method' => $count <= 3 ? 'min_mean_max_small_sample' : 'percentile_with_outlier_filtering',
                                 'percentiles' => [
-                                    'p25' => round($values[$p25Index], 2),
-                                    'p50' => round($values[$p50Index], 2),
-                                    'p75' => round($values[$p75Index], 2),
+                                    'p25' => $p25,
+                                    'p50' => $p50,
+                                    'p75' => $p75,
                                 ],
                                 'sample_values' => array_slice($values, 0, min(5, $count)),
                                 'formula' => [
-                                    'min' => '25th percentile (good performance threshold)',
-                                    'avg' => '50th percentile (median - typical performance)',
-                                    'max' => '75th percentile (excellent performance threshold)',
+                                    'min' => $count <= 3 ? 'minimum value (small sample)' : '25th percentile (good performance threshold)',
+                                    'avg' => $count <= 3 ? 'mean / middle value (small sample)' : '50th percentile (median - typical performance)',
+                                    'max' => $count <= 3 ? 'maximum value (small sample)' : '75th percentile (excellent performance threshold)',
                                 ],
                             ],
                         ];
@@ -1344,11 +1363,29 @@ class BenchmarkService
         // Get industry benchmarks (use broader date range to ensure data)
         $dateTo = now()->toDateString();
         $dateFrom = now()->subYear()->toDateString();
-        $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo, $filters);
+
+        // For conversion-type objectives, filter benchmark data to matching campaign types only.
+        // This prevents awareness/traffic campaigns from polluting CPL/CVR benchmarks.
+        $benchmarkFilters = $filters;
+        $conversionObjectives = ['leads', 'messages', 'calls', 'sales', 'conversions', 'catalog_sales', 'purchases', 'app_installs'];
+        $objectiveFiltered = in_array(strtolower($objective), $conversionObjectives) && empty($filters['objective']);
+        if ($objectiveFiltered) {
+            $benchmarkFilters['objective'] = $objective;
+        }
+
+        $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo, $benchmarkFilters);
+
+        // If no data found with objective filter, fall back to all campaign types
+        $aliases = $this->getIndustryAliases($industry);
+        $hasData = collect($aliases)->contains(fn($a) => isset($industryBenchmarks[$a]));
+        if (!$hasData && $objectiveFiltered) {
+            $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo, $filters);
+            $objectiveFiltered = false;
+        }
 
         $benchmarks = null;
         $matchedIndustry = null;
-        foreach ($this->getIndustryAliases($industry) as $alias) {
+        foreach ($aliases as $alias) {
             if (isset($industryBenchmarks[$alias])) {
                 $benchmarks = $industryBenchmarks[$alias];
                 $matchedIndustry = $alias;
@@ -1358,6 +1395,10 @@ class BenchmarkService
 
         $source = 'dynamic';
         $dataPoints = $benchmarks ? array_sum(array_column($benchmarks, 'data_points')) : 0;
+        // Track conversion-metric data points separately for quality warnings
+        $cplDataPoints = $benchmarks['cpl']['data_points'] ?? 0;
+        $cvrDataPoints = $benchmarks['cvr']['data_points'] ?? 0;
+        $conversionDataPoints = max($cplDataPoints, $cvrDataPoints);
 
         // Calculate predictions for different performance scenarios
         $predictions = [
@@ -1394,7 +1435,9 @@ class BenchmarkService
             'predictions' => $predictions,
             'benchmark_info' => [
                 'calculation_method' => $source,
+                'objective_filtered' => $objectiveFiltered,
                 'data_points' => $dataPoints,
+                'conversion_data_points' => $conversionDataPoints,
                 'date_range' => ['from' => $dateFrom, 'to' => $dateTo],
             ],
             'disclaimers' => [
@@ -1463,11 +1506,19 @@ class BenchmarkService
             case 'leads':
             case 'messages':
             case 'calls':
-                $primaryValue = $clicks * ($cvr / 100);
+                // Prefer direct CPL calculation when CPL benchmark is available —
+                // it's more reliable than the CPM→CTR→CVR chain for small datasets.
+                if ($cpl > 0) {
+                    $primaryValue = $spend / $cpl;
+                    $calc = 'SAR ' . number_format($spend, 0) . ' ÷ SAR ' . round($cpl, 2) . ' CPL = ' . number_format(round($primaryValue));
+                } else {
+                    $primaryValue = $clicks * ($cvr / 100);
+                    $calc = number_format(round($clicks)) . ' clicks × ' . round($cvr, 2) . '% CVR = ' . number_format(round($primaryValue));
+                }
                 return [
                     'primary' => [
                         'value' => round($primaryValue),
-                        'calculation' => number_format(round($clicks)) . " clicks × " . round($cvr, 2) . "% CVR = " . number_format(round($primaryValue)),
+                        'calculation' => $calc,
                         'label' => $this->getObjectiveLabel($objective)
                     ],
                     'secondary' => []

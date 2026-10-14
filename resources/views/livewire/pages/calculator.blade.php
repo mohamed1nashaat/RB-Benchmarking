@@ -854,6 +854,35 @@
                             </div>
                         @endif
 
+                        {{-- Data Quality Warning --}}
+                        @php
+                            $dataPoints = $result['benchmark_info']['data_points'] ?? 0;
+                            $convDataPoints = $result['benchmark_info']['conversion_data_points'] ?? 0;
+                            $objFiltered = $result['benchmark_info']['objective_filtered'] ?? false;
+                            // Use conversion-specific data points for objectives that produce conversions
+                            $checkPoints = $convDataPoints > 0 ? $convDataPoints : $dataPoints;
+                            $lowData = $checkPoints > 0 && $checkPoints < 5;
+                        @endphp
+                        @if($objFiltered || $lowData)
+                            <div class="rounded-lg border px-4 py-3 flex items-start gap-3
+                                {{ $lowData ? 'bg-amber-500/8 border-amber-500/20' : 'bg-brand-500/8 border-brand-500/20' }}">
+                                <x-heroicon-o-information-circle class="h-5 w-5 flex-shrink-0 mt-0.5 {{ $lowData ? 'text-amber-400' : 'text-brand-400' }}" />
+                                <div class="text-sm space-y-1">
+                                    @if($objFiltered)
+                                        <p class="{{ $lowData ? 'text-amber-300' : 'text-brand-300' }} font-medium">
+                                            {{ __('pages.calculator.objective_filtered_notice') }}
+                                        </p>
+                                    @endif
+                                    @if($lowData)
+                                        <p class="text-amber-300 font-medium">
+                                            {{ __('pages.calculator.low_data_warning', ['count' => $checkPoints]) }}
+                                        </p>
+                                        <p class="text-amber-400/70">{{ __('pages.calculator.low_data_hint') }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
                         {{-- Benchmark Transparency --}}
                         @if(!empty($result['benchmark_info']))
                             <div class="card" x-data="{ open: false }">
