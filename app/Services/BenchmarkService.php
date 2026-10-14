@@ -1459,14 +1459,15 @@ class BenchmarkService
         $cpm = isset($benchmarks['cpm']) ? $benchmarks['cpm']['avg'] * $multipliers['cpm'] : 10.0;
         $cvr = isset($benchmarks['cvr']) ? $benchmarks['cvr']['avg'] * $multipliers['cvr'] : 3.0;
         $cpl = isset($benchmarks['cpl']) ? $benchmarks['cpl']['avg'] * $multipliers['cpl'] : 30.0;
+        $cpa = isset($benchmarks['cpa']) ? $benchmarks['cpa']['avg'] * $multipliers['cpl'] : 0.0;
 
         // Calculate basic metrics
         $expectedImpressions = $cpm > 0 ? ($spend / $cpm) * 1000 : 0;
         $expectedClicks = max($expectedImpressions * ($ctr / 100), $spend / $cpc);
-        
+
         // Calculate objective-specific results
         $objectiveResults = $this->calculateObjectiveSpecificResults(
-            $spend, $expectedImpressions, $expectedClicks, $cvr, $cpl, $objective
+            $spend, $expectedImpressions, $expectedClicks, $cvr, $cpl, $cpa, $objective
         );
 
         return [
@@ -1486,6 +1487,7 @@ class BenchmarkService
                 'cpm' => 'SAR ' . round($cpm, 2),
                 'cvr' => round($cvr, 2) . '%',
                 'cpl' => 'SAR ' . round($cpl, 2),
+                'cpa' => $cpa > 0 ? 'SAR ' . round($cpa, 2) : null,
             ],
             'cost_per_result' => [
                 'cost_per_impression' => 'SAR ' . round($spend / max($expectedImpressions, 1), 4),
@@ -1500,7 +1502,7 @@ class BenchmarkService
     /**
      * Calculate results specific to the campaign objective
      */
-    private function calculateObjectiveSpecificResults(float $spend, float $impressions, float $clicks, float $cvr, float $cpl, string $objective): array
+    private function calculateObjectiveSpecificResults(float $spend, float $impressions, float $clicks, float $cvr, float $cpl, float $cpa, string $objective): array
     {
         switch ($objective) {
             case 'leads':
@@ -1527,11 +1529,18 @@ class BenchmarkService
             case 'sales':
             case 'conversions':
             case 'catalog_sales':
-                $primaryValue = $clicks * ($cvr / 100);
+                // Prefer direct CPA calculation when CPA benchmark is available.
+                if ($cpa > 0) {
+                    $primaryValue = $spend / $cpa;
+                    $calc = 'SAR ' . number_format($spend, 0) . ' ÷ SAR ' . round($cpa, 2) . ' CPA = ' . number_format(round($primaryValue));
+                } else {
+                    $primaryValue = $clicks * ($cvr / 100);
+                    $calc = number_format(round($clicks)) . ' clicks × ' . round($cvr, 2) . '% conversion rate = ' . number_format(round($primaryValue));
+                }
                 return [
                     'primary' => [
                         'value' => round($primaryValue),
-                        'calculation' => number_format(round($clicks)) . " clicks × " . round($cvr, 2) . "% conversion rate = " . number_format(round($primaryValue)),
+                        'calculation' => $calc,
                         'label' => $this->getObjectiveLabel($objective)
                     ],
                     'secondary' => []
@@ -1539,10 +1548,11 @@ class BenchmarkService
 
             case 'traffic':
             case 'link_clicks':
+                $ctrDisplay = $impressions > 0 ? round(($clicks / $impressions) * 100, 2) : 0;
                 return [
                     'primary' => [
                         'value' => round($clicks),
-                        'calculation' => number_format(round($impressions)) . " impressions × " . round(($clicks / $impressions) * 100, 2) . "% CTR = " . number_format(round($clicks)),
+                        'calculation' => number_format(round($impressions)) . " impressions × " . $ctrDisplay . "% CTR = " . number_format(round($clicks)),
                         'label' => 'Website Visits'
                     ],
                     'secondary' => []
