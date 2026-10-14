@@ -43,12 +43,6 @@
                 <x-heroicon-s-chart-bar class="me-3 h-5 w-5 text-gray-400" />
                 {{ __('navigation.ad_accounts') }}
             </a>
-            @if($isSuperAdmin)
-                <a href="/industry-management" @click="open = false" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-950">
-                    <x-heroicon-s-building-office class="me-3 h-5 w-5 text-gray-400" />
-                    {{ __('navigation.industry_management') }}
-                </a>
-            @endif
             <a href="/clients" @click="open = false" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-950">
                 <x-heroicon-s-user-group class="me-3 h-5 w-5 text-gray-400" />
                 {{ __('navigation.clients') }}
