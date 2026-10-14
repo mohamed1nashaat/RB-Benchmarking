@@ -1381,15 +1381,7 @@ class BenchmarkService
                 $predictions[$scenario] = $prediction;
             }
         } else {
-            // No dynamic account data: fall back to global benchmark table.
-            $global = $this->calculateExpectedResultsFromGlobalBenchmarks($spend, $industry, $objective, $filters);
-
-            if (!$global || empty($global['predictions'])) {
-                throw new \Exception("Not enough data to calculate predictions for {$industry} industry");
-            }
-
-            $predictions = $global['predictions'];
-            $source = 'global_benchmarks';
+            throw new \Exception("Not enough data from your campaigns to calculate predictions for the {$industry} industry. Please run more campaigns or select a different industry.");
         }
 
         return [

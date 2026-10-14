@@ -653,20 +653,22 @@
                                         @endphp
                                         @if($isVisible)
                                             <th class="{{ $bgClass }}">
-                                                @php
-                                                    $opts = $columnFilterOptions[$key] ?? [];
-                                                    $selectOptions = array_combine($opts, $opts);
-                                                @endphp
-                                                <div class="select2-compact">
-                                                    <x-select2
-                                                        wireModel="columnFilters.{{ $key }}"
-                                                        uid="col-filter-{{ $key }}-{{ count($opts) }}-{{ md5(json_encode($opts)) }}"
-                                                        placeholder="{{ __('filters.all') }}"
-                                                        :options="$selectOptions"
-                                                        :allowClear="true"
-                                                        :searchable="true"
-                                                    />
-                                                </div>
+                                                @if($col['filterable'] ?? true)
+                                                    @php
+                                                        $opts = $columnFilterOptions[$key] ?? [];
+                                                        $selectOptions = array_combine($opts, $opts);
+                                                    @endphp
+                                                    <div class="select2-compact">
+                                                        <x-select2
+                                                            wireModel="columnFilters.{{ $key }}"
+                                                            uid="col-filter-{{ $key }}-{{ count($opts) }}-{{ md5(json_encode($opts)) }}"
+                                                            placeholder="{{ __('filters.all') }}"
+                                                            :options="$selectOptions"
+                                                            :allowClear="true"
+                                                            :searchable="true"
+                                                        />
+                                                    </div>
+                                                @endif
                                             </th>
                                         @endif
                                     @endforeach

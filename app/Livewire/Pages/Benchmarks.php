@@ -167,6 +167,7 @@ class Benchmarks extends Component
     public function refreshData()
     {
         $this->loading = true;
+        $this->columnFilters = [];
 
         try {
             $service = app(BenchmarkService::class);
@@ -875,31 +876,31 @@ class Benchmarks extends Component
     public function getColumnConfig(): array
     {
         return [
-            ['key' => 'industry', 'label' => $this->tableGroupBy === 'client' ? __('labels.client') : __('Industry'), 'group' => 'account', 'visible' => true, 'locked' => true, 'sortable' => true, 'width' => '160px'],
-            ['key' => 'country', 'label' => __('Country'), 'group' => 'account', 'visible' => $this->visibleColumns['country'], 'sortable' => true, 'width' => '100px'],
-            ['key' => 'category', 'label' => __('Category'), 'group' => 'account', 'visible' => $this->visibleColumns['category'], 'sortable' => true, 'width' => '120px'],
-            ['key' => 'subCategory', 'label' => __('labels.sub_category'), 'group' => 'account', 'visible' => $this->visibleColumns['subCategory'], 'sortable' => true, 'width' => '120px'],
-            ['key' => 'funnelStage', 'label' => __('Funnel Stage'), 'group' => 'campaign', 'visible' => $this->visibleColumns['funnelStage'], 'sortable' => true, 'width' => '100px'],
-            ['key' => 'campaignObjective', 'label' => __('Objective'), 'group' => 'campaign', 'visible' => $this->visibleColumns['campaignObjective'], 'sortable' => true, 'width' => '100px'],
-            ['key' => 'spend', 'label' => __('Spend'), 'group' => 'volume', 'visible' => $this->visibleColumns['spend'], 'sortable' => true, 'width' => '110px'],
-            ['key' => 'impressions', 'label' => __('Impressions'), 'group' => 'volume', 'visible' => $this->visibleColumns['impressions'], 'sortable' => true, 'width' => '110px'],
-            ['key' => 'clicks', 'label' => __('Clicks'), 'group' => 'volume', 'visible' => $this->visibleColumns['clicks'], 'sortable' => true, 'width' => '100px'],
-            ['key' => 'leads', 'label' => __('Leads'), 'group' => 'volume', 'visible' => $this->visibleColumns['leads'], 'sortable' => true, 'width' => '100px'],
-            ['key' => 'installs', 'label' => __('Installs'), 'group' => 'volume', 'visible' => $this->visibleColumns['installs'], 'sortable' => true, 'width' => '100px'],
-            ['key' => 'conversions', 'label' => __('Conversions'), 'group' => 'volume', 'visible' => $this->visibleColumns['conversions'], 'sortable' => true, 'width' => '110px'],
-            ['key' => 'cpm', 'label' => 'CPM', 'group' => 'efficiency', 'visible' => $this->visibleColumns['cpm'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'cpc', 'label' => 'CPC', 'group' => 'efficiency', 'visible' => $this->visibleColumns['cpc'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'ctr', 'label' => 'CTR', 'group' => 'efficiency', 'visible' => $this->visibleColumns['ctr'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'cpl', 'label' => 'CPL', 'group' => 'efficiency', 'visible' => $this->visibleColumns['cpl'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'cpa', 'label' => 'CPA', 'group' => 'efficiency', 'visible' => $this->visibleColumns['cpa'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'cpi', 'label' => 'CPI', 'group' => 'efficiency', 'visible' => $this->visibleColumns['cpi'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'global_cpm', 'label' => 'GB CPM', 'group' => 'global', 'visible' => $this->visibleColumns['global_cpm'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'global_cpc', 'label' => 'GB CPC', 'group' => 'global', 'visible' => $this->visibleColumns['global_cpc'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'global_ctr', 'label' => 'GB CTR', 'group' => 'global', 'visible' => $this->visibleColumns['global_ctr'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'global_cpl', 'label' => 'GB CPL', 'group' => 'global', 'visible' => $this->visibleColumns['global_cpl'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'global_cpa', 'label' => 'GB CPA', 'group' => 'global', 'visible' => $this->visibleColumns['global_cpa'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'global_cpi', 'label' => 'GB CPI', 'group' => 'global', 'visible' => $this->visibleColumns['global_cpi'], 'sortable' => true, 'width' => '90px'],
-            ['key' => 'actions', 'label' => __('Actions'), 'group' => 'account', 'visible' => true, 'sortable' => false, 'width' => '110px'],
+            ['key' => 'industry',         'label' => $this->tableGroupBy === 'client' ? __('labels.client') : __('Industry'), 'group' => 'account',    'filterable' => true,  'visible' => true,                               'locked' => true, 'sortable' => true,  'width' => '160px'],
+            ['key' => 'country',          'label' => __('Country'),          'group' => 'account',    'filterable' => true,  'visible' => $this->visibleColumns['country'],          'sortable' => true,  'width' => '100px'],
+            ['key' => 'category',         'label' => __('Category'),         'group' => 'account',    'filterable' => true,  'visible' => $this->visibleColumns['category'],         'sortable' => true,  'width' => '120px'],
+            ['key' => 'subCategory',      'label' => __('labels.sub_category'), 'group' => 'account', 'filterable' => true,  'visible' => $this->visibleColumns['subCategory'],      'sortable' => true,  'width' => '120px'],
+            ['key' => 'funnelStage',      'label' => __('Funnel Stage'),     'group' => 'campaign',   'filterable' => true,  'visible' => $this->visibleColumns['funnelStage'],      'sortable' => true,  'width' => '100px'],
+            ['key' => 'campaignObjective','label' => __('Objective'),        'group' => 'campaign',   'filterable' => true,  'visible' => $this->visibleColumns['campaignObjective'],'sortable' => true,  'width' => '100px'],
+            ['key' => 'spend',            'label' => __('Spend'),            'group' => 'volume',     'filterable' => false, 'visible' => $this->visibleColumns['spend'],            'sortable' => true,  'width' => '110px'],
+            ['key' => 'impressions',      'label' => __('Impressions'),      'group' => 'volume',     'filterable' => false, 'visible' => $this->visibleColumns['impressions'],      'sortable' => true,  'width' => '110px'],
+            ['key' => 'clicks',           'label' => __('Clicks'),           'group' => 'volume',     'filterable' => false, 'visible' => $this->visibleColumns['clicks'],           'sortable' => true,  'width' => '100px'],
+            ['key' => 'leads',            'label' => __('Leads'),            'group' => 'volume',     'filterable' => false, 'visible' => $this->visibleColumns['leads'],            'sortable' => true,  'width' => '100px'],
+            ['key' => 'installs',         'label' => __('Installs'),         'group' => 'volume',     'filterable' => false, 'visible' => $this->visibleColumns['installs'],         'sortable' => true,  'width' => '100px'],
+            ['key' => 'conversions',      'label' => __('Conversions'),      'group' => 'volume',     'filterable' => false, 'visible' => $this->visibleColumns['conversions'],      'sortable' => true,  'width' => '110px'],
+            ['key' => 'cpm',              'label' => 'CPM',                  'group' => 'efficiency', 'filterable' => false, 'visible' => $this->visibleColumns['cpm'],              'sortable' => true,  'width' => '90px'],
+            ['key' => 'cpc',              'label' => 'CPC',                  'group' => 'efficiency', 'filterable' => false, 'visible' => $this->visibleColumns['cpc'],              'sortable' => true,  'width' => '90px'],
+            ['key' => 'ctr',              'label' => 'CTR',                  'group' => 'efficiency', 'filterable' => false, 'visible' => $this->visibleColumns['ctr'],              'sortable' => true,  'width' => '90px'],
+            ['key' => 'cpl',              'label' => 'CPL',                  'group' => 'efficiency', 'filterable' => false, 'visible' => $this->visibleColumns['cpl'],              'sortable' => true,  'width' => '90px'],
+            ['key' => 'cpa',              'label' => 'CPA',                  'group' => 'efficiency', 'filterable' => false, 'visible' => $this->visibleColumns['cpa'],              'sortable' => true,  'width' => '90px'],
+            ['key' => 'cpi',              'label' => 'CPI',                  'group' => 'efficiency', 'filterable' => false, 'visible' => $this->visibleColumns['cpi'],              'sortable' => true,  'width' => '90px'],
+            ['key' => 'global_cpm',       'label' => 'GB CPM',               'group' => 'global',     'filterable' => false, 'visible' => $this->visibleColumns['global_cpm'],       'sortable' => true,  'width' => '90px'],
+            ['key' => 'global_cpc',       'label' => 'GB CPC',               'group' => 'global',     'filterable' => false, 'visible' => $this->visibleColumns['global_cpc'],       'sortable' => true,  'width' => '90px'],
+            ['key' => 'global_ctr',       'label' => 'GB CTR',               'group' => 'global',     'filterable' => false, 'visible' => $this->visibleColumns['global_ctr'],       'sortable' => true,  'width' => '90px'],
+            ['key' => 'global_cpl',       'label' => 'GB CPL',               'group' => 'global',     'filterable' => false, 'visible' => $this->visibleColumns['global_cpl'],       'sortable' => true,  'width' => '90px'],
+            ['key' => 'global_cpa',       'label' => 'GB CPA',               'group' => 'global',     'filterable' => false, 'visible' => $this->visibleColumns['global_cpa'],       'sortable' => true,  'width' => '90px'],
+            ['key' => 'global_cpi',       'label' => 'GB CPI',               'group' => 'global',     'filterable' => false, 'visible' => $this->visibleColumns['global_cpi'],       'sortable' => true,  'width' => '90px'],
+            ['key' => 'actions',          'label' => __('Actions'),          'group' => 'account',    'filterable' => false, 'visible' => true,                                      'sortable' => false, 'width' => '110px'],
         ];
     }
 
