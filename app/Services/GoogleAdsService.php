@@ -4,12 +4,12 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-use Google\Ads\GoogleAds\Lib\V22\GoogleAdsClientBuilder;
+use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Lib\OAuth2TokenBuilder;
-use Google\Ads\GoogleAds\V22\Services\ListAccessibleCustomersRequest;
-use Google\Ads\GoogleAds\V22\Services\SearchGoogleAdsRequest;
-use Google\Ads\GoogleAds\V22\Services\GoogleAdsRow;
-use Google\Ads\GoogleAds\Util\V22\ResourceNames;
+use Google\Ads\GoogleAds\V24\Services\ListAccessibleCustomersRequest;
+use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
+use Google\Ads\GoogleAds\V24\Services\GoogleAdsRow;
+use Google\Ads\GoogleAds\Util\V24\ResourceNames;
 
 class GoogleAdsService
 {
@@ -1127,7 +1127,7 @@ class GoogleAdsService
         // Google Ads API returns status as integer enum (CustomerStatusEnum\CustomerStatus)
         // UNSPECIFIED=0, UNKNOWN=1, ENABLED=2, CANCELED=3, SUSPENDED=4, CLOSED=5
         $statusStr = is_int($status)
-            ? \Google\Ads\GoogleAds\V22\Enums\CustomerStatusEnum\CustomerStatus::name($status)
+            ? \Google\Ads\GoogleAds\V24\Enums\CustomerStatusEnum\CustomerStatus::name($status)
             : strtoupper((string) $status);
 
         return match ($statusStr) {
@@ -1285,7 +1285,7 @@ class GoogleAdsService
     }
 
     /**
-     * Fetch creatives from Google Ads API using official SDK (V22)
+     * Fetch creatives from Google Ads API using official SDK (V24)
      */
     private function fetchCreativesFromSDK(string $customerId, string $refreshToken, ?string $loginCustomerId = null): array
     {
@@ -1381,7 +1381,7 @@ class GoogleAdsService
             $ads[] = [
                 'id' => (string) $adId,
                 'name' => $adName,
-                'status' => $this->mapGoogleAdsCampaignStatus($adGroupAd->getStatus() ? \Google\Ads\GoogleAds\V22\Enums\AdGroupAdStatusEnum\AdGroupAdStatus::name($adGroupAd->getStatus()) : 'ENABLED'),
+                'status' => $this->mapGoogleAdsCampaignStatus($adGroupAd->getStatus() ? \Google\Ads\GoogleAds\V24\Enums\AdGroupAdStatusEnum\AdGroupAdStatus::name($adGroupAd->getStatus()) : 'ENABLED'),
                 'campaign_id' => $campaign ? (string) $campaign->getId() : null,
                 'thumbnail_url' => $thumbnailUrl,
                 'image_url' => $imageUrl,
@@ -1413,7 +1413,7 @@ class GoogleAdsService
             $headers['login-customer-id'] = $loginCustomerId;
         }
 
-        $response = Http::withHeaders($headers)->post("https://googleads.googleapis.com/v22/customers/{$customerId}/googleAds:search", [
+        $response = Http::withHeaders($headers)->post("https://googleads.googleapis.com/v24/customers/{$customerId}/googleAds:search", [
             'query' => 'SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.status, campaign.id, campaign.name, ad_group_ad.ad.final_urls, ad_group_ad.ad.responsive_search_ad.headlines, ad_group_ad.ad.responsive_search_ad.descriptions, ad_group_ad.ad.responsive_display_ad.marketing_images, ad_group_ad.ad.image_ad.image_url FROM ad_group_ad'
         ]);
 

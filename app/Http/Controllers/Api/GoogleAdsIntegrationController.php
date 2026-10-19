@@ -141,10 +141,6 @@ class GoogleAdsIntegrationController extends Controller
                 }
 
                 // Check if state is not too old (10 minutes max)
-                if (($stateData['redirect_uri'] ?? null) !== config('services.' . strtolower(basename(app/Http/Controllers/Api/GoogleAdsIntegrationController.php, 'IntegrationController.php')) . '.redirect_uri')) {
-                    throw new \Exception('Invalid redirect URI in state');
-                }
-
                 if (time() - $stateData['timestamp'] > 600) {
                     throw new \Exception('OAuth state has expired');
                 }

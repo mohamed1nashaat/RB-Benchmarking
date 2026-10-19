@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use Google\Ads\GoogleAds\Lib\V22\GoogleAdsClientBuilder;
+use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Lib\OAuth2TokenBuilder;
-use Google\Ads\GoogleAds\V22\Services\SearchGoogleAdsRequest;
+use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
 
 class GoogleAdsMetricsSyncService
 {
-    private const API_BASE_URL = 'https://googleads.googleapis.com/v22';
+    private const API_BASE_URL = 'https://googleads.googleapis.com/v24';
     private const PAGE_SIZE = 100;
 
     private GoogleAdsService $googleAdsService;

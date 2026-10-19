@@ -7,9 +7,9 @@ use App\Models\AdCampaign;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
-use Google\Ads\GoogleAds\Lib\V22\GoogleAdsClientBuilder;
+use Google\Ads\GoogleAds\Lib\V24\GoogleAdsClientBuilder;
 use Google\Ads\GoogleAds\Lib\OAuth2TokenBuilder;
-use Google\Ads\GoogleAds\V22\Services\SearchGoogleAdsRequest;
+use Google\Ads\GoogleAds\V24\Services\SearchGoogleAdsRequest;
 
 class GoogleAdsCampaignSyncService
 {
@@ -241,12 +241,12 @@ class GoogleAdsCampaignSyncService
                     // SDK returns enums as integers — convert to readable strings
                     $channelType = $campaign->getAdvertisingChannelType();
                     $channelTypeStr = is_int($channelType)
-                        ? \Google\Ads\GoogleAds\V22\Enums\AdvertisingChannelTypeEnum\AdvertisingChannelType::name($channelType)
+                        ? \Google\Ads\GoogleAds\V24\Enums\AdvertisingChannelTypeEnum\AdvertisingChannelType::name($channelType)
                         : $channelType;
 
                     $biddingStrategy = $campaign->getBiddingStrategyType();
                     $biddingStrategyStr = is_int($biddingStrategy)
-                        ? \Google\Ads\GoogleAds\V22\Enums\BiddingStrategyTypeEnum\BiddingStrategyType::name($biddingStrategy)
+                        ? \Google\Ads\GoogleAds\V24\Enums\BiddingStrategyTypeEnum\BiddingStrategyType::name($biddingStrategy)
                         : $biddingStrategy;
 
                     $campaigns[] = [
@@ -355,7 +355,7 @@ class GoogleAdsCampaignSyncService
     {
         // SDK returns integer enums: UNSPECIFIED=0, UNKNOWN=1, ENABLED=2, PAUSED=3, REMOVED=4
         $statusStr = is_int($googleStatus)
-            ? \Google\Ads\GoogleAds\V22\Enums\CampaignStatusEnum\CampaignStatus::name($googleStatus)
+            ? \Google\Ads\GoogleAds\V24\Enums\CampaignStatusEnum\CampaignStatus::name($googleStatus)
             : strtoupper((string) $googleStatus);
 
         return match ($statusStr) {

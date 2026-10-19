@@ -308,7 +308,7 @@ class AuditMetricsSpend extends Command
             }
 
             $response = Http::withHeaders($headers)
-                ->post("https://googleads.googleapis.com/v22/customers/{$customerId}/googleAds:search", $body);
+                ->post("https://googleads.googleapis.com/v24/customers/{$customerId}/googleAds:search", $body);
 
             if (!$response->successful()) {
                 throw new \Exception("Google Ads API error: {$response->status()} - {$response->body()}");
