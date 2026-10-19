@@ -1458,8 +1458,32 @@ class BenchmarkService
         $cpc = isset($benchmarks['cpc']) ? $benchmarks['cpc']['avg'] * $multipliers['cpc'] : 1.0;
         $cpm = isset($benchmarks['cpm']) ? $benchmarks['cpm']['avg'] * $multipliers['cpm'] : 10.0;
         $cvr = isset($benchmarks['cvr']) ? $benchmarks['cvr']['avg'] * $multipliers['cvr'] : 3.0;
-        $cpl = isset($benchmarks['cpl']) ? $benchmarks['cpl']['avg'] * $multipliers['cpl'] : 30.0;
-        $cpa = isset($benchmarks['cpa']) ? $benchmarks['cpa']['avg'] * $multipliers['cpl'] : 0.0;
+
+        // For CPL/CPA use actual percentile data to match the displayed range.
+        // excellent (×0.5) → p25 (min), average (×1.0–1.4) → p50 (avg), poor (≥1.5) → p75 (max).
+        $cplMult = $multipliers['cpl'];
+        if (isset($benchmarks['cpl'])) {
+            if ($cplMult <= 0.6) {
+                $cpl = $benchmarks['cpl']['min'] ?? $benchmarks['cpl']['avg'] * $cplMult;
+            } elseif ($cplMult >= 1.5) {
+                $cpl = $benchmarks['cpl']['max'] ?? $benchmarks['cpl']['avg'] * $cplMult;
+            } else {
+                $cpl = $benchmarks['cpl']['avg'];
+            }
+        } else {
+            $cpl = 30.0;
+        }
+        if (isset($benchmarks['cpa'])) {
+            if ($cplMult <= 0.6) {
+                $cpa = $benchmarks['cpa']['min'] ?? $benchmarks['cpa']['avg'] * $cplMult;
+            } elseif ($cplMult >= 1.5) {
+                $cpa = $benchmarks['cpa']['max'] ?? $benchmarks['cpa']['avg'] * $cplMult;
+            } else {
+                $cpa = $benchmarks['cpa']['avg'];
+            }
+        } else {
+            $cpa = 0.0;
+        }
 
         // Calculate basic metrics
         $expectedImpressions = $cpm > 0 ? ($spend / $cpm) * 1000 : 0;
