@@ -36,11 +36,10 @@ class LinkedInIntegrationController extends Controller
 
         // Generate state parameter with user and tenant info
         $stateData = [
-            
-            'redirect_uri' => config('services.' . basename(app/Http/Controllers/Api/LinkedInIntegrationController.php, 'IntegrationController.php') . '.redirect_uri'),'user_id' => $request->user()->id,
+            'user_id'   => $request->user()->id,
             'tenant_id' => $request->current_tenant ? $request->current_tenant->id : $request->user()->default_tenant_id,
             'timestamp' => time(),
-            'nonce' => Str::random(32)
+            'nonce'     => Str::random(32),
         ];
 
         $state = OAuthStateHelper::generate($stateData);
@@ -128,12 +127,7 @@ class LinkedInIntegrationController extends Controller
             // Default tenant_id to null if not present
             $stateData['tenant_id'] = $stateData['tenant_id'] ?? null;
 
-            // Check if state is not too old (1 hour max)
-            if (($stateData['redirect_uri'] ?? null) !== config('services.' . strtolower(basename(app/Http/Controllers/Api/LinkedInIntegrationController.php, 'IntegrationController.php')) . '.redirect_uri')) {
-                    throw new \Exception('Invalid redirect URI in state');
-                }
-
-                if (time() - $stateData['timestamp'] > 3600) {
+            if (time() - $stateData['timestamp'] > 3600) {
                 throw new \Exception('State expired');
             }
 

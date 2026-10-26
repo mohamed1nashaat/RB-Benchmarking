@@ -392,7 +392,7 @@ class LinkedInAdsService
             do {
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $accessToken,
-                    'LinkedIn-Version' => '202501',
+                    'LinkedIn-Version' => '202607',
                     'X-Restli-Protocol-Version' => '2.0.0'
                 ])->get($url, [
                     'q' => 'search',
@@ -689,7 +689,7 @@ class LinkedInAdsService
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $accessToken,
-                'LinkedIn-Version' => '202501',
+                'LinkedIn-Version' => '202607',
                 'X-Restli-Protocol-Version' => '2.0.0',
             ])->get(self::API_BASE_URL . '/adDirectSponsoredContents', [
                 'q' => 'account',
@@ -770,7 +770,7 @@ class LinkedInAdsService
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $accessToken,
-                'LinkedIn-Version' => '202510',
+                'LinkedIn-Version' => '202607',
                 'X-Restli-Protocol-Version' => '2.0.0'
             ])->get($url);
 
