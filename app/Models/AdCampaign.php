@@ -15,10 +15,21 @@ class AdCampaign extends Model
 {
     use HasFactory, BelongsToTenant;
     public const OBJECTIVE_FUNNEL_MAP = [
-        'awareness' => 'TOF',
-        'leads'     => 'BOF',
-        'sales'     => 'BOF',
-        'calls'     => 'BOF',
+        'awareness'     => 'TOF',
+        'reach'         => 'TOF',
+        'video_views'   => 'TOF',
+        'engagement'    => 'TOF',
+        'page_likes'    => 'TOF',
+        'traffic'       => 'MOF',
+        'link_clicks'   => 'MOF',
+        'store_visits'  => 'MOF',
+        'leads'         => 'BOF',
+        'sales'         => 'BOF',
+        'calls'         => 'BOF',
+        'conversions'   => 'BOF',
+        'catalog_sales' => 'BOF',
+        'app_installs'  => 'BOF',
+        'app_events'    => 'BOF',
     ];
 
     public const NAME_FUNNEL_KEYWORDS = [
@@ -130,12 +141,14 @@ class AdCampaign extends Model
             event(new CampaignCreated($campaign));
         });
 
-        // Auto-derive funnel_stage: objective → name keywords → keep existing
+        // Auto-derive funnel_stage: name keywords first, then objective, then keep existing.
+        // Name takes priority because platform objectives (e.g. "awareness") are often set
+        // broadly while the campaign name explicitly records the funnel intent (e.g. "Traffic").
         static::saving(function (AdCampaign $campaign) {
             if ($campaign->isDirty('objective') || $campaign->isDirty('name') || !$campaign->funnel_stage) {
                 $campaign->funnel_stage =
-                    self::funnelStageForObjective($campaign->objective)
-                    ?? self::funnelStageFromName($campaign->name)
+                    self::funnelStageFromName($campaign->name)
+                    ?? self::funnelStageForObjective($campaign->objective)
                     ?? $campaign->funnel_stage;
             }
         });
