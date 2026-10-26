@@ -108,7 +108,7 @@ class BenchmarkService
                 DB::raw('SUM(m.spend) as total_spend_raw'),
                 DB::raw('SUM(m.impressions) as total_impressions'),
                 DB::raw('SUM(m.clicks) as total_clicks'),
-                DB::raw('SUM(m.leads) as total_leads'),
+                DB::raw('SUM(GREATEST(COALESCE(m.blended_leads,0), COALESCE(m.leads,0) + COALESCE(m.instant_leads,0))) as total_leads'),
                 DB::raw('SUM(m.conversions) as total_conversions'),
                 DB::raw('SUM(m.purchases) as total_purchases'),
                 DB::raw('SUM(m.app_installs) as total_installs')
@@ -127,6 +127,19 @@ class BenchmarkService
             $countries = is_array($filters['country']) ? $filters['country'] : [$filters['country']];
             $query->whereIn('a.country', $countries);
         }
+
+        // Exclude short-lived campaigns (< 7 active days) — they are anomalies that skew benchmarks.
+        // Metrics with no campaign_id are kept (account-level data).
+        $validCampaigns = DB::table('ad_metrics')
+            ->selectRaw('ad_campaign_id')
+            ->whereNotNull('ad_campaign_id')
+            ->whereBetween('date', [$dateFrom, $dateTo])
+            ->groupBy('ad_campaign_id')
+            ->havingRaw('COUNT(DISTINCT date) >= 7');
+        $query->where(function ($q) use ($validCampaigns) {
+            $q->whereNull('m.ad_campaign_id')
+              ->orWhereIn('m.ad_campaign_id', $validCampaigns);
+        });
 
         $rows = $query->groupBy('m.ad_account_id', 'account_currency')->get();
 
@@ -201,7 +214,7 @@ class BenchmarkService
                 DB::raw('SUM(m.spend) as total_spend_raw'),
                 DB::raw('SUM(m.impressions) as total_impressions'),
                 DB::raw('SUM(m.clicks) as total_clicks'),
-                DB::raw('SUM(m.leads) as total_leads'),
+                DB::raw('SUM(GREATEST(COALESCE(m.blended_leads,0), COALESCE(m.leads,0) + COALESCE(m.instant_leads,0))) as total_leads'),
                 DB::raw('SUM(m.conversions) as total_conversions'),
                 DB::raw('SUM(m.purchases) as total_purchases'),
                 DB::raw('SUM(m.app_installs) as total_installs')
@@ -220,6 +233,18 @@ class BenchmarkService
             $countries = is_array($filters['country']) ? $filters['country'] : [$filters['country']];
             $query->whereIn('a.country', $countries);
         }
+
+        // Exclude short-lived campaigns (< 7 active days) — anomalies that skew benchmarks.
+        $validCampaigns = DB::table('ad_metrics')
+            ->selectRaw('ad_campaign_id')
+            ->whereNotNull('ad_campaign_id')
+            ->whereBetween('date', [$dateFrom, $dateTo])
+            ->groupBy('ad_campaign_id')
+            ->havingRaw('COUNT(DISTINCT date) >= 7');
+        $query->where(function ($q) use ($validCampaigns) {
+            $q->whereNull('m.ad_campaign_id')
+              ->orWhereIn('m.ad_campaign_id', $validCampaigns);
+        });
 
         $rows = $query
             ->groupByRaw('1, 2, 3, 4, 5, 6, 7, 8')
@@ -509,6 +534,20 @@ class BenchmarkService
             }
 
             if (count($values) >= 1) {
+                // Always apply domain-specific minimums, even before IQR (catches single-account outliers)
+                $domainMin = match ($metric) {
+                    'cpl', 'cpa' => 10.0,   // SAR 10 minimum — sub-SAR-10 leads/purchases are data artefacts
+                    'cpc'        => 0.40,
+                    'cpm'        => 1.00,
+                    default      => 0.0,
+                };
+                if ($domainMin > 0) {
+                    $values = array_values(array_filter($values, fn ($v) => $v >= $domainMin));
+                }
+                if (count($values) === 0) {
+                    continue;
+                }
+
                 sort($values);
                 $count = count($values);
 
@@ -1364,24 +1403,14 @@ class BenchmarkService
         $dateTo = now()->toDateString();
         $dateFrom = now()->subYear()->toDateString();
 
-        // For conversion-type objectives, filter benchmark data to matching campaign types only.
-        // This prevents awareness/traffic campaigns from polluting CPL/CVR benchmarks.
+        // Use all campaign data — awareness/traffic campaigns with no leads already get CPL=0
+        // which is excluded by the domain minimum (≥ SAR 10), so no objective filter needed.
         $benchmarkFilters = $filters;
-        $conversionObjectives = ['leads', 'messages', 'calls', 'sales', 'conversions', 'catalog_sales', 'purchases', 'app_installs'];
-        $objectiveFiltered = in_array(strtolower($objective), $conversionObjectives) && empty($filters['objective']);
-        if ($objectiveFiltered) {
-            $benchmarkFilters['objective'] = $objective;
-        }
+        $objectiveFiltered = false;
 
         $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo, $benchmarkFilters);
 
-        // If no data found with objective filter, fall back to all campaign types
         $aliases = $this->getIndustryAliases($industry);
-        $hasData = collect($aliases)->contains(fn($a) => isset($industryBenchmarks[$a]));
-        if (!$hasData && $objectiveFiltered) {
-            $industryBenchmarks = $this->calculateDynamicIndustryBenchmarks($dateFrom, $dateTo, $filters);
-            $objectiveFiltered = false;
-        }
 
         $benchmarks = null;
         $matchedIndustry = null;
@@ -1459,27 +1488,41 @@ class BenchmarkService
         $cpm = isset($benchmarks['cpm']) ? $benchmarks['cpm']['avg'] * $multipliers['cpm'] : 10.0;
         $cvr = isset($benchmarks['cvr']) ? $benchmarks['cvr']['avg'] * $multipliers['cvr'] : 3.0;
 
-        // For CPL/CPA use actual percentile data to match the displayed range.
-        // excellent (×0.5) → p25 (min), average (×1.0–1.4) → p50 (avg), poor (≥1.5) → p75 (max).
+        // Linearly interpolate CPL/CPA across the three percentiles so all four scenarios diverge.
+        // Multiplier mapping: 0.5 (excellent) → p25 (min), 1.0 (midpoint) → p50 (avg), 1.7 (poor) → p75 (max).
         $cplMult = $multipliers['cpl'];
         if (isset($benchmarks['cpl'])) {
-            if ($cplMult <= 0.6) {
-                $cpl = $benchmarks['cpl']['min'] ?? $benchmarks['cpl']['avg'] * $cplMult;
-            } elseif ($cplMult >= 1.5) {
-                $cpl = $benchmarks['cpl']['max'] ?? $benchmarks['cpl']['avg'] * $cplMult;
+            $cplMin = $benchmarks['cpl']['min'] ?? null;
+            $cplAvg = $benchmarks['cpl']['avg'];
+            $cplMax = $benchmarks['cpl']['max'] ?? null;
+            if ($cplMin !== null && $cplMax !== null) {
+                if ($cplMult <= 1.0) {
+                    $t = max(0.0, min(1.0, ($cplMult - 0.5) / 0.5));
+                    $cpl = $cplMin + ($cplAvg - $cplMin) * $t;
+                } else {
+                    $t = max(0.0, min(1.0, ($cplMult - 1.0) / 0.7));
+                    $cpl = $cplAvg + ($cplMax - $cplAvg) * $t;
+                }
             } else {
-                $cpl = $benchmarks['cpl']['avg'];
+                $cpl = $cplAvg * $cplMult;
             }
         } else {
             $cpl = 30.0;
         }
         if (isset($benchmarks['cpa'])) {
-            if ($cplMult <= 0.6) {
-                $cpa = $benchmarks['cpa']['min'] ?? $benchmarks['cpa']['avg'] * $cplMult;
-            } elseif ($cplMult >= 1.5) {
-                $cpa = $benchmarks['cpa']['max'] ?? $benchmarks['cpa']['avg'] * $cplMult;
+            $cpaMin = $benchmarks['cpa']['min'] ?? null;
+            $cpaAvg = $benchmarks['cpa']['avg'];
+            $cpaMax = $benchmarks['cpa']['max'] ?? null;
+            if ($cpaMin !== null && $cpaMax !== null) {
+                if ($cplMult <= 1.0) {
+                    $t = max(0.0, min(1.0, ($cplMult - 0.5) / 0.5));
+                    $cpa = $cpaMin + ($cpaAvg - $cpaMin) * $t;
+                } else {
+                    $t = max(0.0, min(1.0, ($cplMult - 1.0) / 0.7));
+                    $cpa = $cpaAvg + ($cpaMax - $cpaAvg) * $t;
+                }
             } else {
-                $cpa = $benchmarks['cpa']['avg'];
+                $cpa = $cpaAvg * $cplMult;
             }
         } else {
             $cpa = 0.0;
@@ -1516,7 +1559,7 @@ class BenchmarkService
             'cost_per_result' => [
                 'cost_per_impression' => 'SAR ' . round($spend / max($expectedImpressions, 1), 4),
                 'cost_per_click' => 'SAR ' . round($spend / max($expectedClicks, 1), 2),
-                'cost_per_conversion' => 'SAR ' . round($spend / max($objectiveResults['primary']['value'], 1), 2),
+                'cost_per_conversion' => $objectiveResults['cost_per_result'] ?? ('SAR ' . round($spend / max($objectiveResults['primary']['value'], 1), 2)),
             ],
             // Keep legacy fields for backward compatibility
             'leads' => $objectiveResults['primary'],
@@ -1542,12 +1585,9 @@ class BenchmarkService
                     $calc = number_format(round($clicks)) . ' clicks × ' . round($cvr, 2) . '% CVR = ' . number_format(round($primaryValue));
                 }
                 return [
-                    'primary' => [
-                        'value' => round($primaryValue),
-                        'calculation' => $calc,
-                        'label' => $this->getObjectiveLabel($objective)
-                    ],
-                    'secondary' => []
+                    'primary' => ['value' => round($primaryValue), 'calculation' => $calc, 'label' => $this->getObjectiveLabel($objective)],
+                    'secondary' => [],
+                    'cost_per_result' => round($primaryValue) > 0 ? 'SAR ' . number_format(round($spend / $primaryValue, 2), 2) : null,
                 ];
 
             case 'sales':
@@ -1562,60 +1602,66 @@ class BenchmarkService
                     $calc = number_format(round($clicks)) . ' clicks × ' . round($cvr, 2) . '% conversion rate = ' . number_format(round($primaryValue));
                 }
                 return [
-                    'primary' => [
-                        'value' => round($primaryValue),
-                        'calculation' => $calc,
-                        'label' => $this->getObjectiveLabel($objective)
-                    ],
-                    'secondary' => []
+                    'primary' => ['value' => round($primaryValue), 'calculation' => $calc, 'label' => $this->getObjectiveLabel($objective)],
+                    'secondary' => [],
+                    'cost_per_result' => round($primaryValue) > 0 ? 'SAR ' . number_format(round($spend / $primaryValue, 2), 2) : null,
                 ];
 
             case 'traffic':
             case 'link_clicks':
                 $ctrDisplay = $impressions > 0 ? round(($clicks / $impressions) * 100, 2) : 0;
+                $cpc = $clicks > 0 ? $spend / $clicks : 0;
                 return [
                     'primary' => [
                         'value' => round($clicks),
                         'calculation' => number_format(round($impressions)) . " impressions × " . $ctrDisplay . "% CTR = " . number_format(round($clicks)),
-                        'label' => 'Website Visits'
+                        'label' => 'Website Visits',
                     ],
-                    'secondary' => []
+                    'secondary' => [],
+                    'cost_per_result' => $cpc > 0 ? 'SAR ' . number_format(round($cpc, 2), 2) : null,
                 ];
 
             case 'video_views':
                 $videoViews = $clicks * 2.5; // Video views typically higher than clicks
+                $cpv = $videoViews > 0 ? $spend / $videoViews : 0;
                 return [
                     'primary' => [
                         'value' => round($videoViews),
                         'calculation' => number_format(round($clicks)) . " engagements × 2.5 view rate = " . number_format(round($videoViews)),
-                        'label' => 'Video Views'
+                        'label' => 'Video Views',
                     ],
-                    'secondary' => []
+                    'secondary' => [],
+                    'cost_per_result' => $cpv > 0 ? 'SAR ' . number_format(round($cpv, 3), 3) : null,
                 ];
 
             case 'engagement':
             case 'page_likes':
                 $engagements = $impressions * 0.02; // 2% engagement rate
+                $cpe = $engagements > 0 ? $spend / $engagements : 0;
                 return [
                     'primary' => [
                         'value' => round($engagements),
                         'calculation' => number_format(round($impressions)) . " impressions × 2% engagement rate = " . number_format(round($engagements)),
-                        'label' => $this->getObjectiveLabel($objective)
+                        'label' => $this->getObjectiveLabel($objective),
                     ],
-                    'secondary' => []
+                    'secondary' => [],
+                    'cost_per_result' => $cpe > 0 ? 'SAR ' . number_format(round($cpe, 2), 2) : null,
                 ];
 
             case 'awareness':
             case 'reach':
             case 'impressions':
                 $reach = $impressions * 0.7; // Reach is typically 70% of impressions
+                // CPM is the standard cost metric for awareness campaigns
+                $cpm = $impressions > 0 ? ($spend / $impressions) * 1000 : 0;
                 return [
                     'primary' => [
                         'value' => round($reach),
                         'calculation' => number_format(round($impressions)) . " impressions × 70% reach rate = " . number_format(round($reach)),
-                        'label' => 'People Reached'
+                        'label' => 'People Reached',
                     ],
-                    'secondary' => []
+                    'secondary' => [],
+                    'cost_per_result' => $cpm > 0 ? 'SAR ' . number_format(round($cpm, 2), 2) . ' CPM' : null,
                 ];
 
             case 'app_installs':
@@ -1625,9 +1671,10 @@ class BenchmarkService
                     'primary' => [
                         'value' => round($appActions),
                         'calculation' => number_format(round($clicks)) . " clicks × " . round($cvr, 2) . "% install rate = " . number_format(round($appActions)),
-                        'label' => $this->getObjectiveLabel($objective)
+                        'label' => $this->getObjectiveLabel($objective),
                     ],
-                    'secondary' => []
+                    'secondary' => [],
+                    'cost_per_result' => round($appActions) > 0 ? 'SAR ' . number_format(round($spend / $appActions, 2), 2) : null,
                 ];
 
             default:
@@ -1637,9 +1684,10 @@ class BenchmarkService
                     'primary' => [
                         'value' => round($primaryValue),
                         'calculation' => number_format(round($clicks)) . " clicks × " . round($cvr, 2) . "% CVR = " . number_format(round($primaryValue)),
-                        'label' => 'Conversions'
+                        'label' => 'Conversions',
                     ],
-                    'secondary' => []
+                    'secondary' => [],
+                    'cost_per_result' => round($primaryValue) > 0 ? 'SAR ' . number_format(round($spend / $primaryValue, 2), 2) : null,
                 ];
         }
     }

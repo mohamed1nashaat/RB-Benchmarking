@@ -57,23 +57,13 @@ class Calculator extends Component
     ];
 
     public array $availableObjectives = [
-        'leads' => 'Leads',
-        'messages' => 'Messages',
-        'calls' => 'Phone Calls',
-        'sales' => 'Sales',
-        'conversions' => 'Conversions',
-        'catalog_sales' => 'Catalog Sales',
-        'store_visits' => 'Store Visits',
-        'traffic' => 'Website Visits',
-        'link_clicks' => 'Link Clicks',
-        'engagement' => 'Engagements',
-        'video_views' => 'Video Views',
-        'page_likes' => 'Page Likes',
-        'awareness' => 'Awareness',
-        'reach' => 'Reach',
-        'impressions' => 'Impressions',
+        'leads'        => 'Leads',
+        'sales'        => 'Sales / Conversions',
+        'traffic'      => 'Website Visits',
+        'engagement'   => 'Engagements',
+        'video_views'  => 'Video Views',
+        'awareness'    => 'Awareness / Reach',
         'app_installs' => 'App Installs',
-        'app_events' => 'App Events',
     ];
 
     public function mount()
