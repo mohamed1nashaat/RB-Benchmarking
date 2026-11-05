@@ -525,10 +525,30 @@ class BenchmarkService
         foreach ($metrics as $metric) {
             $values = [];
 
-            // Collect all non-zero values for this metric
+            // Collect all non-zero values for this metric.
+            // For cost-per-conversion metrics, require minimum volume so accounts with incidental
+            // conversions from awareness spend don't distort the benchmark (e.g. a furniture brand
+            // spending SAR 4M on reach that incidentally gets 6 form fills).
+            $minDenominator = match ($metric) {
+                'cpl' => 20,
+                'cpa' => 10,
+                'cpi' => 10,
+                default => 0,
+            };
             foreach ($allMetrics as $accountMetric) {
                 $value = $accountMetric[$metric];
                 if ($value > 0) {
+                    if ($minDenominator > 0) {
+                        $denomField = match ($metric) {
+                            'cpl' => 'total_leads',
+                            'cpa' => 'total_purchases',
+                            'cpi' => 'total_installs',
+                            default => null,
+                        };
+                        if ($denomField && ($accountMetric[$denomField] ?? 0) < $minDenominator) {
+                            continue;
+                        }
+                    }
                     $values[] = $value;
                 }
             }
@@ -536,7 +556,7 @@ class BenchmarkService
             if (count($values) >= 1) {
                 // Always apply domain-specific minimums, even before IQR (catches single-account outliers)
                 $domainMin = match ($metric) {
-                    'cpl', 'cpa' => 10.0,   // SAR 10 minimum — sub-SAR-10 leads/purchases are data artefacts
+                    'cpl', 'cpa' => 5.0,    // SAR 5 minimum — sub-SAR-5 CPL/CPA are micro-conversion artefacts
                     'cpc'        => 0.40,
                     'cpm'        => 1.00,
                     default      => 0.0,

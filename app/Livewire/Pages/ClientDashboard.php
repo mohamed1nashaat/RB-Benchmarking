@@ -5,10 +5,13 @@ namespace App\Livewire\Pages;
 use App\Models\AdAccount;
 use App\Models\AdCampaign;
 use App\Models\AccountCategory;
+use App\Models\AiVisibilityMonth;
+use App\Models\AiVisibilitySnapshot;
 use App\Models\Industry;
 use App\Models\Integration;
 use App\Models\SeoTechnicalIssue;
 use App\Models\Tenant;
+use App\Services\AiVisibilityParser;
 use App\Services\ClientDashboardService;
 use App\Services\ClientPerformanceReportService;
 use App\Services\CurrencyConversionService;
@@ -17,11 +20,15 @@ use App\Services\GA4AnalyticsService;
 use App\Services\PageSpeedService;
 use App\Services\SeoAuditService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Carbon\Carbon;
 
 class ClientDashboard extends Component
 {
+    use WithFileUploads;
+
     public int $clientId;
 
     // Tab
@@ -87,6 +94,14 @@ class ClientDashboard extends Component
     public string $editAccountCategory = '';
     public string $editAccountSubCategory = '';
 
+    // AI Visibility tab
+    public $aiVisibilityFile = null;
+    public bool $aiUploading = false;
+    public string $aiUploadError = '';
+    public string $aiUploadSuccess = '';
+    public ?array $aiMonths = null;
+    public ?array $aiSnapshot = null;
+
     public function mount(int $id)
     {
         $this->clientId = $id;
@@ -109,6 +124,12 @@ class ClientDashboard extends Component
                 $this->loadGa4Properties();
             }
         }
+
+        // Auto-select AI Visibility tab when ?ai-visibility is in the URL
+        if (request()->has('ai-visibility') || request()->query('tab') === 'ai-visibility') {
+            $this->activeTabIndex = 3;
+            $this->loadAiVisibilityData();
+        }
     }
 
     public function setActiveTab(int $index)
@@ -124,6 +145,82 @@ class ClientDashboard extends Component
                 $this->loadSearchConsoleSites();
                 $this->loadGa4Properties();
             }
+        }
+        if ($index === 3 && $this->aiMonths === null) {
+            $this->loadAiVisibilityData();
+        }
+    }
+
+    // ─── AI Visibility Tab ────────────────────────────────────────────────────
+
+    public function loadAiVisibilityData(): void
+    {
+        $this->aiMonths = AiVisibilityMonth::where('tenant_id', $this->clientId)
+            ->orderBy('month')
+            ->get()
+            ->map(fn($m) => $m->toArray())
+            ->toArray();
+
+        $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+            ->latest('snapshot_date')
+            ->first();
+
+        $this->aiSnapshot = $snapshot?->toArray();
+    }
+
+    public function uploadAiVisibility(): void
+    {
+        $this->validate([
+            'aiVisibilityFile' => 'required|file|mimes:xlsx|max:20480',
+        ]);
+
+        $this->aiUploading = true;
+        $this->aiUploadError = '';
+        $this->aiUploadSuccess = '';
+
+        try {
+            $path = $this->aiVisibilityFile->store('ai-visibility', 'local');
+            $fullPath = storage_path('app/' . $path);
+
+            $parser = new AiVisibilityParser();
+            $data = $parser->parse($fullPath);
+
+            // Determine report month from the latest month in the data
+            $months = $data['months'] ?? [];
+            $reportMonth = collect($months)->max('month') ?? now()->format('Y-m');
+            $snapshotDate = now()->toDateString();
+
+            // Upsert monthly rows
+            foreach ($months as $monthData) {
+                $month = $monthData['month'];
+                unset($monthData['month']);
+                AiVisibilityMonth::updateOrCreate(
+                    ['tenant_id' => $this->clientId, 'month' => $month],
+                    array_merge($monthData, ['tenant_id' => $this->clientId, 'month' => $month])
+                );
+            }
+
+            // Upsert snapshot
+            $snap = $data['snapshot'];
+            AiVisibilitySnapshot::updateOrCreate(
+                ['tenant_id' => $this->clientId, 'report_month' => $reportMonth],
+                array_merge($snap, [
+                    'tenant_id'     => $this->clientId,
+                    'report_month'  => $reportMonth,
+                    'snapshot_date' => $snapshotDate,
+                    'filename'      => $this->aiVisibilityFile->getClientOriginalName(),
+                ])
+            );
+
+            Storage::disk('local')->delete($path);
+
+            $this->aiVisibilityFile = null;
+            $this->aiUploadSuccess = 'AI visibility data imported for ' . $reportMonth;
+            $this->loadAiVisibilityData();
+        } catch (\Exception $e) {
+            $this->aiUploadError = 'Import failed: ' . $e->getMessage();
+        } finally {
+            $this->aiUploading = false;
         }
     }
 
@@ -1696,6 +1793,11 @@ class ClientDashboard extends Component
             }
         }
         ksort($campaignCategories);
+
+        // AI Visibility lazy-load
+        if ($this->activeTabIndex === 3 && $this->aiMonths === null) {
+            $this->loadAiVisibilityData();
+        }
 
         return view('livewire.pages.client-dashboard', [
             'platformChartConfig' => $this->getPlatformChartConfigProperty(),
