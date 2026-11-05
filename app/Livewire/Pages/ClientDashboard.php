@@ -7,6 +7,8 @@ use App\Models\AdCampaign;
 use App\Models\AccountCategory;
 use App\Models\AiVisibilityMonth;
 use App\Models\AiVisibilitySnapshot;
+use App\Models\Competitor;
+use App\Models\CompetitorVisibility;
 use App\Models\Industry;
 use App\Models\Integration;
 use App\Models\SeoTechnicalIssue;
@@ -102,6 +104,25 @@ class ClientDashboard extends Component
     public ?array $aiMonths = null;
     public ?array $aiSnapshot = null;
 
+    // Competitors
+    public ?array $competitors = null;
+    public bool $competitorFormOpen = false;
+    public string $competitorName = '';
+    public string $competitorWebsite = '';
+    public string $competitorIndustry = '';
+    public string $competitorNotes = '';
+    public ?int $editingCompetitorId = null;
+    // Competitor visibility entry form
+    public bool $competitorVisFormOpen = false;
+    public ?int $competitorVisId = null;
+    public string $competitorVisMonth = '';
+    public ?int $competitorVisAiImpressions = null;
+    public ?int $competitorVisAiSessions = null;
+    public ?int $competitorVisSemrushScore = null;
+    public ?int $competitorVisSemrushTopics = null;
+    public ?int $competitorVisClarityCitations = null;
+    public string $competitorVisSaveSuccess = '';
+
     public function mount(int $id)
     {
         $this->clientId = $id;
@@ -166,6 +187,7 @@ class ClientDashboard extends Component
             ->first();
 
         $this->aiSnapshot = $snapshot?->toArray();
+        $this->loadCompetitors();
     }
 
     public function uploadAiVisibility(): void
@@ -222,6 +244,119 @@ class ClientDashboard extends Component
         } finally {
             $this->aiUploading = false;
         }
+    }
+
+    // ─── Competitor Methods ───────────────────────────────────────────────────
+
+    public function loadCompetitors(): void
+    {
+        $this->competitors = Competitor::where('tenant_id', $this->clientId)
+            ->with(['latestVisibility', 'visibility'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn($c) => array_merge($c->toArray(), [
+                'latest_visibility' => $c->latestVisibility?->toArray(),
+                'visibility'        => $c->visibility->map(fn($v) => $v->toArray())->toArray(),
+            ]))
+            ->toArray();
+    }
+
+    public function openCompetitorForm(?int $id = null): void
+    {
+        $this->editingCompetitorId = $id;
+        if ($id) {
+            $comp = Competitor::find($id);
+            $this->competitorName     = $comp?->name ?? '';
+            $this->competitorWebsite  = $comp?->website ?? '';
+            $this->competitorIndustry = $comp?->industry ?? '';
+            $this->competitorNotes    = $comp?->notes ?? '';
+        } else {
+            $this->competitorName = $this->competitorWebsite = $this->competitorIndustry = $this->competitorNotes = '';
+        }
+        $this->competitorFormOpen = true;
+    }
+
+    public function saveCompetitor(): void
+    {
+        $this->validate(['competitorName' => 'required|string|max:255']);
+
+        if ($this->editingCompetitorId) {
+            Competitor::where('id', $this->editingCompetitorId)
+                ->where('tenant_id', $this->clientId)
+                ->update([
+                    'name'     => $this->competitorName,
+                    'website'  => $this->competitorWebsite ?: null,
+                    'industry' => $this->competitorIndustry ?: null,
+                    'notes'    => $this->competitorNotes ?: null,
+                ]);
+        } else {
+            Competitor::create([
+                'tenant_id' => $this->clientId,
+                'name'      => $this->competitorName,
+                'website'   => $this->competitorWebsite ?: null,
+                'industry'  => $this->competitorIndustry ?: null,
+                'notes'     => $this->competitorNotes ?: null,
+            ]);
+        }
+        $this->competitorFormOpen = false;
+        $this->editingCompetitorId = null;
+        $this->loadCompetitors();
+    }
+
+    public function deleteCompetitor(int $id): void
+    {
+        Competitor::where('id', $id)->where('tenant_id', $this->clientId)->delete();
+        $this->loadCompetitors();
+    }
+
+    public function openCompetitorVisForm(int $competitorId, string $month = ''): void
+    {
+        $this->competitorVisId                = $competitorId;
+        $this->competitorVisMonth             = $month ?: now()->format('Y-m');
+        $this->competitorVisAiImpressions     = null;
+        $this->competitorVisAiSessions        = null;
+        $this->competitorVisSemrushScore      = null;
+        $this->competitorVisSemrushTopics     = null;
+        $this->competitorVisClarityCitations  = null;
+        $this->competitorVisSaveSuccess       = '';
+
+        // Pre-fill if entry exists for this month
+        $existing = CompetitorVisibility::where('competitor_id', $competitorId)
+            ->where('report_month', $this->competitorVisMonth)
+            ->first();
+        if ($existing) {
+            $this->competitorVisAiImpressions    = $existing->ai_impressions;
+            $this->competitorVisAiSessions       = $existing->ai_sessions;
+            $this->competitorVisSemrushScore     = $existing->semrush_score;
+            $this->competitorVisSemrushTopics    = $existing->semrush_topics_count;
+            $this->competitorVisClarityCitations = $existing->clarity_citations;
+        }
+
+        $this->competitorVisFormOpen = true;
+    }
+
+    public function saveCompetitorVisibility(): void
+    {
+        $this->validate([
+            'competitorVisId'    => 'required|integer',
+            'competitorVisMonth' => 'required|date_format:Y-m',
+        ]);
+
+        CompetitorVisibility::updateOrCreate(
+            ['competitor_id' => $this->competitorVisId, 'report_month' => $this->competitorVisMonth],
+            [
+                'ai_impressions'       => $this->competitorVisAiImpressions,
+                'ai_sessions'          => $this->competitorVisAiSessions,
+                'semrush_score'        => $this->competitorVisSemrushScore,
+                'semrush_topics_count' => $this->competitorVisSemrushTopics,
+                'clarity_citations'    => $this->competitorVisClarityCitations,
+            ]
+        );
+
+        $this->competitorVisSaveSuccess = 'Saved for ' . $this->competitorVisMonth;
+        $this->competitorVisFormOpen = false;
+        $this->loadCompetitors();
     }
 
     // ─── Report Designer Tab ──────────────────────────────────────────────────
