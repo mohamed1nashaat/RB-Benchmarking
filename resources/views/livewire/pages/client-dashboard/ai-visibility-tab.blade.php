@@ -33,6 +33,18 @@
             </div>
             @if(!$seoHasIntegration)
                 <a href="{{ route('integrations') }}" wire:navigate class="text-xs text-brand-400 hover:text-brand-300 underline">Connect Google →</a>
+            @else
+                <button wire:click="refreshGoogleLists" wire:loading.attr="disabled"
+                    class="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-50">
+                    <svg wire:loading wire:target="refreshGoogleLists" class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <svg wire:loading.remove wire:target="refreshGoogleLists" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    Refresh
+                </button>
             @endif
         </div>
 

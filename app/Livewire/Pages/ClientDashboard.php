@@ -428,6 +428,19 @@ class ClientDashboard extends Component
         }
     }
 
+    public function refreshGoogleLists(): void
+    {
+        // Clear cached access token so a fresh one is fetched after reauth
+        $integration = $this->findGoogleIntegration($this->clientId);
+        if ($integration) {
+            \Illuminate\Support\Facades\Cache::forget('google_token:' . $integration->id);
+        }
+        $this->seoSearchConsoleSites = [];
+        $this->seoGa4Properties = [];
+        $this->loadSearchConsoleSites();
+        $this->loadGa4Properties();
+    }
+
     /**
      * Open the manual snapshot entry form for Semrush / Clarity data.
      */

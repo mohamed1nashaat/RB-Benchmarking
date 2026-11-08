@@ -12,8 +12,6 @@
     <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/favicon.png">
 
-    <!-- Theme: apply before paint to prevent flash -->
-    <script>(function(){var t=localStorage.getItem('rb-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');})()</script>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
