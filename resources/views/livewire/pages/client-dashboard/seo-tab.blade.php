@@ -1866,11 +1866,4 @@
                     <p class="empty-message">{{ __('Configure SEO properties to view reports') }}</p>
                 </div>
             @endif
-
-    @else
-        {{-- Error State --}}
-        <div class="text-center py-12">
-            <p class="text-gray-500">{{ $error ?: __('Failed to load client dashboard') }}</p>
-        </div>
-    @endif
-</div>
+@endif

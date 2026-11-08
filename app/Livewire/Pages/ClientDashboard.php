@@ -270,10 +270,6 @@ class ClientDashboard extends Component
      */
     public function saveAiGoogleSettings(): void
     {
-        \Illuminate\Support\Facades\Log::info('saveAiGoogleSettings called', [
-            'ga4' => $this->seoGa4PropertyId,
-            'sc'  => $this->seoSearchConsoleSite,
-        ]);
         $this->aiSyncError   = '';
         $this->aiSyncSuccess = '';
 
