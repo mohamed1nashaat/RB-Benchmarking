@@ -355,28 +355,31 @@ class ClientDashboard extends Component
                 $ga4 = $ga4MonthData[$month] ?? [];
                 $gsc = $gscMonthData[$month] ?? [];
 
-                $aiSessions      = $ga4['ai_sessions']    ?? 0;
-                $totalSessions   = $ga4['total_sessions']  ?? 0;
-                $aiImpressions   = $gsc['ai_impressions']  ?? 0;
-                $totalImpressions = $gsc['total_impressions'] ?? 0;
+                $aiSessions       = $ga4['ai_sessions']       ?? 0;
+                $totalSessions    = $ga4['total_sessions']     ?? 0;
+                $aiImpressions    = $gsc['ai_impressions']     ?? 0;
+                $totalImpressions = $gsc['total_impressions']  ?? 0;
+
+                // Only include a field when the API returned a non-zero value so
+                // existing Excel-imported data is not overwritten with nulls when
+                // an AI channel (e.g. GA4 AI Direct segment) has no traffic yet.
+                $updates = array_filter([
+                    'gsc_clicks'        => $gsc['gsc_clicks']    ?? null,
+                    'total_impressions' => $totalImpressions ?: null,
+                    'ai_impressions'    => $aiImpressions    ?: null,
+                    'ai_sessions'       => $aiSessions       ?: null,
+                    'ai_key_events'     => $ga4['ai_key_events'] ?? null,
+                    'ai_revenue'        => $ga4['ai_revenue']    ?? null,
+                    'total_sessions'    => $totalSessions    ?: null,
+                    'ai_session_share'  => ($totalSessions > 0 && $aiSessions > 0)
+                        ? round($aiSessions / $totalSessions * 100, 2) : null,
+                    'ai_impression_share' => ($totalImpressions > 0 && $aiImpressions > 0)
+                        ? round($aiImpressions / $totalImpressions * 100, 2) : null,
+                ], fn($v) => $v !== null);
 
                 AiVisibilityMonth::updateOrCreate(
                     ['tenant_id' => $this->clientId, 'month' => $month],
-                    [
-                        'tenant_id'           => $this->clientId,
-                        'month'               => $month,
-                        'gsc_clicks'          => $gsc['gsc_clicks']       ?? null,
-                        'total_impressions'   => $totalImpressions ?: null,
-                        'ai_impressions'      => $aiImpressions    ?: null,
-                        'ai_sessions'         => $aiSessions       ?: null,
-                        'ai_key_events'       => $ga4['ai_key_events']    ?? null,
-                        'ai_revenue'          => $ga4['ai_revenue']       ?? null,
-                        'total_sessions'      => $totalSessions    ?: null,
-                        'ai_session_share'    => $totalSessions > 0
-                            ? round($aiSessions / $totalSessions * 100, 2) : null,
-                        'ai_impression_share' => $totalImpressions > 0
-                            ? round($aiImpressions / $totalImpressions * 100, 2) : null,
-                    ]
+                    $updates + ['tenant_id' => $this->clientId, 'month' => $month]
                 );
                 $imported++;
             }
