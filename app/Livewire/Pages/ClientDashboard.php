@@ -106,6 +106,15 @@ class ClientDashboard extends Component
     public bool $aiSyncing = false;
     public string $aiSyncError = '';
     public string $aiSyncSuccess = '';
+    public int $aiPeriodMonths = 12;
+    // Manual snapshot entry (Semrush + Clarity)
+    public bool $aiSnapshotFormOpen = false;
+    public string $aiSnapshotMonth = '';
+    public ?int $aiSnapshotSemrushScore = null;
+    public ?int $aiSnapshotSemrushTopics = null;
+    public ?int $aiSnapshotSemrushPrompts = null;
+    public ?int $aiSnapshotClarityCitations = null;
+    public string $aiSnapshotSaveSuccess = '';
 
     // Competitors
     public ?array $competitors = null;
@@ -153,11 +162,8 @@ class ClientDashboard extends Component
         if (request()->has('ai-visibility') || request()->query('tab') === 'ai-visibility') {
             $this->activeTabIndex = 3;
             $this->loadAiVisibilityData();
-            $this->loadSeoProperties();
-            if ($this->seoHasIntegration) {
-                $this->loadSearchConsoleSites();
-                $this->loadGa4Properties();
-            }
+            $this->loadSeoProperties(); // DB-only, fast
+            // Google API list-loading is deferred via wire:init on the connection panel
         }
     }
 
@@ -179,11 +185,8 @@ class ClientDashboard extends Component
             if ($this->aiMonths === null) {
                 $this->loadAiVisibilityData();
             }
-            $this->loadSeoProperties();
-            if ($this->seoHasIntegration && empty($this->seoSearchConsoleSites)) {
-                $this->loadSearchConsoleSites();
-                $this->loadGa4Properties();
-            }
+            $this->loadSeoProperties(); // DB-only, fast
+            // Google API list-loading is deferred via wire:init on the connection panel
         }
     }
 
@@ -394,8 +397,12 @@ class ClientDashboard extends Component
                 );
             }
 
-            $this->aiSyncSuccess = "Synced {$imported} months from Google Analytics & Search Console";
-            $this->loadAiVisibilityData();
+            if ($imported === 0) {
+                $this->aiSyncError = 'Google API returned no data. Your Google token may be expired — please reconnect under Integrations.';
+            } else {
+                $this->aiSyncSuccess = "Synced {$imported} months of data from Google Analytics & Search Console";
+                $this->loadAiVisibilityData();
+            }
         } catch (\Exception $e) {
             $this->aiSyncError = 'Sync failed: ' . $e->getMessage();
             \Illuminate\Support\Facades\Log::error('AI Visibility live sync failed', [
@@ -405,6 +412,71 @@ class ClientDashboard extends Component
         } finally {
             $this->aiSyncing = false;
         }
+    }
+
+    /**
+     * Load GA4 property list + Search Console sites for the AI tab (called via wire:init).
+     */
+    public function loadGoogleListsForAiTab(): void
+    {
+        $this->loadSeoProperties();
+        if ($this->seoHasIntegration && empty($this->seoSearchConsoleSites)) {
+            $this->loadSearchConsoleSites();
+        }
+        if ($this->seoHasIntegration && empty($this->seoGa4Properties)) {
+            $this->loadGa4Properties();
+        }
+    }
+
+    /**
+     * Open the manual snapshot entry form for Semrush / Clarity data.
+     */
+    public function openAiSnapshotForm(?string $month = null): void
+    {
+        $this->aiSnapshotMonth           = $month ?: now()->subMonth()->format('Y-m');
+        $this->aiSnapshotSemrushScore    = null;
+        $this->aiSnapshotSemrushTopics   = null;
+        $this->aiSnapshotSemrushPrompts  = null;
+        $this->aiSnapshotClarityCitations = null;
+        $this->aiSnapshotSaveSuccess     = '';
+
+        $existing = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+            ->where('report_month', $this->aiSnapshotMonth)
+            ->first();
+
+        if ($existing) {
+            $this->aiSnapshotSemrushScore    = $existing->semrush_score;
+            $this->aiSnapshotSemrushTopics   = $existing->semrush_topics_count;
+            $this->aiSnapshotSemrushPrompts  = $existing->semrush_prompts_count;
+            $this->aiSnapshotClarityCitations = $existing->clarity_citations;
+        }
+
+        $this->aiSnapshotFormOpen = true;
+    }
+
+    /**
+     * Save manual Semrush / Clarity data to the snapshot.
+     */
+    public function saveAiSnapshot(): void
+    {
+        $this->validate(['aiSnapshotMonth' => 'required|date_format:Y-m']);
+
+        AiVisibilitySnapshot::updateOrCreate(
+            ['tenant_id' => $this->clientId, 'report_month' => $this->aiSnapshotMonth],
+            [
+                'tenant_id'             => $this->clientId,
+                'report_month'          => $this->aiSnapshotMonth,
+                'snapshot_date'         => now()->toDateString(),
+                'semrush_score'         => $this->aiSnapshotSemrushScore,
+                'semrush_topics_count'  => $this->aiSnapshotSemrushTopics,
+                'semrush_prompts_count' => $this->aiSnapshotSemrushPrompts,
+                'clarity_citations'     => $this->aiSnapshotClarityCitations,
+            ]
+        );
+
+        $this->aiSnapshotSaveSuccess = 'Saved for ' . $this->aiSnapshotMonth;
+        $this->aiSnapshotFormOpen    = false;
+        $this->loadAiVisibilityData();
     }
 
     // ─── Competitor Methods ───────────────────────────────────────────────────

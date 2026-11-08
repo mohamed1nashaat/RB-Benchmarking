@@ -3,7 +3,7 @@
 <div class="space-y-6">
 
     {{-- ── Google Connection Panel ─────────────────────────────────────────── --}}
-    <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+    <div wire:init="loadGoogleListsForAiTab" class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
@@ -140,7 +140,7 @@
         <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <div>
                 <p class="text-xs text-gray-400 font-medium">Sync live data from Google</p>
-                <p class="text-xs text-gray-600 mt-0.5">Pulls AI Direct sessions from GA4 + AI Overview impressions from Search Console (last 13 months).</p>
+                <p class="text-xs text-gray-600 mt-0.5">Pulls AI Direct sessions from GA4 + AI Overview impressions from Search Console (24 months history).</p>
             </div>
             <button wire:click="pullLiveAiVisibilityData" wire:loading.attr="disabled"
                 class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white border border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/10 transition-colors disabled:opacity-50">
@@ -190,14 +190,20 @@
             </svg>
         </div>
         <h3 class="text-sm font-semibold text-white">No AI visibility data yet</h3>
-        <p class="text-xs text-gray-500 mt-1 max-w-sm">Upload the monthly Excel report above to start tracking this client's AI citation presence across Google AI Overviews, ChatGPT, Gemini, Perplexity, and more.</p>
+        <p class="text-xs text-gray-500 mt-1 max-w-sm">Use "Save &amp; Sync" in the Google Connection panel to pull live data, or upload the monthly Excel report above. Semrush and Clarity data can be entered manually.</p>
+        <button wire:click="openAiSnapshotForm()" class="mt-4 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-400 border border-white/10 hover:border-white/20 hover:text-gray-200 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Enter Semrush &amp; Clarity data
+        </button>
     </div>
     @endif
 
     @if(!empty($aiMonths) || $aiSnapshot)
 
     @php
-        $months     = collect($aiMonths);
+        $allMonths   = collect($aiMonths);
+        // Apply period filter
+        $months      = $aiPeriodMonths > 0 ? $allMonths->takeLast($aiPeriodMonths) : $allMonths;
         $latestM    = $months->last();
         $prevM      = $months->slice(-2, 1)->first();
         $monthLabels = $months->pluck('month')->map(fn($m) => \Carbon\Carbon::parse($m)->format('M Y'))->values();
@@ -215,6 +221,24 @@
         $revDelta         = $aiDelta($latestM['ai_revenue'] ?? null, $prevM['ai_revenue'] ?? null);
         $keDelta          = $aiDelta($latestM['ai_key_events'] ?? null, $prevM['ai_key_events'] ?? null);
     @endphp
+
+    {{-- ── Period Filter ─────────────────────────────────────────────────── --}}
+    <div class="flex items-center justify-between gap-3">
+        <p class="text-xs text-gray-500">
+            Showing <span class="text-gray-300 font-medium">{{ $months->count() }}</span> months
+            @if($allMonths->count() > $months->count())
+                ({{ $allMonths->count() }} total)
+            @endif
+        </p>
+        <div class="flex items-center gap-1 bg-white/[0.04] rounded-lg p-0.5">
+            @foreach([3 => '3M', 6 => '6M', 12 => '12M', 24 => '24M', 0 => 'All'] as $val => $label)
+                <button wire:click="$set('aiPeriodMonths', {{ $val }})"
+                    class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors {{ $aiPeriodMonths === $val ? 'bg-white/15 text-white' : 'text-gray-500 hover:text-gray-300' }}">
+                    {{ $label }}
+                </button>
+            @endforeach
+        </div>
+    </div>
 
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
     {{-- ── KPI Row ───────────────────────────────────────────────────────── --}}
@@ -257,7 +281,7 @@
             @endif
         </div>
         {{-- Semrush AI Score --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 relative group">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">Semrush AI Score</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $semrushScore !== null ? $semrushScore . ' / 100' : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">
@@ -265,14 +289,78 @@
                 @else AI brand visibility
                 @endif
             </p>
+            <button wire:click="openAiSnapshotForm('{{ $aiSnapshot['report_month'] ?? now()->subMonth()->format('Y-m') }}')"
+                class="absolute top-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-gray-500 hover:text-gray-200 hover:bg-white/10"
+                title="Edit Semrush & Clarity data">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+            </button>
         </div>
         {{-- Copilot Citations --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 relative group">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">AI Citations</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $clarityCit !== null ? number_format($clarityCit) : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">Microsoft Clarity · Copilot</p>
+            <button wire:click="openAiSnapshotForm('{{ $aiSnapshot['report_month'] ?? now()->subMonth()->format('Y-m') }}')"
+                class="absolute top-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-gray-500 hover:text-gray-200 hover:bg-white/10"
+                title="Edit Semrush & Clarity data">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+            </button>
         </div>
     </div>
+
+    {{-- ── Semrush & Clarity Manual Entry Modal ─────────────────────────── --}}
+    @if($aiSnapshotFormOpen)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.6);">
+        <div class="card w-full max-w-sm p-6" x-data>
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-semibold text-white">Semrush &amp; Clarity Data</h3>
+                <button wire:click="$set('aiSnapshotFormOpen', false)" class="text-gray-500 hover:text-gray-200">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Report Month</label>
+                    <input wire:model="aiSnapshotMonth" type="month" class="input-field" />
+                </div>
+                <div class="pt-1 pb-1">
+                    <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Semrush AI Visibility</p>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Score (0–100)</label>
+                            <input wire:model="aiSnapshotSemrushScore" type="number" min="0" max="100" placeholder="0" class="input-field" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Topics</label>
+                            <input wire:model="aiSnapshotSemrushTopics" type="number" min="0" placeholder="0" class="input-field" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Prompts</label>
+                            <input wire:model="aiSnapshotSemrushPrompts" type="number" min="0" placeholder="0" class="input-field" />
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-gray-600 mt-1.5">From Semrush AI Toolkit → AI Visibility score.</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Microsoft Clarity</p>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">AI Citations</label>
+                        <input wire:model="aiSnapshotClarityCitations" type="number" min="0" placeholder="0" class="input-field" />
+                    </div>
+                    <p class="text-[11px] text-gray-600 mt-1.5">From Clarity Dashboard → AI-referred sessions / citations.</p>
+                </div>
+            </div>
+            <div class="mt-5 flex items-center gap-3">
+                <button wire:click="saveAiSnapshot" wire:loading.attr="disabled"
+                    class="btn-primary flex-1 disabled:opacity-50">
+                    <span wire:loading.remove wire:target="saveAiSnapshot">Save</span>
+                    <span wire:loading wire:target="saveAiSnapshot">Saving…</span>
+                </button>
+                <button wire:click="$set('aiSnapshotFormOpen', false)" class="btn-ghost">Cancel</button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
     {{-- ── Google AI Search (GSC) ────────────────────────────────────────── --}}
