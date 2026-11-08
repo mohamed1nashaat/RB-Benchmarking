@@ -420,11 +420,18 @@ class ClientDashboard extends Component
     public function loadGoogleListsForAiTab(): void
     {
         $this->loadSeoProperties();
-        if ($this->seoHasIntegration && empty($this->seoSearchConsoleSites)) {
-            $this->loadSearchConsoleSites();
-        }
-        if ($this->seoHasIntegration && empty($this->seoGa4Properties)) {
-            $this->loadGa4Properties();
+        if ($this->seoHasIntegration) {
+            // Clear cached access token so a fresh one is fetched — handles post-reauth stale tokens
+            $integration = $this->findGoogleIntegration($this->clientId);
+            if ($integration) {
+                \Illuminate\Support\Facades\Cache::forget('google_token:' . $integration->id);
+            }
+            if (empty($this->seoSearchConsoleSites)) {
+                $this->loadSearchConsoleSites();
+            }
+            if (empty($this->seoGa4Properties)) {
+                $this->loadGa4Properties();
+            }
         }
     }
 

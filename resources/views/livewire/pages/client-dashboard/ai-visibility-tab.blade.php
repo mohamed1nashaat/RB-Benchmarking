@@ -3,7 +3,7 @@
 <div class="space-y-6">
 
     {{-- ── Google Connection Panel ─────────────────────────────────────────── --}}
-    <div wire:init="loadGoogleListsForAiTab" class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+    <div wire:init="loadGoogleListsForAiTab" class="card p-5">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
@@ -119,7 +119,7 @@
     </div>
 
     {{-- ── Upload Panel ──────────────────────────────────────────────────── --}}
-    <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+    <div class="card p-5">
         <div class="flex items-start justify-between gap-4 flex-wrap">
             <div>
                 <h3 class="text-sm font-semibold text-white">Upload Monthly AI Visibility Report</h3>
@@ -195,7 +195,7 @@
 
     @if(empty($aiMonths) && !$aiSnapshot)
     {{-- ── Empty state ───────────────────────────────────────────────────── --}}
-    <div class="rounded-xl border border-white/10 bg-white/[0.02] flex flex-col items-center justify-center py-20 text-center px-6">
+    <div class="card flex flex-col items-center justify-center py-20 text-center px-6">
         <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style="background: rgba(239,68,68,0.12);">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ef4444">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
@@ -257,7 +257,7 @@
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {{-- AI Impressions --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div class="card p-4">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">AI Impressions</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $totalAiImpr ? number_format($totalAiImpr) : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">Google AI Overviews</p>
@@ -266,7 +266,7 @@
             @endif
         </div>
         {{-- AI Sessions --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div class="card p-4">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">AI Sessions</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $totalAiSess ? number_format($totalAiSess) : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">ChatGPT · Gemini · etc.</p>
@@ -275,7 +275,7 @@
             @endif
         </div>
         {{-- AI Revenue --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div class="card p-4">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">AI Revenue</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $totalAiRev ? 'SAR ' . number_format($totalAiRev, 0) : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">From AI-referred sessions</p>
@@ -284,7 +284,7 @@
             @endif
         </div>
         {{-- AI Key Events --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div class="card p-4">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">AI Conversions</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $totalAiKE ? number_format($totalAiKE) : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">Key events from AI traffic</p>
@@ -293,7 +293,7 @@
             @endif
         </div>
         {{-- Semrush AI Score --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 relative group">
+        <div class="card p-4 relative group">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">Semrush AI Score</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $semrushScore !== null ? $semrushScore . ' / 100' : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">
@@ -308,7 +308,7 @@
             </button>
         </div>
         {{-- Copilot Citations --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4 relative group">
+        <div class="card p-4 relative group">
             <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium leading-tight">AI Citations</p>
             <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $clarityCit !== null ? number_format($clarityCit) : '—' }}</p>
             <p class="text-[11px] text-gray-600 mt-0.5">Microsoft Clarity · Copilot</p>
@@ -385,7 +385,7 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {{-- AI Impressions trend --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-3">AI Impressions by Month</h3>
                 <div x-data="{
                     init() {
@@ -399,7 +399,7 @@
                 }"><div style="height:200px;"><canvas x-ref="cv"></canvas></div></div>
             </div>
             {{-- AI Impression Share % trend --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-1">AI Impression Share %</h3>
                 <p class="text-[11px] text-gray-600 mb-3">What % of total GSC impressions appear in AI Overviews</p>
                 <div x-data="{
@@ -428,7 +428,7 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {{-- Sessions by month --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-3">AI Sessions by Month</h3>
                 <div x-data="{
                     init() {
@@ -442,7 +442,7 @@
                 }"><div style="height:200px;"><canvas x-ref="cv"></canvas></div></div>
             </div>
             {{-- Revenue by month --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-1">AI Revenue by Month</h3>
                 <p class="text-[11px] text-gray-600 mb-3">Revenue generated from AI-referred sessions (SAR)</p>
                 <div x-data="{
@@ -459,7 +459,7 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             {{-- Key Events --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-1">AI Key Events (Conversions)</h3>
                 <p class="text-[11px] text-gray-600 mb-3">Purchase / lead events from AI-referred sessions</p>
                 <div x-data="{
@@ -474,7 +474,7 @@
                 }"><div style="height:200px;"><canvas x-ref="cv"></canvas></div></div>
             </div>
             {{-- AI Session Share % --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-1">AI Session Share %</h3>
                 <p class="text-[11px] text-gray-600 mb-3">AI-referred sessions as % of total sessions (GA4)</p>
                 <div x-data="{
@@ -509,7 +509,7 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {{-- Sessions --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-4">Sessions by Platform</h3>
                 <div class="space-y-3">
                     @foreach($platforms as $i => $p)
@@ -527,7 +527,7 @@
                 </div>
             </div>
             {{-- Revenue --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-4">Revenue by Platform (SAR)</h3>
                 <div class="space-y-3">
                     @foreach($platforms as $i => $p)
@@ -548,7 +548,7 @@
                 </div>
             </div>
             {{-- Key Events --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-4">Key Events by Platform</h3>
                 @php $maxKE = max(1, $platforms->max('key_events')); @endphp
                 <div class="space-y-3">
@@ -578,7 +578,7 @@
         $funnel = collect($aiSnapshot['ai_funnel'])->filter(fn($f) => ($f['total'] ?? 0) > 0)->values();
         $topVal = $funnel->max('total') ?: 1;
     @endphp
-    <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+    <div class="card p-5">
         <div class="flex items-start justify-between mb-4">
             <div>
                 <h3 class="text-sm font-semibold text-white">AI Assistant — Shopping Funnel</h3>
@@ -634,7 +634,7 @@
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @if(!empty($aiSnapshot['top_ai_pages']))
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+        <div class="card p-5">
             <h3 class="text-sm font-semibold text-white mb-3">Top Pages in Google AI Overviews</h3>
             <p class="text-[11px] text-gray-600 mb-3">Pages with the most AI impression appearances</p>
             @php $maxPageImpr = max(1, collect($aiSnapshot['top_ai_pages'])->max('impressions')); @endphp
@@ -661,7 +661,7 @@
         @endif
 
         @if(!empty($aiSnapshot['top_ai_countries']))
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+        <div class="card p-5">
             <h3 class="text-sm font-semibold text-white mb-3">AI Impressions by Country</h3>
             <p class="text-[11px] text-gray-600 mb-3">Geographic distribution of Google AI Overviews appearances</p>
             @php $maxCountryImpr = max(1, collect($aiSnapshot['top_ai_countries'])->max('impressions')); @endphp
@@ -724,22 +724,22 @@
 
         {{-- KPI tiles --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div class="card p-4">
                 <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium">Total Citations</p>
                 <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $totalCit ? number_format($totalCit) : '—' }}</p>
                 <p class="text-[11px] text-gray-600 mt-0.5">Times cited by AI</p>
             </div>
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div class="card p-4">
                 <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium">Branded Citations</p>
                 <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $brandedCit ? number_format($brandedCit) : '—' }}</p>
                 <p class="text-[11px] text-gray-600 mt-0.5">{{ $totalCit > 0 ? round($brandedCit / $totalCit * 100) . '% of total' : 'Brand queries' }}</p>
             </div>
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div class="card p-4">
                 <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium">Non-Branded</p>
                 <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $nonBrandCit ? number_format($nonBrandCit) : '—' }}</p>
                 <p class="text-[11px] text-gray-600 mt-0.5">{{ $totalCit > 0 ? round($nonBrandCit / $totalCit * 100) . '% of total' : 'Generic queries' }}</p>
             </div>
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div class="card p-4">
                 <p class="text-[11px] text-gray-500 uppercase tracking-wide font-medium">AI Sessions</p>
                 <p class="text-2xl font-bold text-white mt-1 tabular-nums">{{ $aiSessClarity ? number_format($aiSessClarity) : '—' }}</p>
                 <p class="text-[11px] text-gray-600 mt-0.5">Via Clarity tracking</p>
@@ -748,7 +748,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {{-- Share of Authority + Branded vs Non-Branded visual --}}
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-4">Share of Authority</h3>
                 <div class="space-y-3">
                     @if($shareAuth !== null)
@@ -797,7 +797,7 @@
 
             {{-- Topic categories --}}
             @if($topicCategories->count() > 0)
-            <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+            <div class="card p-5">
                 <h3 class="text-xs font-semibold text-gray-300 mb-4">Citations by Topic Category</h3>
                 @php $maxTopicCit = max(1, $topicCategories->max('count')); @endphp
                 <div class="space-y-3">
@@ -820,7 +820,7 @@
 
         {{-- Core Web Vitals --}}
         @if($perfScore || $lcp || $inp || $cls)
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5 mt-4">
+        <div class="card p-5 mt-4">
             <h3 class="text-xs font-semibold text-gray-300 mb-4">Core Web Vitals — AI-Cited Pages</h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @if($perfScore !== null)
@@ -879,7 +879,7 @@
     {{-- ── Semrush AI Topics ─────────────────────────────────────────────── --}}
     {{-- ══════════════════════════════════════════════════════════════════════ --}}
     @if(!empty($aiSnapshot['semrush_top_topics']))
-    <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+    <div class="card p-5">
         <div class="flex items-start justify-between mb-4">
             <div>
                 <h3 class="text-sm font-semibold text-white">Semrush AI Topics</h3>
@@ -965,7 +965,7 @@
 
         {{-- Add / Edit Competitor modal --}}
         @if($competitorFormOpen)
-        <div class="rounded-xl border border-brand-500/30 bg-white/[0.03] p-5 mb-4">
+        <div class="card p-5 mb-4 !border-brand-500/30">
             <h4 class="text-sm font-semibold text-white mb-3">{{ $editingCompetitorId ? 'Edit Competitor' : 'Add Competitor' }}</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -1000,7 +1000,7 @@
 
         {{-- Competitor Visibility Entry modal --}}
         @if($competitorVisFormOpen)
-        <div class="rounded-xl border border-white/15 bg-white/[0.03] p-5 mb-4">
+        <div class="card p-5 mb-4">
             <h4 class="text-sm font-semibold text-white mb-3">Log Metrics</h4>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div>
@@ -1043,7 +1043,7 @@
 
         {{-- Competitor list / comparison --}}
         @if(empty($competitors))
-            <div class="rounded-xl border border-white/10 bg-white/[0.02] flex flex-col items-center justify-center py-14 text-center px-6">
+            <div class="card flex flex-col items-center justify-center py-14 text-center px-6">
                 <svg class="w-8 h-8 text-gray-700 mb-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
                 <p class="text-xs text-gray-500">No competitors added yet. Click <strong class="text-gray-300">Add Competitor</strong> to start tracking.</p>
             </div>
@@ -1079,7 +1079,7 @@
         {{-- Semrush AI Score comparison --}}
         @php $entitiesWithScore = collect($allEntities)->filter(fn($e) => $e['semrush_score'] !== null)->values(); @endphp
         @if($entitiesWithScore->count() >= 1)
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5 mb-4">
+        <div class="card p-5 mb-4">
             <h3 class="text-sm font-semibold text-white mb-4">Semrush AI Score Comparison</h3>
             <div class="space-y-3">
                 @foreach($entitiesWithScore as $entity)
@@ -1105,7 +1105,7 @@
         @endif
 
         {{-- Full competitor table --}}
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+        <div class="card overflow-hidden">
             <table class="w-full text-xs">
                 <thead>
                     <tr class="border-b border-white/10 text-left">
@@ -1183,7 +1183,7 @@
             $clientMonthLabels = collect($aiMonths ?? [])->pluck('month')->map(fn($m) => \Carbon\Carbon::parse($m)->format('M Y'))->values()->toArray();
         @endphp
         @if(count($aiMonths ?? []) > 1 && $competitorsWithHistory->count() > 0)
-        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5 mt-4">
+        <div class="card p-5 mt-4">
             <h3 class="text-sm font-semibold text-white mb-4">AI Impressions — Client vs Competitors</h3>
             <div x-data="{
                 init() {
