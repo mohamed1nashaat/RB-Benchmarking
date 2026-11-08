@@ -153,6 +153,11 @@ class ClientDashboard extends Component
         if (request()->has('ai-visibility') || request()->query('tab') === 'ai-visibility') {
             $this->activeTabIndex = 3;
             $this->loadAiVisibilityData();
+            $this->loadSeoProperties();
+            if ($this->seoHasIntegration) {
+                $this->loadSearchConsoleSites();
+                $this->loadGa4Properties();
+            }
         }
     }
 
@@ -170,8 +175,15 @@ class ClientDashboard extends Component
                 $this->loadGa4Properties();
             }
         }
-        if ($index === 3 && $this->aiMonths === null) {
-            $this->loadAiVisibilityData();
+        if ($index === 3) {
+            if ($this->aiMonths === null) {
+                $this->loadAiVisibilityData();
+            }
+            $this->loadSeoProperties();
+            if ($this->seoHasIntegration && empty($this->seoSearchConsoleSites)) {
+                $this->loadSearchConsoleSites();
+                $this->loadGa4Properties();
+            }
         }
     }
 
@@ -249,6 +261,44 @@ class ClientDashboard extends Component
         }
     }
 
+    /**
+     * Save GA4 property + Search Console site from the AI tab, then auto-sync live data.
+     */
+    public function saveAiGoogleSettings(): void
+    {
+        $this->aiSyncError   = '';
+        $this->aiSyncSuccess = '';
+
+        try {
+            $client   = Tenant::findOrFail($this->clientId);
+            $settings = $client->settings ?? [];
+
+            // Resolve GA4 property display name from loaded list
+            if ($this->seoGa4PropertyId) {
+                foreach ($this->seoGa4Properties as $prop) {
+                    if (($prop['property_id'] ?? '') === $this->seoGa4PropertyId) {
+                        $this->seoGa4PropertyName = $prop['display_name'] ?? null;
+                        break;
+                    }
+                }
+            }
+
+            $settings['seo'] = array_merge($settings['seo'] ?? [], [
+                'search_console_site' => $this->seoSearchConsoleSite,
+                'ga4_property_id'     => $this->seoGa4PropertyId,
+                'ga4_property_name'   => $this->seoGa4PropertyName,
+            ]);
+
+            $client->update(['settings' => $settings]);
+            $this->seoSaved = true;
+
+            // Auto-sync live data with the newly saved connection
+            $this->pullLiveAiVisibilityData();
+        } catch (\Exception $e) {
+            $this->aiSyncError = 'Save failed: ' . $e->getMessage();
+        }
+    }
+
     public function pullLiveAiVisibilityData(): void
     {
         $this->aiSyncing     = true;
@@ -269,7 +319,7 @@ class ClientDashboard extends Component
                 return;
             }
 
-            $startDate = now()->subMonths(13)->startOfMonth()->format('Y-m-d');
+            $startDate = now()->subMonths(24)->startOfMonth()->format('Y-m-d');
             $endDate   = now()->format('Y-m-d');
 
             $ga4MonthData = [];

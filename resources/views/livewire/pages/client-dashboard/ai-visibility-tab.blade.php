@@ -2,6 +2,110 @@
 @if($activeTabIndex === 3)
 <div class="space-y-6">
 
+    {{-- ── Google Connection Panel ─────────────────────────────────────────── --}}
+    <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <h3 class="text-sm font-semibold text-white">Google Connection</h3>
+                @if($seoHasIntegration)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-500/15 text-emerald-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                        Connected
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-amber-500/15 text-amber-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+                        Not connected
+                    </span>
+                @endif
+                @if($seoSaved)
+                    <span class="text-xs text-emerald-400 font-medium flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        Saved
+                    </span>
+                @endif
+            </div>
+            @if(!$seoHasIntegration)
+                <a href="{{ route('integrations') }}" wire:navigate class="text-xs text-brand-400 hover:text-brand-300 underline">Connect Google →</a>
+            @endif
+        </div>
+
+        @if(!$seoHasIntegration)
+            <div class="flex items-start gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20 text-xs text-amber-300 mb-0">
+                <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+                <span>Connect a Google account under <a href="{{ route('integrations') }}" wire:navigate class="underline font-medium">Integrations</a> to enable live data sync from GA4 and Search Console.</span>
+            </div>
+        @else
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {{-- Search Console Site --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Search Console Site</label>
+                    <div class="relative">
+                        <select wire:model="seoSearchConsoleSite" class="input-field pe-8">
+                            <option value="">— Select site —</option>
+                            @foreach($seoSearchConsoleSites as $site)
+                                <option value="{{ $site['site_url'] }}">{{ $site['site_url'] }}</option>
+                            @endforeach
+                        </select>
+                        @if($seoLoadingSites)
+                            <div class="absolute end-8 top-2.5">
+                                <svg class="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- GA4 Property --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">GA4 Property</label>
+                    <div class="relative">
+                        <select wire:model="seoGa4PropertyId" class="input-field pe-8">
+                            <option value="">— Select property —</option>
+                            @foreach($seoGa4Properties as $prop)
+                                <option value="{{ $prop['property_id'] }}">{{ $prop['display_name'] }} ({{ $prop['account_name'] ?? '' }})</option>
+                            @endforeach
+                        </select>
+                        @if($seoLoadingProperties)
+                            <div class="absolute end-8 top-2.5">
+                                <svg class="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+                <button wire:click="saveAiGoogleSettings"
+                    wire:loading.attr="disabled"
+                    class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity disabled:opacity-50"
+                    style="background: var(--brand-500, #ef4444);">
+                    <svg wire:loading wire:target="saveAiGoogleSettings" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <svg wire:loading.remove wire:target="saveAiGoogleSettings" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    <span wire:loading.remove wire:target="saveAiGoogleSettings">Save &amp; Sync (24 months)</span>
+                    <span wire:loading wire:target="saveAiGoogleSettings">Syncing…</span>
+                </button>
+                <p class="text-xs text-gray-600">Saves selection and pulls historical data from GA4 + Search Console.</p>
+            </div>
+        @endif
+    </div>
+
     {{-- ── Upload Panel ──────────────────────────────────────────────────── --}}
     <div class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
         <div class="flex items-start justify-between gap-4 flex-wrap">
