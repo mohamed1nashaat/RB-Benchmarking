@@ -404,6 +404,7 @@
                         const labels = @js($monthLabels);
                         const vals   = @js($months->pluck('ai_impressions')->map(fn($v) => (int)($v ?? 0))->values());
                         const color  = getComputedStyle(document.documentElement).getPropertyValue('--brand-500')?.trim() || '#ef4444';
+                        Chart.getChart(this.$refs.cv)?.destroy();
                         new Chart(this.$refs.cv, { type: 'line', data: { labels, datasets: [{ label: 'AI Impressions', data: vals, borderColor: color, backgroundColor: color + '18', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: color }] },
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                                 scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } } } } });
@@ -419,6 +420,7 @@
                         const labels = @js($monthLabels);
                         const vals   = @js($months->pluck('ai_impression_share')->map(fn($v) => $v ? round($v * 100, 2) : 0)->values());
                         const color  = '#60a5fa';
+                        Chart.getChart(this.$refs.cv)?.destroy();
                         new Chart(this.$refs.cv, { type: 'line', data: { labels, datasets: [{ label: 'AI Share %', data: vals, borderColor: color, backgroundColor: color + '18', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: color }] },
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                                 scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 }, callback: v => v + '%' } } } } });
@@ -447,6 +449,7 @@
                         const labels = @js($monthLabels);
                         const vals   = @js($months->pluck('ai_sessions')->map(fn($v) => (int)($v ?? 0))->values());
                         const color  = getComputedStyle(document.documentElement).getPropertyValue('--brand-500')?.trim() || '#ef4444';
+                        Chart.getChart(this.$refs.cv)?.destroy();
                         new Chart(this.$refs.cv, { type: 'bar', data: { labels, datasets: [{ label: 'AI Sessions', data: vals, backgroundColor: color + '55', borderColor: color, borderWidth: 1.5, borderRadius: 4 }] },
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                                 scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } } } } });
@@ -462,6 +465,7 @@
                         const labels = @js($monthLabels);
                         const vals   = @js($months->pluck('ai_revenue')->map(fn($v) => round((float)($v ?? 0), 0))->values());
                         const color  = '#34d399';
+                        Chart.getChart(this.$refs.cv)?.destroy();
                         new Chart(this.$refs.cv, { type: 'bar', data: { labels, datasets: [{ label: 'AI Revenue (SAR)', data: vals, backgroundColor: color + '55', borderColor: color, borderWidth: 1.5, borderRadius: 4 }] },
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                                 scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 }, callback: v => 'SAR ' + v } } } } });
@@ -479,6 +483,7 @@
                         const labels = @js($monthLabels);
                         const vals   = @js($months->pluck('ai_key_events')->map(fn($v) => (int)($v ?? 0))->values());
                         const color  = '#fbbf24';
+                        Chart.getChart(this.$refs.cv)?.destroy();
                         new Chart(this.$refs.cv, { type: 'bar', data: { labels, datasets: [{ label: 'Key Events', data: vals, backgroundColor: color + '55', borderColor: color, borderWidth: 1.5, borderRadius: 4 }] },
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                                 scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } } } } });
@@ -494,6 +499,7 @@
                         const labels = @js($monthLabels);
                         const vals   = @js($months->pluck('ai_session_share')->map(fn($v) => $v ? round($v * 100, 2) : 0)->values());
                         const color  = '#a78bfa';
+                        Chart.getChart(this.$refs.cv)?.destroy();
                         new Chart(this.$refs.cv, { type: 'line', data: { labels, datasets: [{ label: 'Session Share %', data: vals, borderColor: color, backgroundColor: color + '18', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: color }] },
                             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                                 scales: { x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7280', font: { size: 11 }, callback: v => v + '%' } } } } });
@@ -1220,6 +1226,7 @@
                         fill: false, tension: 0.3, pointRadius: 3, borderDash: [4, 3],
                     });
                     @endforeach
+                    Chart.getChart(this.$refs.cv)?.destroy();
                     new Chart(this.$refs.cv, { type: 'line', data: { labels, datasets },
                         options: { responsive: true, maintainAspectRatio: false,
                             plugins: { legend: { display: true, labels: { color: '#9ca3af', font: { size: 11 }, boxWidth: 24 } } },
