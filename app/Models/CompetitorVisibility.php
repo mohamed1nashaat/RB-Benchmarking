@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CompetitorVisibility extends Model
 {
+    protected $table = 'competitor_visibility';
+
     protected $fillable = [
         'competitor_id', 'report_month',
         'ai_impressions', 'ai_sessions',
