@@ -698,4 +698,238 @@ class GA4AnalyticsService
             return [];
         }
     }
+
+    // ─── AI Visibility Live Sync ──────────────────────────────────────────────
+
+    /**
+     * Get AI-channel (AI Direct) sessions + total sessions grouped by YYYY-MM.
+     * Returns [month => ['ai_sessions', 'ai_key_events', 'ai_revenue', 'total_sessions']]
+     */
+    public function getAiTrafficByMonth(
+        Integration $integration,
+        string $propertyId,
+        string $startDate,
+        string $endDate
+    ): array {
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+
+        $aiRows    = $this->fetchAiSessionsByMonth($accessToken, $propertyId, $startDate, $endDate);
+        $totalRows = $this->fetchTotalSessionsByMonth($accessToken, $propertyId, $startDate, $endDate);
+
+        $result = [];
+        foreach ($totalRows as $month => $total) {
+            $result[$month] = ['total_sessions' => $total['sessions']];
+        }
+        foreach ($aiRows as $month => $ai) {
+            $result[$month] = array_merge($result[$month] ?? ['total_sessions' => 0], [
+                'ai_sessions'   => $ai['sessions'],
+                'ai_key_events' => $ai['key_events'],
+                'ai_revenue'    => $ai['revenue'],
+            ]);
+        }
+        return $result;
+    }
+
+    /**
+     * Get AI-referred sessions broken down by source (platform) for the snapshot.
+     * Returns [['platform' => string, 'sessions' => int], ...]
+     */
+    public function getAiPlatformBreakdown(
+        Integration $integration,
+        string $propertyId,
+        string $startDate,
+        string $endDate
+    ): array {
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+
+        try {
+            $response = Http::withHeaders(['Authorization' => "Bearer {$accessToken}"])
+                ->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                    'dateRanges'      => [['startDate' => $startDate, 'endDate' => $endDate]],
+                    'dimensions'      => [['name' => 'sessionSource']],
+                    'metrics'         => [['name' => 'sessions']],
+                    'dimensionFilter' => [
+                        'filter' => [
+                            'fieldName'   => 'sessionDefaultChannelGroup',
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                        ],
+                    ],
+                    'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
+                    'limit' => 20,
+                ]);
+
+            if (!$response->successful()) return [];
+
+            $platforms = [];
+            foreach ($response->json()['rows'] ?? [] as $row) {
+                $source   = $row['dimensionValues'][0]['value'] ?? '';
+                $sessions = (int) ($row['metricValues'][0]['value'] ?? 0);
+                if ($source && $sessions > 0) {
+                    $platforms[] = ['platform' => $source, 'sessions' => $sessions];
+                }
+            }
+            return $platforms;
+        } catch (\Exception $e) {
+            Log::error('GA4 getAiPlatformBreakdown error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Get top pages by AI-referred sessions for the snapshot.
+     * Returns [['page' => string, 'sessions' => int], ...]
+     */
+    public function getAiTopPages(
+        Integration $integration,
+        string $propertyId,
+        string $startDate,
+        string $endDate
+    ): array {
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+
+        try {
+            $response = Http::withHeaders(['Authorization' => "Bearer {$accessToken}"])
+                ->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                    'dateRanges'      => [['startDate' => $startDate, 'endDate' => $endDate]],
+                    'dimensions'      => [['name' => 'pagePath']],
+                    'metrics'         => [['name' => 'sessions']],
+                    'dimensionFilter' => [
+                        'filter' => [
+                            'fieldName'   => 'sessionDefaultChannelGroup',
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                        ],
+                    ],
+                    'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
+                    'limit' => 20,
+                ]);
+
+            if (!$response->successful()) return [];
+
+            $pages = [];
+            foreach ($response->json()['rows'] ?? [] as $row) {
+                $page     = $row['dimensionValues'][0]['value'] ?? '';
+                $sessions = (int) ($row['metricValues'][0]['value'] ?? 0);
+                if ($page && $sessions > 0) {
+                    $pages[] = ['page' => $page, 'sessions' => $sessions];
+                }
+            }
+            return $pages;
+        } catch (\Exception $e) {
+            Log::error('GA4 getAiTopPages error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Get top countries by AI-referred sessions for the snapshot.
+     * Returns [['country' => string, 'sessions' => int], ...]
+     */
+    public function getAiTopCountries(
+        Integration $integration,
+        string $propertyId,
+        string $startDate,
+        string $endDate
+    ): array {
+        $accessToken = $this->getAccessToken($integration);
+        if (!$accessToken) return [];
+
+        try {
+            $response = Http::withHeaders(['Authorization' => "Bearer {$accessToken}"])
+                ->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                    'dateRanges'      => [['startDate' => $startDate, 'endDate' => $endDate]],
+                    'dimensions'      => [['name' => 'country']],
+                    'metrics'         => [['name' => 'sessions']],
+                    'dimensionFilter' => [
+                        'filter' => [
+                            'fieldName'   => 'sessionDefaultChannelGroup',
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                        ],
+                    ],
+                    'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
+                    'limit' => 20,
+                ]);
+
+            if (!$response->successful()) return [];
+
+            $countries = [];
+            foreach ($response->json()['rows'] ?? [] as $row) {
+                $country  = $row['dimensionValues'][0]['value'] ?? '';
+                $sessions = (int) ($row['metricValues'][0]['value'] ?? 0);
+                if ($country && $sessions > 0) {
+                    $countries[] = ['country' => $country, 'sessions' => $sessions];
+                }
+            }
+            return $countries;
+        } catch (\Exception $e) {
+            Log::error('GA4 getAiTopCountries error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    private function fetchAiSessionsByMonth(string $accessToken, string $propertyId, string $startDate, string $endDate): array
+    {
+        try {
+            $response = Http::withHeaders(['Authorization' => "Bearer {$accessToken}"])
+                ->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                    'dateRanges'      => [['startDate' => $startDate, 'endDate' => $endDate]],
+                    'dimensions'      => [['name' => 'yearMonth']],
+                    'metrics'         => [
+                        ['name' => 'sessions'],
+                        ['name' => 'keyEvents'],
+                        ['name' => 'totalRevenue'],
+                    ],
+                    'dimensionFilter' => [
+                        'filter' => [
+                            'fieldName'   => 'sessionDefaultChannelGroup',
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                        ],
+                    ],
+                ]);
+
+            if (!$response->successful()) return [];
+
+            $result = [];
+            foreach ($response->json()['rows'] ?? [] as $row) {
+                $ym    = $row['dimensionValues'][0]['value'] ?? '';
+                $month = substr($ym, 0, 4) . '-' . substr($ym, 4, 2);
+                $result[$month] = [
+                    'sessions'   => (int) ($row['metricValues'][0]['value'] ?? 0),
+                    'key_events' => (int) ($row['metricValues'][1]['value'] ?? 0),
+                    'revenue'    => (float) ($row['metricValues'][2]['value'] ?? 0),
+                ];
+            }
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('GA4 fetchAiSessionsByMonth error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    private function fetchTotalSessionsByMonth(string $accessToken, string $propertyId, string $startDate, string $endDate): array
+    {
+        try {
+            $response = Http::withHeaders(['Authorization' => "Bearer {$accessToken}"])
+                ->post(self::DATA_API_BASE . "/properties/{$propertyId}:runReport", [
+                    'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+                    'dimensions' => [['name' => 'yearMonth']],
+                    'metrics'    => [['name' => 'sessions']],
+                ]);
+
+            if (!$response->successful()) return [];
+
+            $result = [];
+            foreach ($response->json()['rows'] ?? [] as $row) {
+                $ym    = $row['dimensionValues'][0]['value'] ?? '';
+                $month = substr($ym, 0, 4) . '-' . substr($ym, 4, 2);
+                $result[$month] = ['sessions' => (int) ($row['metricValues'][0]['value'] ?? 0)];
+            }
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('GA4 fetchTotalSessionsByMonth error', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
 }

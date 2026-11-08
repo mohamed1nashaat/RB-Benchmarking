@@ -103,6 +103,9 @@ class ClientDashboard extends Component
     public string $aiUploadSuccess = '';
     public ?array $aiMonths = null;
     public ?array $aiSnapshot = null;
+    public bool $aiSyncing = false;
+    public string $aiSyncError = '';
+    public string $aiSyncSuccess = '';
 
     // Competitors
     public ?array $competitors = null;
@@ -243,6 +246,114 @@ class ClientDashboard extends Component
             $this->aiUploadError = 'Import failed: ' . $e->getMessage();
         } finally {
             $this->aiUploading = false;
+        }
+    }
+
+    public function pullLiveAiVisibilityData(): void
+    {
+        $this->aiSyncing     = true;
+        $this->aiSyncError   = '';
+        $this->aiSyncSuccess = '';
+        $this->aiUploadError = '';
+        $this->aiUploadSuccess = '';
+
+        try {
+            if (!$this->seoSettingsLoaded) {
+                $this->loadSeoProperties();
+            }
+
+            $integration = $this->findGoogleIntegration($this->clientId);
+
+            if (!$integration) {
+                $this->aiSyncError = 'No Google integration found. Connect Google Analytics in the SEO tab first.';
+                return;
+            }
+
+            $startDate = now()->subMonths(13)->startOfMonth()->format('Y-m-d');
+            $endDate   = now()->format('Y-m-d');
+
+            $ga4MonthData = [];
+            if ($this->seoGa4PropertyId) {
+                $ga4MonthData = app(GA4AnalyticsService::class)
+                    ->getAiTrafficByMonth($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+            }
+
+            $gscMonthData = [];
+            if ($this->seoSearchConsoleSite) {
+                $gscMonthData = app(SearchConsoleService::class)
+                    ->getAiImpressionsByMonth($integration, $this->seoSearchConsoleSite, $startDate, $endDate);
+            }
+
+            if (empty($ga4MonthData) && empty($gscMonthData)) {
+                $this->aiSyncError = 'No data returned. Configure GA4 Property ID and Search Console site in the SEO tab.';
+                return;
+            }
+
+            $months   = array_unique(array_merge(array_keys($ga4MonthData), array_keys($gscMonthData)));
+            $imported = 0;
+
+            foreach ($months as $month) {
+                $ga4 = $ga4MonthData[$month] ?? [];
+                $gsc = $gscMonthData[$month] ?? [];
+
+                $aiSessions      = $ga4['ai_sessions']    ?? 0;
+                $totalSessions   = $ga4['total_sessions']  ?? 0;
+                $aiImpressions   = $gsc['ai_impressions']  ?? 0;
+                $totalImpressions = $gsc['total_impressions'] ?? 0;
+
+                AiVisibilityMonth::updateOrCreate(
+                    ['tenant_id' => $this->clientId, 'month' => $month],
+                    [
+                        'tenant_id'           => $this->clientId,
+                        'month'               => $month,
+                        'gsc_clicks'          => $gsc['gsc_clicks']       ?? null,
+                        'total_impressions'   => $totalImpressions ?: null,
+                        'ai_impressions'      => $aiImpressions    ?: null,
+                        'ai_sessions'         => $aiSessions       ?: null,
+                        'ai_key_events'       => $ga4['ai_key_events']    ?? null,
+                        'ai_revenue'          => $ga4['ai_revenue']       ?? null,
+                        'total_sessions'      => $totalSessions    ?: null,
+                        'ai_session_share'    => $totalSessions > 0
+                            ? round($aiSessions / $totalSessions * 100, 2) : null,
+                        'ai_impression_share' => $totalImpressions > 0
+                            ? round($aiImpressions / $totalImpressions * 100, 2) : null,
+                    ]
+                );
+                $imported++;
+            }
+
+            // Create snapshot with live platform/page/country breakdown
+            if ($this->seoGa4PropertyId) {
+                $ga4Service  = app(GA4AnalyticsService::class);
+                $platforms   = $ga4Service->getAiPlatformBreakdown($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+                $topPages    = $ga4Service->getAiTopPages($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+                $topCountries = $ga4Service->getAiTopCountries($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+
+                $reportMonth = now()->subMonth()->format('Y-m');
+                AiVisibilitySnapshot::updateOrCreate(
+                    ['tenant_id' => $this->clientId, 'report_month' => $reportMonth],
+                    [
+                        'tenant_id'        => $this->clientId,
+                        'report_month'     => $reportMonth,
+                        'snapshot_date'    => now()->toDateString(),
+                        'ai_platforms'     => $platforms    ?: null,
+                        'top_ai_pages'     => $topPages     ?: null,
+                        'top_ai_countries' => $topCountries ?: null,
+                        'filename'         => 'live-sync-' . now()->format('Y-m-d'),
+                    ]
+                );
+            }
+
+            $this->aiSyncSuccess = "Synced {$imported} months from Google Analytics & Search Console";
+            $this->loadAiVisibilityData();
+        } catch (\Exception $e) {
+            $this->aiSyncError = 'Sync failed: ' . $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('AI Visibility live sync failed', [
+                'tenant_id' => $this->clientId,
+                'error'     => $e->getMessage(),
+            ]);
+        } finally {
+            $this->aiSyncing = false;
         }
     }
 

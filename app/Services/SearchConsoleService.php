@@ -275,4 +275,90 @@ class SearchConsoleService
             return [];
         }
     }
+
+    /**
+     * Get AI Overview impressions + total impressions/clicks grouped by YYYY-MM.
+     * Returns [month => ['gsc_clicks', 'total_impressions', 'ai_impressions', 'ai_clicks']]
+     */
+    public function getAiImpressionsByMonth(
+        Integration $integration,
+        string $siteUrl,
+        string $startDate,
+        string $endDate
+    ): array {
+        $cacheKey = 'sc:ai_months:' . $integration->id . ':' . md5("{$siteUrl}:{$startDate}:{$endDate}");
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        try {
+            $client  = $this->buildClient($integration);
+            $service = new \Google\Service\SearchConsole($client);
+
+            // Query 1: total organic clicks/impressions by date
+            $totalRequest = new \Google\Service\SearchConsole\SearchAnalyticsQueryRequest();
+            $totalRequest->setStartDate($startDate);
+            $totalRequest->setEndDate($endDate);
+            $totalRequest->setDimensions(['date']);
+            $totalRequest->setRowLimit(500);
+
+            $totalByMonth = [];
+            foreach ($service->searchanalytics->query($siteUrl, $totalRequest)->getRows() ?? [] as $row) {
+                $date  = $row->getKeys()[0] ?? '';
+                if (!$date) continue;
+                $month = substr($date, 0, 7);
+                $totalByMonth[$month] = [
+                    'clicks'      => ($totalByMonth[$month]['clicks']      ?? 0) + (int) $row->getClicks(),
+                    'impressions' => ($totalByMonth[$month]['impressions'] ?? 0) + (int) $row->getImpressions(),
+                ];
+            }
+
+            // Query 2: AI Overview impressions/clicks by date
+            $aiRequest = new \Google\Service\SearchConsole\SearchAnalyticsQueryRequest();
+            $aiRequest->setStartDate($startDate);
+            $aiRequest->setEndDate($endDate);
+            $aiRequest->setDimensions(['date']);
+            $aiRequest->setRowLimit(500);
+
+            $filter = new \Google\Service\SearchConsole\ApiDimensionFilter();
+            $filter->setDimension('searchAppearance');
+            $filter->setOperator('equals');
+            $filter->setExpression('AI_OVERVIEW');
+
+            $filterGroup = new \Google\Service\SearchConsole\ApiDimensionFilterGroup();
+            $filterGroup->setFilters([$filter]);
+            $aiRequest->setDimensionFilterGroups([$filterGroup]);
+
+            $aiByMonth = [];
+            foreach ($service->searchanalytics->query($siteUrl, $aiRequest)->getRows() ?? [] as $row) {
+                $date  = $row->getKeys()[0] ?? '';
+                if (!$date) continue;
+                $month = substr($date, 0, 7);
+                $aiByMonth[$month] = [
+                    'clicks'      => ($aiByMonth[$month]['clicks']      ?? 0) + (int) $row->getClicks(),
+                    'impressions' => ($aiByMonth[$month]['impressions'] ?? 0) + (int) $row->getImpressions(),
+                ];
+            }
+
+            $result = [];
+            foreach (array_unique(array_merge(array_keys($totalByMonth), array_keys($aiByMonth))) as $month) {
+                $result[$month] = [
+                    'gsc_clicks'       => $totalByMonth[$month]['clicks']      ?? 0,
+                    'total_impressions' => $totalByMonth[$month]['impressions'] ?? 0,
+                    'ai_impressions'    => $aiByMonth[$month]['impressions']    ?? 0,
+                    'ai_clicks'         => $aiByMonth[$month]['clicks']         ?? 0,
+                ];
+            }
+
+            Cache::put($cacheKey, $result, 3600);
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('SearchConsole getAiImpressionsByMonth failed', [
+                'site_url' => $siteUrl,
+                'error'    => $e->getMessage(),
+            ]);
+            return [];
+        }
+    }
 }
