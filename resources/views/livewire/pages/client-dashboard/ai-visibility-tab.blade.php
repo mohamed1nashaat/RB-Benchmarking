@@ -202,8 +202,8 @@
 
     @php
         $allMonths   = collect($aiMonths);
-        // Apply period filter
-        $months      = $aiPeriodMonths > 0 ? $allMonths->takeLast($aiPeriodMonths) : $allMonths;
+        // Apply period filter (take(-n) = last n items)
+        $months      = $aiPeriodMonths > 0 ? $allMonths->take(-$aiPeriodMonths) : $allMonths;
         $latestM    = $months->last();
         $prevM      = $months->slice(-2, 1)->first();
         $monthLabels = $months->pluck('month')->map(fn($m) => \Carbon\Carbon::parse($m)->format('M Y'))->values();
