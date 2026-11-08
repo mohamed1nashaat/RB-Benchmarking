@@ -202,7 +202,7 @@ class ClientDashboard extends Component
             ->toArray();
 
         $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
-            ->latest('snapshot_date')
+            ->latest('report_month')
             ->first();
 
         $this->aiSnapshot = $snapshot?->toArray();
