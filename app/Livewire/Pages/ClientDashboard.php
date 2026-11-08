@@ -270,6 +270,10 @@ class ClientDashboard extends Component
      */
     public function saveAiGoogleSettings(): void
     {
+        \Illuminate\Support\Facades\Log::info('saveAiGoogleSettings called', [
+            'ga4' => $this->seoGa4PropertyId,
+            'sc'  => $this->seoSearchConsoleSite,
+        ]);
         $this->aiSyncError   = '';
         $this->aiSyncSuccess = '';
 
@@ -298,8 +302,13 @@ class ClientDashboard extends Component
 
             // Auto-sync live data with the newly saved connection
             $this->pullLiveAiVisibilityData();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->aiSyncError = 'Save failed: ' . $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('saveAiGoogleSettings failed', [
+                'tenant_id' => $this->clientId,
+                'error'     => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -404,7 +413,7 @@ class ClientDashboard extends Component
                 $this->aiSyncSuccess = "Synced {$imported} months of data from Google Analytics & Search Console";
                 $this->loadAiVisibilityData();
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->aiSyncError = 'Sync failed: ' . $e->getMessage();
             \Illuminate\Support\Facades\Log::error('AI Visibility live sync failed', [
                 'tenant_id' => $this->clientId,

@@ -98,9 +98,9 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex items-center gap-3">
-                <button wire:click="saveAiGoogleSettings"
-                    wire:loading.attr="disabled"
+            <div class="mt-4 flex items-center gap-3 flex-wrap">
+                <button type="button" wire:click="saveAiGoogleSettings"
+                    wire:loading.attr="disabled" wire:target="saveAiGoogleSettings"
                     class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity disabled:opacity-50"
                     style="background: var(--brand-500, #ef4444);">
                     <svg wire:loading wire:target="saveAiGoogleSettings" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
@@ -115,6 +115,18 @@
                 </button>
                 <p class="text-xs text-gray-600">Saves selection and pulls historical data from GA4 + Search Console.</p>
             </div>
+            @if($aiSyncSuccess)
+                <div class="mt-3 flex items-center gap-2 text-xs text-emerald-400">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    {{ $aiSyncSuccess }}
+                </div>
+            @endif
+            @if($aiSyncError)
+                <div class="mt-3 flex items-center gap-2 text-xs text-red-400">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" /></svg>
+                    {{ $aiSyncError }}
+                </div>
+            @endif
         @endif
     </div>
 
