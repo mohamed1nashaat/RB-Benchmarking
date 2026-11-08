@@ -98,8 +98,8 @@
                 </div>
             </div>
 
-            <div class="mt-4 flex items-center gap-3 flex-wrap" x-data>
-                <button type="button" @click="$wire.saveAiGoogleSettings()"
+            <div class="mt-4 flex items-center gap-3 flex-wrap">
+                <button type="button" wire:click="saveAiGoogleSettings"
                     wire:loading.attr="disabled" wire:target="saveAiGoogleSettings"
                     class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity disabled:opacity-50"
                     style="background: var(--brand-500, #ef4444);">
