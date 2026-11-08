@@ -3,7 +3,7 @@
 <div class="space-y-6">
 
     {{-- ── Google Connection Panel ─────────────────────────────────────────── --}}
-    <div wire:init="loadGoogleListsForAiTab" class="card p-5">
+    <div class="card p-5">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">

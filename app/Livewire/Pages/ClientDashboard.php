@@ -162,8 +162,7 @@ class ClientDashboard extends Component
         if (request()->has('ai-visibility') || request()->query('tab') === 'ai-visibility') {
             $this->activeTabIndex = 3;
             $this->loadAiVisibilityData();
-            $this->loadSeoProperties(); // DB-only, fast
-            // Google API list-loading is deferred via wire:init on the connection panel
+            $this->loadGoogleListsForAiTab();
         }
     }
 
@@ -185,8 +184,10 @@ class ClientDashboard extends Component
             if ($this->aiMonths === null) {
                 $this->loadAiVisibilityData();
             }
-            $this->loadSeoProperties(); // DB-only, fast
-            // Google API list-loading is deferred via wire:init on the connection panel
+            $this->loadSeoProperties();
+            if ($this->seoHasIntegration && empty($this->seoSearchConsoleSites)) {
+                $this->loadGoogleListsForAiTab();
+            }
         }
     }
 
