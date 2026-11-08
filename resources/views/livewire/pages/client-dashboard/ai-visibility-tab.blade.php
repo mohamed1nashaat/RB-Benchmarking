@@ -725,6 +725,23 @@
         $pagesPerSess = $cd['Pages per session'] ?? null;
         $activeTime  = $cd['Active time (sec)'] ?? null;
 
+        // Friction / engagement rates
+        $deadClicks  = isset($cd['Dead clicks'])   ? round((float)$cd['Dead clicks']  * 100, 1) : null;
+        $quickBacks  = isset($cd['Quick backs'])   ? round((float)$cd['Quick backs']  * 100, 1) : null;
+        $rageClicks  = isset($cd['Rage clicks'])   ? round((float)$cd['Rage clicks']  * 100, 1) : null;
+        $scrollDepth = isset($cd['Scroll depth'])  ? round((float)$cd['Scroll depth'] * 100, 0) : null;
+        $aiBotStatus = $cd['AI bot activity'] ?? null;
+
+        // Copilot-cited pages — keys starting with "/" that have a numeric citation count
+        $copilotPages = collect($cd)
+            ->filter(fn($v, $k) => str_starts_with($k, '/') && is_numeric($v) && (int)$v > 0)
+            ->map(fn($v, $k) => ['path' => $k, 'citations' => (int)$v])
+            ->sortByDesc('citations')->values()->take(10);
+
+        // Branded query terms from Clarity
+        $brandedQueries    = collect($cd)->filter(fn($v) => $v === 'Branded')->keys()->values();
+        $nonBrandedQueries = collect($cd)->filter(fn($v) => $v === 'Non-branded')->keys()->values();
+
         // Topic categories — numeric values in clarity_data are citation counts per category
         $topicCategories = collect($cd)->filter(fn($v) => is_numeric($v) && (int)$v > 10 && !in_array(array_search($v, $cd), [
             'Citations', 'Branded citations', 'Non-branded citations',
@@ -890,6 +907,119 @@
             @endif
         </div>
         @endif
+
+        {{-- Copilot-cited pages + Grounding queries --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            @if($copilotPages->count() > 0)
+            <div class="card p-5">
+                <h3 class="text-xs font-semibold text-gray-300 mb-1">Pages Cited by Copilot</h3>
+                <p class="text-[11px] text-gray-600 mb-3">Pages on this site cited by AI assistants (Clarity tracking)</p>
+                @php $maxCopCit = max(1, $copilotPages->max('citations')); @endphp
+                <div class="space-y-2.5">
+                    @foreach($copilotPages as $cp)
+                        @php
+                            $displayPath = strlen($cp['path']) > 50 ? substr($cp['path'], 0, 50) . '…' : $cp['path'];
+                            $pct = round($cp['citations'] / $maxCopCit * 100);
+                        @endphp
+                        <div>
+                            <div class="flex items-center justify-between text-[11px] mb-0.5">
+                                <span class="text-gray-400 font-mono truncate max-w-[70%]" title="{{ $cp['path'] }}">{{ $displayPath }}</span>
+                                <span class="text-gray-500 tabular-nums flex-shrink-0 ms-2">{{ number_format($cp['citations']) }}</span>
+                            </div>
+                            <div class="h-1 rounded-full bg-white/10 overflow-hidden">
+                                <div class="h-full rounded-full" style="width:{{ $pct }}%;background:#60a5fa;opacity:0.7;"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            @if($brandedQueries->count() > 0 || $nonBrandedQueries->count() > 0)
+            <div class="card p-5">
+                <h3 class="text-xs font-semibold text-gray-300 mb-1">Grounding Queries (Clarity)</h3>
+                <p class="text-[11px] text-gray-600 mb-3">Queries where AI cited this brand, classified by intent</p>
+                @if($brandedQueries->count() > 0)
+                <div class="mb-3">
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-brand-500 inline-block flex-shrink-0"></span>
+                        <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Branded ({{ $brandedQueries->count() }})</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach($brandedQueries->take(12) as $q)
+                            <span class="px-2 py-0.5 rounded-full text-[11px] bg-white/[0.06] text-gray-300 border border-white/10" dir="auto">{{ $q }}</span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                @if($nonBrandedQueries->count() > 0)
+                <div>
+                    <div class="flex items-center gap-1.5 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-400 inline-block flex-shrink-0"></span>
+                        <span class="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Non-branded ({{ $nonBrandedQueries->count() }})</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach($nonBrandedQueries->take(10) as $q)
+                            <span class="px-2 py-0.5 rounded-full text-[11px] bg-white/[0.04] text-gray-500 border border-white/10" dir="auto">{{ $q }}</span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+            @endif
+        </div>
+
+        {{-- Friction metrics --}}
+        @if($deadClicks !== null || $quickBacks !== null || $scrollDepth !== null)
+        <div class="card p-5 mt-4">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-300">Friction on AI Landing Pages</h3>
+                    <p class="text-[11px] text-gray-600 mt-0.5">Engagement quality for sessions arriving from AI assistants (Clarity)</p>
+                </div>
+                @if($aiBotStatus)
+                <span class="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full border {{ str_contains($aiBotStatus, 'Not') ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' }}">
+                    AI bot activity: {{ $aiBotStatus }}
+                </span>
+                @endif
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @if($deadClicks !== null)
+                <div class="text-center">
+                    <p class="text-[11px] text-gray-500 uppercase tracking-wide">Dead Clicks</p>
+                    @php $dcColor = $deadClicks <= 5 ? '#22c55e' : ($deadClicks <= 15 ? '#eab308' : '#ef4444'); @endphp
+                    <p class="text-2xl font-bold mt-1 tabular-nums" style="color:{{ $dcColor }}">{{ $deadClicks }}%</p>
+                    <p class="text-[11px] text-gray-600">{{ $deadClicks <= 5 ? 'Low' : ($deadClicks <= 15 ? 'Normal' : 'High') }}</p>
+                </div>
+                @endif
+                @if($quickBacks !== null)
+                <div class="text-center">
+                    <p class="text-[11px] text-gray-500 uppercase tracking-wide">Quick Backs</p>
+                    @php $qbColor = $quickBacks <= 5 ? '#22c55e' : ($quickBacks <= 15 ? '#eab308' : '#ef4444'); @endphp
+                    <p class="text-2xl font-bold mt-1 tabular-nums" style="color:{{ $qbColor }}">{{ $quickBacks }}%</p>
+                    <p class="text-[11px] text-gray-600">{{ $quickBacks <= 5 ? 'Low' : ($quickBacks <= 15 ? 'Normal' : 'High') }}</p>
+                </div>
+                @endif
+                @if($rageClicks !== null)
+                <div class="text-center">
+                    <p class="text-[11px] text-gray-500 uppercase tracking-wide">Rage Clicks</p>
+                    @php $rcColor = $rageClicks <= 1 ? '#22c55e' : ($rageClicks <= 5 ? '#eab308' : '#ef4444'); @endphp
+                    <p class="text-2xl font-bold mt-1 tabular-nums" style="color:{{ $rcColor }}">{{ $rageClicks }}%</p>
+                    <p class="text-[11px] text-gray-600">{{ $rageClicks <= 1 ? 'Good' : ($rageClicks <= 5 ? 'Watch' : 'High') }}</p>
+                </div>
+                @endif
+                @if($scrollDepth !== null)
+                <div class="text-center">
+                    <p class="text-[11px] text-gray-500 uppercase tracking-wide">Scroll Depth</p>
+                    @php $sdColor = $scrollDepth >= 60 ? '#22c55e' : ($scrollDepth >= 35 ? '#eab308' : '#ef4444'); @endphp
+                    <p class="text-2xl font-bold mt-1 tabular-nums" style="color:{{ $sdColor }}">{{ $scrollDepth }}%</p>
+                    <p class="text-[11px] text-gray-600">{{ $scrollDepth >= 60 ? 'Deep' : ($scrollDepth >= 35 ? 'Moderate' : 'Shallow') }}</p>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
     </div>
     @endif
 
