@@ -81,4 +81,30 @@ class AiVisibilityReportTest extends TestCase
         $this->assertSame(9, $r['hero']['metrics']['cit']['value']);
         $this->assertSame('/en', $r['grounding']['citPages'][0]['l']);
     }
+
+    public function test_ga4_numbers_in_a_month_in_progress_use_the_live_sync_date(): void
+    {
+        $snap = $this->snapshot();
+        $snap['report_tables']['live_sync'] = ['ga4_at' => '2026-11-10T09:00:00+00:00', 'from' => '2024-11-01', 'to' => '2026-11-10'];
+        $snap['report_tables']['landing_pages_monthly'] = ['2026-11' => [['/ar/عسل-سدر/p123', 12, 1, 99.5]]];
+        $r = (new AiVisibilityReport($this->months(), $snap, [], 'Brand', '2026-11'))->build('2026-11');
+
+        $this->assertSame(2, $r['ctx']['days']);      // AI impressions: daily export covers Nov 1–2
+        $this->assertSame(10, $r['ctx']['ga_days']);  // GA4: synced to Nov 10
+        $this->assertSame('November 2026 (to date)', $r['ctx']['label']);
+        // 20 sessions in 10 days vs October's 120 over 31 days scaled to 10 days (38.7).
+        $this->assertSame('−48.3%', $r['tiles']['sessions']['delta']['text']);
+        $this->assertSame(12, $r['traffic']['landing'][0]['sessions']);
+        $this->assertStringContainsString('GA4 live sync 10 Nov', $r['fresh']['line']);
+    }
+
+    public function test_ai_referrers_map_to_platform_names(): void
+    {
+        $this->assertSame('ChatGPT', \App\Services\GA4AnalyticsService::aiPlatformName('chatgpt.com'));
+        $this->assertSame('Gemini', \App\Services\GA4AnalyticsService::aiPlatformName('gemini.google.com'));
+        $this->assertSame('Perplexity', \App\Services\GA4AnalyticsService::aiPlatformName('perplexity.ai'));
+        $this->assertSame('Copilot', \App\Services\GA4AnalyticsService::aiPlatformName('copilot.microsoft.com'));
+        $this->assertSame('Claude', \App\Services\GA4AnalyticsService::aiPlatformName('claude.ai'));
+        $this->assertSame('example.org', \App\Services\GA4AnalyticsService::aiPlatformName('example.org'));
+    }
 }

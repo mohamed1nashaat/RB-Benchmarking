@@ -213,7 +213,7 @@
         <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <div>
                 <p class="text-xs text-gray-400 font-medium">Sync live data from Google</p>
-                <p class="text-xs text-gray-600 mt-0.5">Pulls AI Direct sessions from GA4 + AI Overview impressions from Search Console (24 months history).</p>
+                <p class="text-xs text-gray-600 mt-0.5">Pulls 24 months from GA4 (AI Assistant sessions, conversions, revenue, AI platforms, funnel and landing pages) and Search Console (clicks and impressions). AI impressions are not in the Search Console API, so they come from the monthly workbook.</p>
             </div>
             <button wire:click="pullLiveAiVisibilityData" wire:loading.attr="disabled"
                 class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white border border-white/15 bg-white/5 hover:border-white/30 hover:bg-white/10 transition-colors disabled:opacity-50">

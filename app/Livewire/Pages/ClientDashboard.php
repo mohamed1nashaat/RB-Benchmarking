@@ -529,62 +529,68 @@ class ClientDashboard extends Component
             foreach ($months as $month) {
                 $ga4 = $ga4MonthData[$month] ?? [];
                 $gsc = $gscMonthData[$month] ?? [];
+                $row = AiVisibilityMonth::firstOrNew(['tenant_id' => $this->clientId, 'month' => $month]);
 
-                $aiSessions       = $ga4['ai_sessions']       ?? 0;
-                $totalSessions    = $ga4['total_sessions']     ?? 0;
-                $aiImpressions    = $gsc['ai_impressions']     ?? 0;
-                $totalImpressions = $gsc['total_impressions']  ?? 0;
-
-                // Only include a field when the API returned a non-zero value so
-                // existing Excel-imported data is not overwritten with nulls when
-                // an AI channel (e.g. GA4 AI Direct segment) has no traffic yet.
-                $updates = array_filter([
-                    'gsc_clicks'        => $gsc['gsc_clicks']    ?? null,
-                    'total_impressions' => $totalImpressions ?: null,
-                    'ai_impressions'    => $aiImpressions    ?: null,
-                    'ai_sessions'       => $aiSessions       ?: null,
-                    'ai_key_events'     => $ga4['ai_key_events'] ?? null,
-                    'ai_revenue'        => $ga4['ai_revenue']    ?? null,
-                    'total_sessions'    => $totalSessions    ?: null,
-                    'ai_session_share'  => ($totalSessions > 0 && $aiSessions > 0)
-                        ? round($aiSessions / $totalSessions * 100, 2) : null,
-                    'ai_impression_share' => ($totalImpressions > 0 && $aiImpressions > 0)
-                        ? round($aiImpressions / $totalImpressions * 100, 2) : null,
-                ], fn($v) => $v !== null);
-
-                AiVisibilityMonth::updateOrCreate(
-                    ['tenant_id' => $this->clientId, 'month' => $month],
-                    $updates + ['tenant_id' => $this->clientId, 'month' => $month]
-                );
-                $imported++;
+                // Write a field only when the API actually returned it. GA4 has no
+                // AI Assistant row for months without AI traffic, and Search Console
+                // never returns AI impressions, so imported values stay untouched.
+                if (!empty($ga4['total_sessions'])) {
+                    $row->total_sessions = $ga4['total_sessions'];
+                }
+                if (array_key_exists('ai_sessions', $ga4)) {
+                    $row->ai_sessions   = $ga4['ai_sessions'];
+                    $row->ai_key_events = $ga4['ai_key_events'];
+                    $row->ai_revenue    = round((float) $ga4['ai_revenue'], 2);
+                }
+                if (!empty($gsc['total_impressions'])) {
+                    $row->total_impressions = $gsc['total_impressions'];
+                    $row->gsc_clicks        = $gsc['gsc_clicks'];
+                    $row->gsc_ctr           = $gsc['gsc_clicks'] / $gsc['total_impressions'];
+                }
+                // Derived shares are fractions (0–1), the same as the workbook import.
+                if ($row->ai_sessions && $row->total_sessions) {
+                    $row->ai_session_share       = $row->ai_sessions / $row->total_sessions;
+                    $row->ai_key_event_rate      = $row->ai_key_events / $row->ai_sessions;
+                    $row->ai_revenue_per_session = $row->ai_revenue / $row->ai_sessions;
+                }
+                if ($row->ai_impressions && $row->total_impressions) {
+                    $row->ai_impression_share = $row->ai_impressions / $row->total_impressions;
+                }
+                if ($row->isDirty()) {
+                    $row->save();
+                    $imported++;
+                }
             }
 
-            // Create snapshot with live platform/page/country breakdown
+            // Diagnostics tables (channel split, AI platforms, AI funnel, AI landing
+            // pages by month) go into the report's own table store, merged by month,
+            // so the imported Search Console / Clarity data is never replaced.
             if ($this->seoGa4PropertyId) {
-                $ga4Service  = app(GA4AnalyticsService::class);
-                $platforms   = $ga4Service->getAiPlatformBreakdown($integration, $this->seoGa4PropertyId, $startDate, $endDate);
-                $topPages    = $ga4Service->getAiTopPages($integration, $this->seoGa4PropertyId, $startDate, $endDate);
-                $topCountries = $ga4Service->getAiTopCountries($integration, $this->seoGa4PropertyId, $startDate, $endDate);
-
-                $reportMonth = now()->subMonth()->format('Y-m');
-                AiVisibilitySnapshot::updateOrCreate(
-                    ['tenant_id' => $this->clientId, 'report_month' => $reportMonth],
-                    [
-                        'tenant_id'        => $this->clientId,
-                        'report_month'     => $reportMonth,
-                        'snapshot_date'    => now()->toDateString(),
-                        'ai_platforms'     => $platforms    ?: null,
-                        'top_ai_pages'     => $topPages     ?: null,
-                        'top_ai_countries' => $topCountries ?: null,
-                        'filename'         => 'live-sync-' . now()->format('Y-m-d'),
-                    ]
-                );
+                $tables = app(GA4AnalyticsService::class)
+                    ->getAiReportTables($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+                if ($tables) {
+                    $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+                        ->whereNotNull('report_tables')->latest('report_month')->first()
+                        ?? AiVisibilitySnapshot::firstOrNew(
+                            ['tenant_id' => $this->clientId, 'report_month' => now()->subMonth()->format('Y-m')],
+                            ['snapshot_date' => now()->toDateString(), 'filename' => 'live-sync-' . now()->format('Y-m-d')]
+                        );
+                    $merged = $snapshot->report_tables ?? [];
+                    foreach ($tables as $key => $byMonth) {
+                        $merged[$key] = array_replace($merged[$key] ?? [], $byMonth);
+                        ksort($merged[$key]);
+                    }
+                    $merged['live_sync'] = ['ga4_at' => now()->toIso8601String(), 'from' => $startDate, 'to' => $endDate];
+                    $snapshot->report_tables = $merged;
+                    $snapshot->save();
+                    $imported++;
+                }
             }
 
             if ($imported === 0) {
                 $this->aiSyncError = 'Google API returned no data. Your Google token may be expired — please reconnect under Integrations.';
             } else {
-                $this->aiSyncSuccess = "Synced {$imported} months of data from Google Analytics & Search Console";
+                $this->aiSyncSuccess = 'Synced GA4 and Search Console. AI impressions are not in the Search Console API, so they keep coming from the monthly export.';
                 $this->loadAiVisibilityData();
             }
         } catch (\Throwable $e) {

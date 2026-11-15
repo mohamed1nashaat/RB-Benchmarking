@@ -61,6 +61,7 @@ class AiVisibilityReport
             'prev' => $prev,
             'partial' => $this->isPartial($sel),
             'days' => $this->daysElapsed($sel),
+            'ga_days' => $this->gaDaysElapsed($sel),
             'label' => $this->monthLabel($sel, true),
             'short' => Carbon::parse($sel.'-01')->format('M'),
             'prev_short' => $prev ? Carbon::parse($prev.'-01')->format('M') : null,
@@ -120,11 +121,22 @@ class AiVisibilityReport
         return max(1, min($dim, (int) now()->format('j') - 1));
     }
 
+    /** Days of a month in progress covered by GA4: up to the live-sync date when there is one. */
+    private function gaDaysElapsed(string $ym): int
+    {
+        $to = $this->tables['live_sync']['to'] ?? null;
+        if ($this->isPartial($ym) && $to && str_starts_with($to, $ym)) {
+            return max(1, (int) substr($to, 8, 2));
+        }
+
+        return $this->daysElapsed($ym);
+    }
+
     private function monthLabel(string $ym, bool $withDays): string
     {
         $label = Carbon::parse($ym.'-01')->format('F Y');
         if ($withDays && $this->isPartial($ym)) {
-            $label .= ' (1–'.$this->daysElapsed($ym).')';
+            $label .= ' (to date)';
         }
 
         return $label;
@@ -323,7 +335,8 @@ class AiVisibilityReport
             return $prevValue;
         }
 
-        return $prevValue * $ctx['days'] / Carbon::parse($ctx['prev'].'-01')->daysInMonth;
+        // GA4 numbers run to the live-sync date, which can differ from the daily AI-impressions export.
+        return $prevValue * ($ctx['ga_days'] ?? $ctx['days']) / Carbon::parse($ctx['prev'].'-01')->daysInMonth;
     }
 
     private function impressionsPrev(array $ctx): ?float
@@ -369,7 +382,11 @@ class AiVisibilityReport
         if ($d = $this->semrushDay()) {
             $parts[] = 'Semrush '.$d;
         }
-        $refresh = 'GA4 and Search Console come from the live Google connection (Search Console lags 2–3 days).';
+        $live = $this->tables['live_sync']['ga4_at'] ?? null;
+        if ($live) {
+            $parts[0] = 'GA4 live sync '.Carbon::parse($live)->format('j M');
+        }
+        $refresh = 'GA4 and Search Console clicks/impressions come from the live Google connection'.($live ? ', last synced '.Carbon::parse($live)->format('j M Y') : '').' (Search Console lags 2–3 days). AI impressions are not in the Search Console API, so they come from the monthly Generative AI features export.';
         if ($d = $this->clarityDay()) {
             $refresh .= " Clarity, including Bing/Copilot citations, was captured {$d}";
         }
@@ -393,7 +410,7 @@ class AiVisibilityReport
             if ($d !== null) {
                 $s .= ', '.($d >= 0 ? 'up' : 'down').' <b>'.number_format(abs($d), 1).'%</b> on '.($ctx['partial'] ? 'the same days of ' : '').e($ctx['prev_label']);
             }
-            if (! empty($m['total_impressions'])) {
+            if (! empty($m['total_impressions']) && ! $ctx['partial']) {
                 $s .= '; that is '.round($cur / $m['total_impressions'] * 100).'% of all the site\'s Google impressions';
             }
             $parts[] = $s.'.';
@@ -640,7 +657,12 @@ class AiVisibilityReport
             }
         }
 
-        return ['platforms' => $platforms, 'platSrc' => $platSrc, 'cmp' => $cmp];
+        // AI landing pages for the selected month (GA4 live sync).
+        $landing = collect($this->tables['landing_pages_monthly'][$ctx['sel']] ?? [])
+            ->map(fn ($r) => ['page' => $r[0], 'short' => self::shortPage($r[0]), 'sessions' => (int) $r[1], 'key_events' => (int) ($r[2] ?? 0), 'revenue' => (float) ($r[3] ?? 0)])
+            ->values()->all();
+
+        return ['platforms' => $platforms, 'platSrc' => $platSrc, 'cmp' => $cmp, 'landing' => $landing];
     }
 
     private function grounding(array $ctx): array
@@ -765,7 +787,7 @@ class AiVisibilityReport
             'traffic' => ['Traffic quality', 'GA4 sessions by source for AI referrers, compared with Organic Search.', 'Visibility only matters if the visits are worth something. This compares AI visitors with our best-known channel.'],
             'platsess' => ['AI-sourced sessions by platform', 'GA4 sessions where the referrer is an AI assistant, grouped by platform.', 'Observed visits. Read it beside the simulated mentions chart on Overview, never merged with it.'],
             'cmp' => ['AI visitors vs organic visitors', 'GA4 key events and revenue per session, AI Assistant vs Organic Search, same site and same month.', 'Tells us whether an AI visitor is worth more or less than a search visitor. AI samples are small, so read the ratio as a direction.'],
-            'landing' => ['Top AI landing pages', 'Microsoft Clarity → top pages with Channel = AIPlatform (or GA4 landing page for the AI channel).', 'Shows which pages AI visitors land on, so we know which pages to keep fast and conversion-ready.'],
+            'landing' => ['Top AI landing pages', 'Google Analytics 4 → landing page for sessions in the AI Assistant channel, for the selected month (live sync).', 'Shows which pages AI visitors land on, so we know which pages to keep fast and conversion-ready.'],
             'grounding' => ['Grounding and citations', 'Search Console, Bing via Clarity and Clarity.', 'Explains the "why" behind visibility: which searches the assistant ran and which of our pages it chose to cite.'],
             'gq' => ['Top grounding queries', 'Microsoft Clarity AI Visibility → Grounding queries: the searches Copilot ran to build its answers, with our citation count and share.', 'Shows the questions where we are already a trusted source, and where competitors take most of the citations.'],
             'aipages' => ['Pages Google shows in AI answers', 'Search Console Generative AI features report → Pages tab.', 'Shows which pages Google trusts enough to show inside AI Overviews and AI Mode, mostly blog content.'],

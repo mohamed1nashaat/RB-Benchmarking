@@ -50,9 +50,21 @@
         </div>
         <div class="card air-card" style="margin-top:14px">
             <h3>Top AI landing pages <x-ai-help :h="$help['landing']" /></h3>
-            <div class="air-sub">The pages AI visitors view most</div>
-            @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Post-click', 'src' => 'Microsoft Clarity · AI channel · last 30 days', 'flag' => 'Not imported'])
-            <div class="air-empty"><b>Not imported yet.</b> Add Clarity's top pages with Channel = AIPlatform (or the GA4 landing-page export for the AI channel) to the monthly workbook and this table fills in.</div>
+            <div class="air-sub">Where visitors from AI assistants land, {{ $ctx['label'] }}</div>
+            @if($tq['landing'])
+                @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Post-click', 'src' => 'Google Analytics 4 · AI Assistant channel · landing page'])
+                <div class="air-tbl"><table class="data-table">
+                    <thead><tr><th>Landing page</th><th>AI sessions</th><th>Conversions</th><th>Revenue</th></tr></thead>
+                    <tbody>
+                    @foreach($tq['landing'] as $lp)
+                        <tr><td class="wrap"><span class="air-ar" dir="auto" title="{{ $lp['page'] }}">{{ $lp['short'] }}</span></td><td>{{ number_format($lp['sessions']) }}</td><td>{{ number_format($lp['key_events']) }}</td><td>{{ $lp['revenue'] ? 'SAR '.number_format($lp['revenue']) : '—' }}</td></tr>
+                    @endforeach
+                    </tbody>
+                </table></div>
+            @else
+                @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Post-click', 'src' => 'Google Analytics 4 · AI Assistant channel', 'flag' => 'Not synced'])
+                <div class="air-empty"><b>No landing-page data for this month yet.</b> Run "Sync from Google" in Data &amp; settings to pull AI landing pages from GA4.</div>
+            @endif
         </div>
     </section>
 

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Integration;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -702,7 +703,7 @@ class GA4AnalyticsService
     // ─── AI Visibility Live Sync ──────────────────────────────────────────────
 
     /**
-     * Get AI-channel (AI Direct) sessions + total sessions grouped by YYYY-MM.
+     * Get AI Assistant channel sessions + total sessions grouped by YYYY-MM.
      * Returns [month => ['ai_sessions', 'ai_key_events', 'ai_revenue', 'total_sessions']]
      */
     public function getAiTrafficByMonth(
@@ -753,7 +754,7 @@ class GA4AnalyticsService
                     'dimensionFilter' => [
                         'filter' => [
                             'fieldName'   => 'sessionDefaultChannelGroup',
-                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => self::AI_CHANNEL],
                         ],
                     ],
                     'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
@@ -767,10 +768,15 @@ class GA4AnalyticsService
                 $source   = $row['dimensionValues'][0]['value'] ?? '';
                 $sessions = (int) ($row['metricValues'][0]['value'] ?? 0);
                 if ($source && $sessions > 0) {
-                    $platforms[] = ['platform' => $source, 'sessions' => $sessions];
+                    $name = self::aiPlatformName($source);
+                    $platforms[$name] = ($platforms[$name] ?? 0) + $sessions;
                 }
             }
-            return $platforms;
+            arsort($platforms);
+            $total = array_sum($platforms) ?: 1;
+            return collect($platforms)->map(fn ($v, $k) => [
+                'platform' => $k, 'sessions' => $v, 'total_sessions' => $v, 'share' => round($v / $total, 4),
+            ])->values()->all();
         } catch (\Exception $e) {
             Log::error('GA4 getAiPlatformBreakdown error', ['error' => $e->getMessage()]);
             return [];
@@ -799,7 +805,7 @@ class GA4AnalyticsService
                     'dimensionFilter' => [
                         'filter' => [
                             'fieldName'   => 'sessionDefaultChannelGroup',
-                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => self::AI_CHANNEL],
                         ],
                     ],
                     'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
@@ -845,7 +851,7 @@ class GA4AnalyticsService
                     'dimensionFilter' => [
                         'filter' => [
                             'fieldName'   => 'sessionDefaultChannelGroup',
-                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => self::AI_CHANNEL],
                         ],
                     ],
                     'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
@@ -884,7 +890,7 @@ class GA4AnalyticsService
                     'dimensionFilter' => [
                         'filter' => [
                             'fieldName'   => 'sessionDefaultChannelGroup',
-                            'stringFilter' => ['matchType' => 'EXACT', 'value' => 'AI Direct'],
+                            'stringFilter' => ['matchType' => 'EXACT', 'value' => self::AI_CHANNEL],
                         ],
                     ],
                 ]);
@@ -930,6 +936,140 @@ class GA4AnalyticsService
         } catch (\Exception $e) {
             Log::error('GA4 fetchTotalSessionsByMonth error', ['error' => $e->getMessage()]);
             return [];
+        }
+    }
+
+    /** GA4's default channel group for visits referred by AI assistants. */
+    public const AI_CHANNEL = 'AI Assistant';
+
+    /** Friendly platform name for an AI referrer (session source). */
+    public static function aiPlatformName(string $source): string
+    {
+        $s = strtolower($source);
+        return match (true) {
+            str_contains($s, 'chatgpt') || str_contains($s, 'openai') => 'ChatGPT',
+            str_contains($s, 'gemini') || str_contains($s, 'bard') => 'Gemini',
+            str_contains($s, 'perplexity') => 'Perplexity',
+            str_contains($s, 'copilot') => 'Copilot',
+            str_contains($s, 'claude') => 'Claude',
+            str_contains($s, 'deepseek') => 'DeepSeek',
+            str_contains($s, 'grok') => 'Grok',
+            str_contains($s, 'meta.ai') => 'Meta AI',
+            default => $source,
+        };
+    }
+
+    /**
+     * Monthly tables for the AI Visibility Diagnostics page, straight from GA4:
+     *  channels_monthly     {YYYY-MM: {channel: [sessions, key_events, revenue]}}
+     *  ai_sources_monthly   {YYYY-MM: {platform: sessions}}
+     *  funnel_monthly       {YYYY-MM: {label, events: {event: count}, revenue}}
+     *  landing_pages_monthly {YYYY-MM: [[page, sessions, key_events, revenue], ...top 10]}
+     * Each table is omitted when its GA4 query fails, so callers never overwrite with blanks.
+     */
+    public function getAiReportTables(Integration $integration, string $propertyId, string $startDate, string $endDate): array
+    {
+        $token = $this->getAccessToken($integration);
+        if (!$token) return [];
+        $range = [['startDate' => $startDate, 'endDate' => $endDate]];
+        $aiOnly = ['filter' => ['fieldName' => 'sessionDefaultChannelGroup', 'stringFilter' => ['matchType' => 'EXACT', 'value' => self::AI_CHANNEL]]];
+        $ym = fn ($v) => substr($v, 0, 4).'-'.substr($v, 4, 2);
+        $out = [];
+
+        $rows = $this->aiReportRows($token, $propertyId, [
+            'dateRanges' => $range,
+            'dimensions' => [['name' => 'yearMonth'], ['name' => 'sessionDefaultChannelGroup']],
+            'metrics' => [['name' => 'sessions'], ['name' => 'keyEvents'], ['name' => 'purchaseRevenue']],
+            'limit' => 5000,
+        ]);
+        if ($rows !== null) {
+            foreach ($rows as $r) {
+                $out['channels_monthly'][$ym($r[0])][$r[1]] = [(int) $r[2], (int) $r[3], round((float) $r[4], 2)];
+            }
+        }
+
+        $rows = $this->aiReportRows($token, $propertyId, [
+            'dateRanges' => $range,
+            'dimensions' => [['name' => 'yearMonth'], ['name' => 'sessionSource']],
+            'metrics' => [['name' => 'sessions']],
+            'dimensionFilter' => $aiOnly,
+            'limit' => 5000,
+        ]);
+        if ($rows !== null) {
+            foreach ($rows as $r) {
+                $name = self::aiPlatformName($r[1]);
+                $out['ai_sources_monthly'][$ym($r[0])][$name] = ($out['ai_sources_monthly'][$ym($r[0])][$name] ?? 0) + (int) $r[2];
+            }
+            foreach ($out['ai_sources_monthly'] ?? [] as &$p) {
+                arsort($p);
+            }
+            unset($p);
+        }
+
+        $funnelEvents = ['session_start', 'view_item', 'add_to_cart', 'view_cart', 'begin_checkout', 'purchase'];
+        $rows = $this->aiReportRows($token, $propertyId, [
+            'dateRanges' => $range,
+            'dimensions' => [['name' => 'yearMonth'], ['name' => 'eventName']],
+            'metrics' => [['name' => 'eventCount'], ['name' => 'purchaseRevenue']],
+            'dimensionFilter' => ['andGroup' => ['expressions' => [
+                $aiOnly,
+                ['filter' => ['fieldName' => 'eventName', 'inListFilter' => ['values' => $funnelEvents]]],
+            ]]],
+            'limit' => 5000,
+        ]);
+        if ($rows !== null) {
+            foreach ($rows as $r) {
+                $m = $ym($r[0]);
+                $out['funnel_monthly'][$m]['label'] = Carbon::parse($m.'-01')->format('M');
+                $out['funnel_monthly'][$m]['events'][$r[1]] = (int) $r[2];
+                if ($r[1] === 'purchase') {
+                    $out['funnel_monthly'][$m]['revenue'] = round((float) $r[3], 2);
+                }
+            }
+        }
+
+        $rows = $this->aiReportRows($token, $propertyId, [
+            'dateRanges' => $range,
+            'dimensions' => [['name' => 'yearMonth'], ['name' => 'landingPage']],
+            'metrics' => [['name' => 'sessions'], ['name' => 'keyEvents'], ['name' => 'purchaseRevenue']],
+            'dimensionFilter' => $aiOnly,
+            'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]],
+            'limit' => 10000,
+        ]);
+        if ($rows !== null) {
+            foreach ($rows as $r) {
+                $m = $ym($r[0]);
+                if (count($out['landing_pages_monthly'][$m] ?? []) < 10 && $r[1] !== '' && $r[1] !== '(not set)') {
+                    $out['landing_pages_monthly'][$m][] = [rawurldecode($r[1]), (int) $r[2], (int) $r[3], round((float) $r[4], 2)];
+                }
+            }
+        }
+
+        foreach ($out as &$table) {
+            ksort($table);
+        }
+        unset($table);
+
+        return $out;
+    }
+
+    /** Rows as flat [dimension..., metric...] arrays, or null when the query fails. */
+    private function aiReportRows(string $token, string $propertyId, array $body): ?array
+    {
+        try {
+            $response = Http::withHeaders(['Authorization' => "Bearer {$token}"])
+                ->post(self::DATA_API_BASE."/properties/{$propertyId}:runReport", $body);
+            if (!$response->successful()) {
+                Log::warning('GA4 AI report query failed', ['status' => $response->status(), 'error' => $response->json('error.message')]);
+                return null;
+            }
+            return collect($response->json('rows') ?? [])->map(fn ($row) => array_merge(
+                array_column($row['dimensionValues'] ?? [], 'value'),
+                array_column($row['metricValues'] ?? [], 'value')
+            ))->all();
+        } catch (\Throwable $e) {
+            Log::warning('GA4 AI report query error', ['error' => $e->getMessage()]);
+            return null;
         }
     }
 }
