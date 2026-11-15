@@ -81,16 +81,19 @@
             <h2 class="section-title">AI visibility report</h2>
             <p>Is the brand showing up inside AI answers, and is anyone arriving from them? Use the ? next to any section to see where its numbers come from.</p>
         </div>
-        <button type="button" wire:click="setAiVisibilitySection('settings')" class="btn-secondary" aria-current="{{ $aiVisibilitySection === 'settings' ? 'page' : 'false' }}">Data &amp; settings</button>
+        @if($aiVisibilitySection === 'settings')
+            <button type="button" wire:click="setAiVisibilitySection('overview')" class="btn-secondary">Back to report</button>
+        @else
+            <button type="button" wire:click="setAiVisibilitySection('settings')" class="btn-secondary">Data &amp; settings</button>
+        @endif
     </div>
-    <nav class="ai-section-nav" aria-label="AI visibility sections">
-        @foreach(['overview' => ['Overview', 'for the client'], 'diagnostics' => ['Diagnostics', 'the why behind the numbers'], 'competitors' => ['Competitors', null], 'research' => ['Topic & prompt research', null]] as $key => [$label, $hint])
-            <button type="button" wire:click="setAiVisibilitySection('{{ $key }}')" aria-current="{{ $aiVisibilitySection === $key ? 'page' : 'false' }}" class="air-tab {{ $aiVisibilitySection === $key ? 'is-active' : '' }}">{{ $label }}@if($hint)<small>{{ $hint }}</small>@endif</button>
-        @endforeach
-    </nav>
 
-    <div wire:key="ai-section-{{ $aiVisibilitySection }}-{{ $aiReportMonth }}-{{ $aiHeroMetric }}" class="space-y-6" data-ai-section="{{ $aiVisibilitySection }}">
-    @if(in_array($aiVisibilitySection, ['overview', 'diagnostics'], true))
+    @if($aiVisibilitySection === 'settings')
+        <div class="space-y-6" data-ai-section="settings">
+            @include('livewire.pages.client-dashboard.ai-data-settings')
+        </div>
+    @else
+    <div wire:key="ai-report-{{ $aiReportMonth }}-{{ $aiHeroMetric }}" class="space-y-6" data-ai-section="report">
         @if(!$aiReport || $aiReport['empty'])
             <div class="card ai-empty-state"><h3>No AI visibility data yet</h3><p>Connect Google or import the monthly workbook in Data &amp; settings.</p></div>
         @else
@@ -103,22 +106,17 @@
                 </select>
                 <span class="air-fresh">{{ $aiReport['fresh']['line'] }}</span>
             </div>
-            @if($aiVisibilitySection === 'overview')
-                @include('livewire.pages.client-dashboard.ai-report-overview')
-            @else
-                @include('livewire.pages.client-dashboard.ai-report-diagnostics')
-            @endif
-            <section aria-label="How to read this report" class="card air-card">
-                <div class="air-foot">
-                    <div><h4><span class="kpi-label">Observed</span><x-ai-help :h="$aiReport['help']['legend']" /></h4><p>Recorded by the platform from real events in its own logs: Search Console, Bing (via Clarity), Clarity, GA4.</p></div>
-                    <div><h4><span class="kpi-label">Simulated</span></h4><p>Produced by asking AI models a fixed set of prompts each month and recording the answers (Semrush). Directional, never mixed with observed figures.</p></div>
-                    <div><h4><span class="kpi-label">Refresh</span></h4><p>{{ $aiReport['fresh']['refresh'] }}</p></div>
-                </div>
-            </section>
+            @include('livewire.pages.client-dashboard.ai-report-overview')
+            <div class="ai-section-heading" id="ai-diagnostics"><div><h2>Diagnostics</h2><p>The why behind the numbers for the month selected above.</p></div></div>
+            @include('livewire.pages.client-dashboard.ai-report-diagnostics')
         @endif
-    @elseif($aiVisibilitySection === 'competitors')
+    </div>
+
+    <div class="space-y-6" id="ai-competitors">
         @include('livewire.pages.client-dashboard.ai-competitors')
-    @elseif($aiVisibilitySection === 'research')
+    </div>
+
+    <div class="space-y-6" id="ai-research">
         @if($comparisonReports->isNotEmpty())
             @include('livewire.pages.client-dashboard.semrush-exports')
         @elseif(!empty($aiSnapshot['semrush_top_topics']))
@@ -126,10 +124,18 @@
         @else
             <div class="card ai-empty-state"><h3>No topic or prompt exports yet</h3><p>Imported Semrush records will appear here.</p></div>
         @endif
-    @elseif($aiVisibilitySection === 'settings')
-        @include('livewire.pages.client-dashboard.ai-data-settings')
-    @endif
     </div>
+
+    @if($aiReport && !$aiReport['empty'])
+        <section aria-label="How to read this report" class="card air-card">
+            <div class="air-foot">
+                <div><h4><span class="kpi-label">Observed</span><x-ai-help :h="$aiReport['help']['legend']" /></h4><p>Recorded by the platform from real events in its own logs: Search Console, Bing (via Clarity), Clarity, GA4.</p></div>
+                <div><h4><span class="kpi-label">Simulated</span></h4><p>Produced by asking AI models a fixed set of prompts each month and recording the answers (Semrush). Directional, never mixed with observed figures.</p></div>
+                <div><h4><span class="kpi-label">Refresh</span></h4><p>{{ $aiReport['fresh']['refresh'] }}</p></div>
+            </div>
+        </section>
+    @endif
+    @endif
     @include('livewire.pages.client-dashboard.ai-snapshot-form')
 </div>
 @endif

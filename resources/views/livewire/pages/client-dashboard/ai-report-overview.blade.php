@@ -154,7 +154,7 @@
                 @else
                     {!! $notCaptured !!}
                 @endif
-                @if(!$aiReport['competitors']['available'])<div class="air-caveat">Competitor share of voice needs a Semrush brand summary for each competitor. Add the brands on the Competitors tab.</div>@endif
+                @if(!$aiReport['competitors']['available'])<div class="air-caveat">Competitor share of voice needs a Semrush brand summary for each competitor. Add the brands in Competitor comparison below.</div>@endif
             </div>
             <div class="card air-card">
                 <h3>Mentions by AI platform <x-ai-help :h="$help['platform']" /></h3>
@@ -211,9 +211,9 @@
                     </details>
                 </div>
             </div>
-            <div class="air-caveat">@if($cmp['note']){{ $cmp['note'] }} @endif Each brand has its own Semrush prompt set, so read shares as a direction. Add or edit brands on the Competitors tab.</div>
+            <div class="air-caveat">@if($cmp['note']){{ $cmp['note'] }} @endif Each brand has its own Semrush prompt set, so read shares as a direction. Add or edit brands in Competitor comparison below.</div>
         @else
-            <div class="air-empty"><b>No competitor data yet.</b> Add competitors on the Competitors tab and upload a Semrush brand summary for each one.</div>
+            <div class="air-empty"><b>No competitor data yet.</b> Add competitors in Competitor comparison below and upload a Semrush brand summary for each one.</div>
         @endif
     </section>
 

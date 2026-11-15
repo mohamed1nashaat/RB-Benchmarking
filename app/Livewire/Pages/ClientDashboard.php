@@ -102,9 +102,9 @@ class ClientDashboard extends Component
 
     public function setAiVisibilitySection(string $section): void
     {
-        // Older links used separate traffic/citations sections; both now live in Diagnostics.
-        $section = in_array($section, ['traffic', 'citations'], true) ? 'diagnostics' : $section;
-        if (in_array($section, ['overview', 'diagnostics', 'competitors', 'research', 'settings'], true)) {
+        // The report is one page; older links to its former tabs open the report.
+        $section = in_array($section, ['diagnostics', 'competitors', 'research', 'traffic', 'citations'], true) ? 'overview' : $section;
+        if (in_array($section, ['overview', 'settings'], true)) {
             if ($section === 'settings' && !$this->aiSettingsLoaded) {
                 $this->loadGoogleListsForAiTab();
                 $this->aiSettingsLoaded = true;
@@ -2413,7 +2413,7 @@ class ClientDashboard extends Component
             'categories' => $categories,
             'subCategories' => $subCategories,
             'campaignCategories' => $campaignCategories,
-            'aiReport' => $this->activeTabIndex === 3 && in_array($this->aiVisibilitySection, ['overview', 'diagnostics'], true)
+            'aiReport' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
                 ? $this->buildAiReport() : null,
         ])->layout('layouts.app');
     }

@@ -49,7 +49,6 @@
     @endforeach
     <p class="ai-table-note"><span x-show="metricGroup === 'visibility'">Mentions and citations can overlap; each brand has its own exported prompt set.</span><span x-show="metricGroup === 'audience'" x-cloak>Audience and Gemini visits are supplied estimates, separate from measured website traffic.</span> A dash means no supplied value; 0 is a reported zero.</p>
 </div>
-<details class="ai-disclosure"><summary>Score comparison <span>Compare all brands visually</span></summary><div class="mt-4">@include('livewire.pages.client-dashboard.ai-score-comparison')</div></details>
 
 @if(collect($competitors ?? [])->contains(fn($c) => collect($c['visibility'] ?? [])->contains(fn($v) => isset($v['ai_impressions']))))
 <details class="ai-disclosure"><summary>Impression history <span>Monthly comparison with available competitor data</span></summary>
