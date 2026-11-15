@@ -130,33 +130,85 @@
     {{-- ── Upload Panel ──────────────────────────────────────────────────── --}}
     <div class="card p-5">
         <div class="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-                <h3 class="text-sm font-semibold text-white">Upload Monthly AI Visibility Report</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Upload the Excel file exported from your AI visibility tracker. Data is merged — existing months are updated.</p>
+            <div class="max-w-2xl">
+                <h3 class="text-base font-semibold tracking-tight text-white">Upload monthly AI visibility report</h3>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">Upload everything for the month in one go: the Excel workbook (Search Console, GA4, Microsoft Clarity and the Semrush overview) and the Semrush AI Visibility exports, <span class="text-gray-300">Brand topics</span> and <span class="text-gray-300">Prompts</span> CSVs for the client and each competitor. Each file is identified by its columns and checked; nothing is saved until you press Import.</p>
             </div>
-            <form wire:submit.prevent="uploadAiVisibility" class="flex items-center gap-3 flex-wrap">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="file" wire:model="aiVisibilityFile" accept=".xlsx" class="hidden" id="ai-vis-file-input">
-                    <label for="ai-vis-file-input"
-                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs text-gray-300 cursor-pointer hover:border-white/30 transition-colors">
-                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
-                        </svg>
-                        <span>{{ $aiVisibilityFile ? $aiVisibilityFile->getClientOriginalName() : 'Choose .xlsx file' }}</span>
-                    </label>
-                </label>
-                <button type="submit" wire:loading.attr="disabled"
-                    class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity"
-                    style="background: var(--brand-500, #ef4444);">
-                    <svg wire:loading wire:target="uploadAiVisibility" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    <span wire:loading.remove wire:target="uploadAiVisibility">Import</span>
-                    <span wire:loading wire:target="uploadAiVisibility">Importing…</span>
-                </button>
-            </form>
+            <label for="ai-import-files" class="btn-secondary cursor-pointer">
+                <x-heroicon-o-arrow-up-tray class="w-4 h-4" />
+                <span wire:loading.remove wire:target="aiImportFiles">{{ $aiImportFiles ? 'Choose other files' : 'Choose files' }}</span>
+                <span wire:loading wire:target="aiImportFiles">Checking…</span>
+            </label>
+            <input type="file" id="ai-import-files" wire:model="aiImportFiles" multiple accept=".xlsx,.csv" class="hidden">
         </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 max-w-2xl">
+            <label class="block">
+                <span class="micro-label">Semrush capture date</span>
+                <input type="date" wire:model.live="aiImportDate" max="{{ now()->toDateString() }}" class="input-field mt-1.5">
+            </label>
+            <label class="block">
+                <span class="micro-label">Client website</span>
+                <input type="text" wire:model.live.debounce.500ms="aiImportDomain" placeholder="alshifahoney.com" class="input-field mt-1.5">
+            </label>
+        </div>
+        @error('aiImportFiles.*')<p class="mt-3 text-xs text-red-400">{{ $message }}</p>@enderror
+
+        @if($aiImportReport)
+            @php $rep = $aiImportReport; $blocking = count($rep['errors']) + collect($rep['files'])->sum(fn ($f) => count($f['errors'])); @endphp
+            <div class="mt-5 overflow-x-auto rounded-xl air-upload" wire:loading.class="opacity-50" wire:target="aiImportFiles,aiImportDate,aiImportDomain,removeAiImportFile">
+                <table class="data-table w-full">
+                    <thead><tr><th>File</th><th>Detected as</th><th>Brand</th><th class="text-end">Rows</th><th>Checks</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach($rep['files'] as $i => $f)
+                        <tr>
+                            <td class="font-medium">
+                                <span class="inline-flex items-center gap-2">
+                                    @if($f['errors'])<x-heroicon-o-x-circle class="w-4 h-4 text-red-400 flex-shrink-0" />
+                                    @elseif($f['warnings'])<x-heroicon-o-exclamation-triangle class="w-4 h-4 text-amber-400 flex-shrink-0" />
+                                    @else<x-heroicon-o-check-circle class="w-4 h-4 text-green-400 flex-shrink-0" />@endif
+                                    <span class="truncate max-w-[220px]" title="{{ $f['name'] }}">{{ $f['name'] }}</span>
+                                </span>
+                            </td>
+                            <td>{{ $f['label'] }}</td>
+                            <td>@if($f['domain']){{ $f['domain'] }} <span class="text-xs text-gray-500">{{ $f['role'] === 'client' ? 'client' : ($f['role'] === 'competitor' ? 'competitor' : '') }}</span>@else<span class="text-gray-500">—</span>@endif</td>
+                            <td class="text-end">{{ $f['rows'] !== null ? number_format($f['rows']) : '—' }}</td>
+                            <td class="air-checks">
+                                @if($f['summary'])<p class="text-xs text-gray-400">{{ $f['summary'] }}</p>@endif
+                                @foreach($f['errors'] as $e)<p class="text-xs text-red-400 mt-1">{{ $e }}</p>@endforeach
+                                @foreach($f['warnings'] as $w)<p class="text-xs text-amber-400 mt-1">{{ $w }}</p>@endforeach
+                            </td>
+                            <td class="text-end"><button type="button" wire:click="removeAiImportFile({{ $i }})" class="text-xs text-gray-500 hover:text-white" aria-label="Remove {{ $f['name'] }}">Remove</button></td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            @if($rep['errors'] || $rep['warnings'])
+                <div class="mt-4 space-y-1.5">
+                    @foreach($rep['errors'] as $e)<p class="flex items-start gap-2 text-xs text-red-400"><x-heroicon-o-x-circle class="w-4 h-4 flex-shrink-0" />{{ $e }}</p>@endforeach
+                    @foreach($rep['warnings'] as $w)<p class="flex items-start gap-2 text-xs text-amber-400"><x-heroicon-o-exclamation-triangle class="w-4 h-4 flex-shrink-0" />{{ $w }}</p>@endforeach
+                </div>
+            @endif
+
+            <div class="mt-5 flex items-center gap-3 flex-wrap">
+                <button type="button" wire:click="confirmAiImport" wire:loading.attr="disabled" wire:target="confirmAiImport" class="btn-primary disabled:opacity-50" @disabled(!$rep['ok'])>
+                    <span wire:loading.remove wire:target="confirmAiImport">Import {{ count($rep['files']) }} {{ count($rep['files']) === 1 ? 'file' : 'files' }}{{ $rep['month'] ? ' for '.\Carbon\Carbon::parse($rep['month'].'-01')->format('F Y') : '' }}</span>
+                    <span wire:loading wire:target="confirmAiImport">Importing…</span>
+                </button>
+                <button type="button" wire:click="clearAiImport" class="btn-ghost">Cancel</button>
+                <p class="text-xs {{ $blocking ? 'text-red-400' : 'text-gray-500' }}">
+                    {{ $blocking ? $blocking.' '.($blocking === 1 ? 'problem' : 'problems').' to fix first' : 'All checks passed. Everything is saved together, or nothing is.' }}
+                </p>
+            </div>
+        @endif
+        @if($aiImportError)
+            <p class="mt-3 flex items-center gap-2 text-xs text-red-400"><x-heroicon-o-x-circle class="w-4 h-4 flex-shrink-0" />{{ $aiImportError }}</p>
+        @endif
+        @if($aiImportResult)
+            <p class="mt-3 flex items-center gap-2 text-xs text-green-400"><x-heroicon-o-check-circle class="w-4 h-4 flex-shrink-0" />{{ $aiImportResult }}</p>
+        @endif
         {{-- Sync from Google button --}}
         <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <div>

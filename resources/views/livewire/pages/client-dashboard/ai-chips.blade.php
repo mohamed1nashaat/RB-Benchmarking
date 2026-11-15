@@ -1,1 +1,1 @@
-<div class="air-chips"><span class="air-chip {{ $type }}">{{ $type === 'obs' ? 'Observed' : 'Simulated' }}</span><span class="air-chip stage">{{ $stage }}</span>@if(!empty($src))<span class="air-src">{{ $src }}</span>@endif</div>
+<p class="air-src">{{ $type === 'obs' ? 'Observed' : 'Simulated' }} · {{ $stage }}@if(!empty($src)) · {{ $src }}@endif @if(!empty($flag))· <span class="flag">{{ $flag }}</span>@endif</p>

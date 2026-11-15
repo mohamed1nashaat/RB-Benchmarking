@@ -12,17 +12,17 @@
 <div class="air-panel" data-testid="ai-report-overview">
 
     {{-- Analyst note --}}
-    <section class="card air-card air-comm" aria-labelledby="air-comm-h">
-        <div class="air-chips"><span class="air-chip stage">Analyst note</span><span class="air-src">Written from this month's data</span><x-ai-help :h="$help['note']" /></div>
-        <h3 id="air-comm-h" class="air-lead">{{ $aiReport['commentary']['heading'] }}</h3>
+    <section class="card air-card air-note" aria-labelledby="air-comm-h">
+        <div class="flex items-center gap-2"><p class="kpi-label">Analyst note</p><x-ai-help :h="$help['note']" /></div>
+        <h3 id="air-comm-h">{{ $aiReport['commentary']['heading'] }}</h3>
         <p>{!! $aiReport['commentary']['html'] !!}</p>
     </section>
 
     {{-- Headline --}}
     <section aria-labelledby="air-h1">
-        <div class="air-sec-h"><h2 id="air-h1">Headline <x-ai-help :h="$help['headline']" /></h2><p>Is the brand showing up inside AI answers, and is anyone arriving from them?</p></div>
+        <div class="air-sec-h"><h2 id="air-h1"><x-heroicon-o-chart-bar-square />Headline <x-ai-help :h="$help['headline']" /></h2><p>Is the brand showing up inside AI answers, and is anyone arriving from them?</p></div>
         <div class="air-grid air-g-hero">
-            <div class="card air-card air-hero">
+            <div class="card air-card">
                 <div class="air-seg" role="group" aria-label="Headline metric">
                     @foreach(['imp' => 'Impressions', 'cit' => 'Citations', 'men' => 'Mentions'] as $k => $lbl)
                         <button type="button" wire:click="setAiHeroMetric('{{ $k }}')" aria-pressed="{{ $heroKey === $k ? 'true' : 'false' }}">{{ $lbl }}</button>
@@ -112,7 +112,6 @@
             {{-- Non-branded Share of Authority --}}
             @php $soa = $aiReport['tiles']['soa']; @endphp
             <div class="card air-card">
-                <div class="air-swap">Replaces "Clicks"</div>
                 <h3>Non-branded Share of Authority <x-ai-help :h="$help['soa']" /></h3>
                 <div class="air-sub">Our share of Copilot citations on queries that don't name the brand</div>
                 @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Pre-click', 'src' => 'Microsoft Clarity · last 30 days'])
@@ -144,7 +143,7 @@
     {{-- Landscape --}}
     @php $land = $aiReport['landscape']; @endphp
     <section aria-labelledby="air-h2">
-        <div class="air-sec-h"><h2 id="air-h2">Landscape <x-ai-help :h="$help['landscape']" /></h2><p>Simulated: Semrush asks the models a fixed prompt set each month</p></div>
+        <div class="air-sec-h"><h2 id="air-h2"><x-heroicon-o-globe-alt />Landscape <x-ai-help :h="$help['landscape']" /></h2><p>Simulated: Semrush asks the models a fixed prompt set each month</p></div>
         <div class="air-grid air-g-land">
             <div class="card air-card">
                 <h3>Where AI mentions {{ $dashboardData['client']['name'] ?? 'the brand' }} <x-ai-help :h="$help['country']" /></h3>
@@ -162,15 +161,15 @@
                 <div class="air-sub">{{ $dashboardData['client']['name'] ?? 'Brand' }} mentions per platform, same prompt set each month</div>
                 @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'sim', 'stage' => 'Pre-click', 'src' => $land['src']])
                 @if($land['captured'] && $land['platforms'])
-                    @php $platColors = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#8792AC', '#5D6987']; @endphp
+                    @php $platColors = ['var(--air-bar)']; @endphp
                     <div class="air-hbs">
                         @foreach($land['platforms'] as $k => $p)
-                            <div class="air-hb"><span class="air-hb-l">{{ $p['name'] }}</span><span class="air-hb-t"><span class="air-hb-f" style="width:{{ number_format($p['v'] / max(1, $land['platforms'][0]['v']) * 100, 1, '.', '') }}%;background:{{ $platColors[$k % 6] }}"></span></span><span class="air-hb-v">{{ number_format($p['v']) }}</span><span class="air-hb-d">{{ round($p['pct']) }}%</span></div>
+                            <div class="air-hb"><span class="air-hb-l">{{ $p['name'] }}</span><span class="air-hb-t"><span class="air-hb-f" style="width:{{ number_format($p['v'] / max(1, $land['platforms'][0]['v']) * 100, 1, '.', '') }}%;background:{{ $platColors[0] }}"></span></span><span class="air-hb-v">{{ number_format($p['v']) }}</span><span class="air-hb-d">{{ round($p['pct']) }}%</span></div>
                         @endforeach
                     </div>
                     @if($land['footnote'])<p class="air-src" style="margin:4px 0 0">{{ $land['footnote'] }}</p>@endif
                     <details class="air-details"><summary>Show as table</summary>
-                        <div class="air-tbl" style="margin-top:8px"><table><thead><tr><th>Platform</th><th>Mentions</th><th>Share</th></tr></thead><tbody>
+                        <div class="air-tbl" style="margin-top:8px"><table class="data-table"><thead><tr><th>Platform</th><th>Mentions</th><th>Share</th></tr></thead><tbody>
                             @foreach($land['platforms'] as $p)<tr><td>{{ $p['name'] }}</td><td>{{ number_format($p['v']) }}</td><td>{{ number_format($p['pct'], 1) }}%</td></tr>@endforeach
                         </tbody></table></div>
                     </details>
@@ -184,12 +183,12 @@
     {{-- Post-click --}}
     @php $fun = $aiReport['funnel']; @endphp
     <section aria-labelledby="air-h3">
-        <div class="air-sec-h"><h2 id="air-h3">Post-click <x-ai-help :h="$help['postclick']" /></h2><p>{{ $fun['sub'] }}</p></div>
+        <div class="air-sec-h"><h2 id="air-h3"><x-heroicon-o-shopping-cart />Post-click <x-ai-help :h="$help['postclick']" /></h2><p>{{ $fun['sub'] }}</p></div>
         @if($fun['available'])
             <div class="air-grid air-g-4">
                 @foreach($fun['steps'] as $k => $s)
-                    <div class="card air-card air-step">
-                        <div class="lbl">{{ $s['label'] }}</div>
+                    <div class="card air-card">
+                        <p class="kpi-label">{{ $s['label'] }}</p>
                         <div class="air-mid">{{ number_format($s['v']) }}</div>
                         <div class="air-track"><div class="air-fill" style="width:{{ number_format($s['width'], 1, '.', '') }}%"></div></div>
                         <div class="air-conv">{{ $s['conv'] }}</div>

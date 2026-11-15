@@ -78,9 +78,8 @@
 <div class="ai-workspace space-y-6" data-testid="ai-visibility-workspace">
     <div class="ai-workspace-header">
         <div>
-            <p class="ai-eyebrow">AI visibility health report</p>
-            <h2>Understand your presence in AI search</h2>
-            <p>Is the brand showing up inside AI answers, and is anyone arriving from them? Every number says where it comes from: tap <span class="air-help-btn" style="display:inline-flex;width:16px;height:16px;font-size:10px" aria-hidden="true">?</span> on any section.</p>
+            <h2 class="section-title">AI visibility report</h2>
+            <p>Is the brand showing up inside AI answers, and is anyone arriving from them? Use the ? next to any section to see where its numbers come from.</p>
         </div>
         <button type="button" wire:click="setAiVisibilitySection('settings')" class="btn-secondary" aria-current="{{ $aiVisibilitySection === 'settings' ? 'page' : 'false' }}">Data &amp; settings</button>
     </div>
@@ -96,13 +95,12 @@
             <div class="card ai-empty-state"><h3>No AI visibility data yet</h3><p>Connect Google or import the monthly workbook in Data &amp; settings.</p></div>
         @else
             <div class="air-filters" aria-label="Filters">
-                <label for="air-month">Month</label>
-                <select id="air-month" wire:model.live="aiReportMonth">
+                <label for="air-month" class="micro-label">Month</label>
+                <select id="air-month" wire:model.live="aiReportMonth" class="input-field">
                     @foreach($aiReport['months'] as $ym => $lbl)
                         <option value="{{ $ym }}" @selected($ym === $aiReport['ctx']['sel'])>{{ $lbl }}</option>
                     @endforeach
                 </select>
-                <span class="air-live">Live data</span>
                 <span class="air-fresh">{{ $aiReport['fresh']['line'] }}</span>
             </div>
             @if($aiVisibilitySection === 'overview')
@@ -112,9 +110,9 @@
             @endif
             <section aria-label="How to read this report" class="card air-card">
                 <div class="air-foot">
-                    <div><h4><span class="air-chip obs">Observed</span><x-ai-help :h="$aiReport['help']['legend']" /></h4><p>Recorded by the platform from real events in its own logs: Search Console, Bing (via Clarity), Clarity, GA4.</p></div>
-                    <div><h4><span class="air-chip sim">Simulated</span></h4><p>Produced by asking AI models a fixed set of prompts each month and recording the answers (Semrush). Directional, never mixed with observed figures.</p></div>
-                    <div><h4>Refresh</h4><p>{{ $aiReport['fresh']['refresh'] }}</p></div>
+                    <div><h4><span class="kpi-label">Observed</span><x-ai-help :h="$aiReport['help']['legend']" /></h4><p>Recorded by the platform from real events in its own logs: Search Console, Bing (via Clarity), Clarity, GA4.</p></div>
+                    <div><h4><span class="kpi-label">Simulated</span></h4><p>Produced by asking AI models a fixed set of prompts each month and recording the answers (Semrush). Directional, never mixed with observed figures.</p></div>
+                    <div><h4><span class="kpi-label">Refresh</span></h4><p>{{ $aiReport['fresh']['refresh'] }}</p></div>
                 </div>
             </section>
         @endif

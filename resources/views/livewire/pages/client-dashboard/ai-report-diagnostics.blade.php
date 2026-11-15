@@ -14,7 +14,7 @@
 
     {{-- Traffic quality --}}
     <section aria-labelledby="air-d1">
-        <div class="air-sec-h"><h2 id="air-d1">Traffic quality <x-ai-help :h="$help['traffic']" /></h2><p>Observed · GA4 and Clarity · {{ $ctx['label'] }}</p></div>
+        <div class="air-sec-h"><h2 id="air-d1"><x-heroicon-o-arrow-trending-up />Traffic quality <x-ai-help :h="$help['traffic']" /></h2><p>Observed · GA4 and Clarity · {{ $ctx['label'] }}</p></div>
         <div class="air-grid air-g-2">
             <div class="card air-card">
                 <h3>AI-sourced sessions by platform <x-ai-help :h="$help['platsess']" /></h3>
@@ -51,20 +51,20 @@
         <div class="card air-card" style="margin-top:14px">
             <h3>Top AI landing pages <x-ai-help :h="$help['landing']" /></h3>
             <div class="air-sub">The pages AI visitors view most</div>
-            <div class="air-chips"><span class="air-chip obs">Observed</span><span class="air-chip stage">Post-click</span><span class="air-chip pend">Not imported</span><span class="air-src">Microsoft Clarity · AI channel · last 30 days</span></div>
+            @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Post-click', 'src' => 'Microsoft Clarity · AI channel · last 30 days', 'flag' => 'Not imported'])
             <div class="air-empty"><b>Not imported yet.</b> Add Clarity's top pages with Channel = AIPlatform (or the GA4 landing-page export for the AI channel) to the monthly workbook and this table fills in.</div>
         </div>
     </section>
 
     {{-- Grounding and citations --}}
     <section aria-labelledby="air-d2">
-        <div class="air-sec-h"><h2 id="air-d2">Grounding and citations <x-ai-help :h="$help['grounding']" /></h2><p>Observed · Search Console, Bing (via Clarity), Clarity</p></div>
+        <div class="air-sec-h"><h2 id="air-d2"><x-heroicon-o-link />Grounding and citations <x-ai-help :h="$help['grounding']" /></h2><p>Observed · Search Console, Bing (via Clarity), Clarity</p></div>
         <div class="card air-card">
             <h3>Top grounding queries and our citation share <x-ai-help :h="$help['gq']" /></h3>
             <div class="air-sub">The searches Copilot ran to build its answers, and how often it cited us</div>
             @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Pre-click', 'src' => $gr['src']])
             @if($gr['captured'] && $gr['queries'])
-                <div class="air-tbl"><table>
+                <div class="air-tbl"><table class="data-table">
                     <thead><tr><th>Grounding query</th><th>Type</th><th>Citations</th><th>Citation share</th></tr></thead>
                     <tbody>
                     @foreach($gr['queries'] as $q)
@@ -124,7 +124,7 @@
                 <h3>AI crawler visits <x-ai-help :h="$help['crawler']" /></h3>
                 <div class="air-sub">Requests from AI bots to the site</div>
                 @php $botOn = $gr['bot'] && !str_contains(strtolower($gr['bot']), 'not'); @endphp
-                <div class="air-chips"><span class="air-chip obs">Observed</span><span class="air-chip stage">Pre-click</span>@unless($botOn)<span class="air-chip pend">Not connected</span>@endunless</div>
+                @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Pre-click', 'src' => 'Microsoft Clarity · Bot activity', 'flag' => $botOn ? null : 'Not connected'])
                 @if($botOn)
                     <div class="air-empty"><b>Connected:</b> {{ $gr['bot'] }}. Bot visit counts will appear here once they are included in the monthly export.</div>
                 @else
@@ -153,13 +153,13 @@
 
     {{-- On-site experience --}}
     <section aria-labelledby="air-d3">
-        <div class="air-sec-h"><h2 id="air-d3">On-site experience <x-ai-help :h="$help['onsite']" /></h2><p>Observed · Clarity, AI visitors vs the whole site, last 30 days</p></div>
+        <div class="air-sec-h"><h2 id="air-d3"><x-heroicon-o-cursor-arrow-rays />On-site experience <x-ai-help :h="$help['onsite']" /></h2><p>Observed · Clarity, AI visitors vs the whole site, last 30 days</p></div>
         <div class="card air-card">
             <h3>Friction on AI landing pages <x-ai-help :h="$help['friction']" /></h3>
             <div class="air-sub">What happens after someone arrives from an AI answer</div>
             @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'obs', 'stage' => 'Post-click', 'src' => $fr['src']])
             @if($fr['captured'] && $fr['rows'])
-                <div class="air-tbl"><table>
+                <div class="air-tbl"><table class="data-table">
                     <thead><tr><th>Metric (share of sessions)</th><th>AI visitors</th><th>Whole site</th><th>Read</th></tr></thead>
                     <tbody>
                     @foreach($fr['rows'] as $r)
@@ -180,12 +180,12 @@
 
     {{-- Competitive watch --}}
     <section aria-labelledby="air-d4">
-        <div class="air-sec-h"><h2 id="air-d4">Competitive watch <x-ai-help :h="$help['competitive']" /></h2><p>Simulated · Semrush prompt set and topics</p></div>
+        <div class="air-sec-h"><h2 id="air-d4"><x-heroicon-o-eye />Competitive watch <x-ai-help :h="$help['competitive']" /></h2><p>Simulated · Semrush prompt set and topics</p></div>
         <div class="air-grid air-g-2">
             <div class="card air-card">
                 <h3>How AI talks about {{ $brand }} <x-ai-help :h="$help['sentiment']" /></h3>
                 <div class="air-sub">Tone of answers that name the brand, by assistant</div>
-                <div class="air-chips"><span class="air-chip sim">Simulated</span><span class="air-chip stage">Pre-click</span><span class="air-chip pend">Not scored</span><span class="air-src">Semrush prompts, scored by the analyst</span></div>
+                @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'sim', 'stage' => 'Pre-click', 'src' => 'Semrush prompts, scored by the analyst', 'flag' => 'Not scored'])
                 <div class="air-legend"><span><i style="background:var(--air-good)"></i>Positive</span><span><i style="background:var(--air-g)"></i>Neutral</span><span><i style="background:var(--air-bad)"></i>Cautious</span></div>
                 <div class="air-empty"><b>Not scored for this month.</b> The analyst scores the Semrush answers that name the brand as positive, neutral or cautious. Once that score sheet is in the workbook, this chart shows the tone by assistant.</div>
             </div>
@@ -194,7 +194,7 @@
                 <div class="air-sub">High-demand topics where AI never mentions {{ $brand }}</div>
                 @include('livewire.pages.client-dashboard.ai-chips', ['type' => 'sim', 'stage' => 'Pre-click', 'src' => $cw['src']])
                 @if($cw['captured'] && $cw['gaps']['rows'])
-                    <div class="air-tbl"><table>
+                    <div class="air-tbl"><table class="data-table">
                         <thead><tr><th>Topic</th><th>Market</th><th>Monthly searches</th></tr></thead>
                         <tbody>
                         @foreach($cw['gaps']['rows'] as $g)

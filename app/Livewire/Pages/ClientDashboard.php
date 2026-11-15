@@ -22,6 +22,7 @@ use App\Services\GA4AnalyticsService;
 use App\Services\PageSpeedService;
 use App\Services\SeoAuditService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -173,6 +174,13 @@ class ClientDashboard extends Component
     // AI Visibility report: selected month (YYYY-MM, '' = default) and the headline metric.
     public string $aiReportMonth = '';
     public string $aiHeroMetric = 'imp';
+    // Monthly upload: workbook + Semrush exports, checked before saving.
+    public $aiImportFiles = [];
+    public string $aiImportDate = '';
+    public string $aiImportDomain = '';
+    public ?array $aiImportReport = null;
+    public string $aiImportResult = '';
+    public string $aiImportError = '';
     // Manual snapshot entry (Semrush + Clarity)
     public bool $aiSnapshotFormOpen = false;
     public string $aiSnapshotMonth = '';
@@ -316,40 +324,9 @@ class ClientDashboard extends Component
         $this->aiUploadSuccess = '';
 
         try {
-            $path = $this->aiVisibilityFile->store('ai-visibility', 'local');
-            $fullPath = storage_path('app/' . $path);
-
-            $parser = new AiVisibilityParser();
-            $data = $parser->parse($fullPath);
-
-            // Determine report month from the latest month in the data
-            $months = $data['months'] ?? [];
-            $reportMonth = collect($months)->max('month') ?? now()->format('Y-m');
-            $snapshotDate = now()->toDateString();
-
-            // Upsert monthly rows
-            foreach ($months as $monthData) {
-                $month = $monthData['month'];
-                unset($monthData['month']);
-                AiVisibilityMonth::updateOrCreate(
-                    ['tenant_id' => $this->clientId, 'month' => $month],
-                    array_merge($monthData, ['tenant_id' => $this->clientId, 'month' => $month])
-                );
-            }
-
-            // Upsert snapshot
-            $snap = $data['snapshot'];
-            AiVisibilitySnapshot::updateOrCreate(
-                ['tenant_id' => $this->clientId, 'report_month' => $reportMonth],
-                array_merge($snap, [
-                    'tenant_id'     => $this->clientId,
-                    'report_month'  => $reportMonth,
-                    'snapshot_date' => $snapshotDate,
-                    'filename'      => $this->aiVisibilityFile->getClientOriginalName(),
-                ])
-            );
-
-            Storage::disk('local')->delete($path);
+            $parsed = (new AiVisibilityParser())->parse($this->aiVisibilityFile->getRealPath());
+            $reportMonth = DB::transaction(fn () => (new \App\Services\AiWorkbookImporter())
+                ->import($this->clientId, $parsed, $this->aiVisibilityFile->getClientOriginalName()));
 
             $this->aiVisibilityFile = null;
             $this->aiUploadSuccess = 'AI visibility data imported for ' . $reportMonth;
@@ -359,6 +336,108 @@ class ClientDashboard extends Component
         } finally {
             $this->aiUploading = false;
         }
+    }
+
+    // ── Monthly upload (workbook + Semrush CSVs) ────────────────────────────
+
+    /** Client's own domain: last Semrush import, else the Search Console site. */
+    private function defaultAiImportDomain(): string
+    {
+        $domain = \App\Models\SemrushReport::where('tenant_id', $this->clientId)->where('is_client', true)
+            ->latest('report_month')->value('domain');
+        if (!$domain) {
+            $settings = Tenant::find($this->clientId)?->settings ?? [];
+            $domain = \App\Services\SemrushImporter::host($settings['seo']['search_console_site'] ?? '');
+        }
+        return (string) $domain;
+    }
+
+    private function aiImportFileList(): array
+    {
+        return collect($this->aiImportFiles)->filter()->values()
+            ->map(fn ($f) => ['path' => $f->getRealPath(), 'name' => $f->getClientOriginalName()])->all();
+    }
+
+    private function runAiImportCheck(): \App\Services\AiImportInspector
+    {
+        $inspector = new \App\Services\AiImportInspector();
+        $this->aiImportReport = $inspector->inspect($this->aiImportFileList(), $this->clientId, $this->aiImportDomain, $this->aiImportDate);
+        return $inspector;
+    }
+
+    public function updatedAiImportFiles(): void
+    {
+        $this->aiImportResult = '';
+        $this->aiImportError = '';
+        $this->validate(['aiImportFiles' => 'array|max:40', 'aiImportFiles.*' => 'file|max:20480|extensions:xlsx,csv']);
+        if ($this->aiImportDate === '') $this->aiImportDate = now()->toDateString();
+        if ($this->aiImportDomain === '') $this->aiImportDomain = $this->defaultAiImportDomain();
+        $this->runAiImportCheck();
+    }
+
+    public function updatedAiImportDate(): void
+    {
+        if ($this->aiImportFiles) $this->runAiImportCheck();
+    }
+
+    public function updatedAiImportDomain(): void
+    {
+        if ($this->aiImportFiles) $this->runAiImportCheck();
+    }
+
+    public function removeAiImportFile(int $index): void
+    {
+        $files = collect($this->aiImportFiles)->filter()->values()->all();
+        unset($files[$index]);
+        $this->aiImportFiles = array_values($files);
+        $this->aiImportFiles ? $this->runAiImportCheck() : $this->clearAiImport();
+    }
+
+    public function clearAiImport(): void
+    {
+        $this->reset('aiImportFiles', 'aiImportReport', 'aiImportError');
+    }
+
+    public function confirmAiImport(): void
+    {
+        $this->aiImportResult = '';
+        $this->aiImportError = '';
+        // Never trust the report shown in the browser: check the files again on the server.
+        $inspector = $this->runAiImportCheck();
+        if (!($this->aiImportReport['ok'] ?? false)) {
+            $this->aiImportError = 'Fix the problems marked below before importing.';
+            return;
+        }
+
+        try {
+            $done = DB::transaction(function () use ($inspector) {
+                $done = [];
+                $groups = [];
+                foreach ($inspector->payloads as $p) {
+                    if ($p['type'] === 'workbook') {
+                        $month = (new \App\Services\AiWorkbookImporter())->import($this->clientId, $p['parsed'], $p['name']);
+                        $done[] = 'workbook for ' . \Carbon\Carbon::parse($month . '-01')->format('F Y');
+                    } else {
+                        $groups[$p['domain']][$p['type']] = $p['rows'];
+                        $groups[$p['domain']]['source_files'][] = $p['name'];
+                    }
+                }
+                if ($groups) {
+                    (new \App\Services\SemrushImporter())->import($this->clientId, $this->aiImportDomain, $this->aiImportDate, $groups);
+                    $done[] = 'Semrush exports for ' . count($groups) . ' ' . (count($groups) === 1 ? 'brand' : 'brands');
+                }
+                return $done;
+            });
+        } catch (\Throwable $e) {
+            report($e);
+            $this->aiImportError = 'Nothing was saved: ' . $e->getMessage();
+            return;
+        }
+
+        $this->aiImportResult = 'Imported ' . implode(' and ', $done) . '.';
+        $this->reset('aiImportFiles', 'aiImportReport');
+        $this->aiMonths = null;
+        $this->loadAiVisibilityData();
     }
 
     /**

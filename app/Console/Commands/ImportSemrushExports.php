@@ -2,12 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AiVisibilitySnapshot;
-use App\Models\Competitor;
-use App\Models\CompetitorVisibility;
-use App\Models\SemrushReport;
 use App\Models\Tenant;
 use App\Services\SemrushExportParser;
+use App\Services\SemrushImporter;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -49,39 +46,7 @@ class ImportSemrushExports extends Command
                 throw new \InvalidArgumentException('Missing paired export for '.$brandDomain);
             }
         }
-        DB::transaction(function () use ($groups, $tenant, $domain, $month, $date) {
-            foreach ($groups as $brandDomain => $data) {
-                SemrushReport::updateOrCreate(
-                    ['tenant_id' => $tenant->id, 'domain' => $brandDomain, 'report_month' => $month],
-                    $data + ['captured_at' => $date, 'is_client' => $brandDomain === $domain]
-                );
-                if ($brandDomain === $domain) {
-                    $topics = collect($data['topics'])->sortByDesc('visibility')->take(15)->map(fn ($row) => [
-                        'topic' => $row['name'], 'market' => strtoupper($row['country']),
-                        'visibility' => $row['visibility'], 'difficulty' => $row['difficulty'],
-                        'mentions' => $row['mentions'], 'volume' => $row['volume'],
-                    ])->values()->all();
-                    AiVisibilitySnapshot::updateOrCreate(
-                        ['tenant_id' => $tenant->id, 'report_month' => $month],
-                        ['snapshot_date' => $date, 'semrush_topics_count' => count($data['topics']),
-                            'semrush_prompts_count' => count($data['prompts']), 'semrush_top_topics' => $topics]
-                    );
-                } else {
-                    $competitor = Competitor::where('tenant_id', $tenant->id)->get()->first(function ($item) use ($brandDomain) {
-                        $host = parse_url(str_contains($item->website ?? '', '://') ? $item->website : 'https://'.$item->website, PHP_URL_HOST);
-
-                        return preg_replace('/^www\./', '', strtolower($host ?? '')) === $brandDomain;
-                    });
-                    if (! $competitor) {
-                        throw new \InvalidArgumentException('Register competitor '.$brandDomain.' for this client first.');
-                    }
-                    CompetitorVisibility::updateOrCreate(
-                        ['competitor_id' => $competitor->id, 'report_month' => $month],
-                        ['semrush_topics_count' => count($data['topics'])]
-                    );
-                }
-            }
-        });
+        DB::transaction(fn () => (new SemrushImporter)->import($tenant->id, $domain, $date, $groups));
         foreach ($groups as $brandDomain => $data) {
             $this->info($brandDomain.': '.count($data['topics']).' topics, '.count($data['prompts']).' prompt records');
         }

@@ -1,6 +1,6 @@
 {{-- SVG pie/donut. Expects $rows = [[label, value], …]; optional $donut, $center, $centerSub, $small, $aria, $percentDecimals. --}}
 @php
-    $pieColors = ['#F93549', '#2a78d6', '#1baf7a', '#eda100', '#8792AC', '#5D6987', '#AEB6C9', '#CBD1DE'];
+    $pieColors = ['#EF4444', '#787774', '#A8A8A4', '#5C5C58', '#D4D4D2', '#3F3F3C', '#C4C4C0', '#8F8F8B'];
     $pieRows = array_values(array_filter($rows ?? [], fn($r) => (float)$r[1] > 0));
     $pieTotal = array_sum(array_map(fn($r) => (float)$r[1], $pieRows));
     $isDonut = $donut ?? false;
