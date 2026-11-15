@@ -119,15 +119,59 @@ class ClientDashboard extends Component
     public string $semrushPlatform = '';
     public string $semrushSearch = '';
     public int $semrushLimit = 25;
+    // Prompt table: sort order and brand-presence filter ('' = all, strong, mentioned, cited).
+    public string $semrushPromptSort = 'strongest';
+    public string $semrushPresence = '';
 
     public function updatedSemrushDomain(): void { $this->semrushLimit = 25; }
     public function updatedSemrushMonth(): void { $this->semrushLimit = 25; }
     public function updatedSemrushCountry(): void { $this->semrushLimit = 25; }
     public function updatedSemrushPlatform(): void { $this->semrushLimit = 25; }
     public function updatedSemrushSearch(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushPromptSort(): void { $this->semrushLimit = 25; }
+    public function setSemrushPresence(string $presence): void
+    {
+        $this->semrushPresence = in_array($presence, ['strong', 'mentioned', 'cited'], true) ? $presence : '';
+        $this->semrushLimit = 25;
+    }
     public function resetSemrushFilters(): void
     {
-        $this->reset('semrushDomain', 'semrushMonth', 'semrushCountry', 'semrushPlatform', 'semrushSearch', 'semrushLimit');
+        $this->reset('semrushDomain', 'semrushMonth', 'semrushCountry', 'semrushPlatform', 'semrushSearch', 'semrushLimit', 'semrushPromptSort', 'semrushPresence');
+    }
+
+    /** How strongly a prompt answer features the brand: named and cited, named only, or cited without being named. */
+    public static function promptStrength(array $prompt): string
+    {
+        $cats = explode(';', $prompt['categories'] ?? '');
+        $named = in_array('mentions_target', $cats, true);
+        $cited = in_array('cites_target', $cats, true);
+
+        return $named && $cited ? 'strong' : ($named ? 'mentioned' : ($cited ? 'cited' : 'none'));
+    }
+
+    /** Sorts prompt rows; ties fall back to the biggest topics first. */
+    public static function sortPrompts(\Illuminate\Support\Collection $prompts, string $sort): \Illuminate\Support\Collection
+    {
+        $tier = ['strong' => 3, 'mentioned' => 2, 'cited' => 1, 'none' => 0];
+        $rows = $prompts->map(fn ($p) => $p + [
+            '_tier' => $tier[$p['strength'] ?? self::promptStrength($p)],
+            '_volume' => (int) ($p['topic_volume'] ?? 0),
+            '_visibility' => (float) ($p['topic_visibility'] ?? 0),
+            '_brands' => (int) ($p['mentioned_brands_count'] ?? 0),
+        ]);
+        $order = match ($sort) {
+            'weakest' => [['_tier', 'asc'], ['_volume', 'desc']],
+            'volume_desc' => [['_volume', 'desc'], ['_tier', 'desc']],
+            'volume_asc' => [['_volume', 'asc'], ['_tier', 'desc']],
+            'visibility_desc' => [['_visibility', 'desc'], ['_volume', 'desc']],
+            'visibility_asc' => [['_visibility', 'asc'], ['_volume', 'desc']],
+            'brands_desc' => [['_brands', 'desc'], ['_volume', 'desc']],
+            'brands_asc' => [['_brands', 'asc'], ['_volume', 'desc']],
+            default => [['_tier', 'desc'], ['_volume', 'desc']],
+        };
+
+        return $rows->sortBy($order)->values()
+            ->map(fn ($p) => array_diff_key($p, array_flip(['_tier', '_volume', '_visibility', '_brands'])));
     }
 
     public function showMoreSemrush(): void { $this->semrushLimit = min(2000, $this->semrushLimit + 50); }
@@ -149,7 +193,14 @@ class ClientDashboard extends Component
         };
         $topics = collect($report->topics)->filter(fn ($r) => $filter($r, $r['name']))->sortByDesc('visibility')->values();
         $prompts = $allPrompts->filter(fn ($r) => $filter($r, $r['prompt'].' '.$r['topic_name'].' '.$r['brief_response'])
-            && (!$this->semrushPlatform || $r['llm'] === $this->semrushPlatform))->values();
+            && (!$this->semrushPlatform || $r['llm'] === $this->semrushPlatform))
+            ->map(fn ($r) => $r + ['strength' => self::promptStrength($r)])->values();
+        // Counts per strength for the filter buttons, before the presence filter narrows the table.
+        $strengthCounts = $prompts->countBy('strength');
+        $promptRows = self::sortPrompts(
+            $this->semrushPresence ? $prompts->where('strength', $this->semrushPresence) : $prompts,
+            $this->semrushPromptSort
+        );
         $summary = $reports->map(fn ($r) => [
             'domain' => $r->domain, 'topics' => $r->metrics['topics'] ?? count($r->topics), 'prompts' => $r->metrics['prompts'] ?? count($r->prompts),
             'monthly_audience' => $r->metrics['monthly_audience'] ?? null, 'estimated_gemini_visits' => $r->metrics['estimated_gemini_visits'] ?? null,
@@ -157,7 +208,7 @@ class ClientDashboard extends Component
             'mentions' => $r->metrics['mentions'] ?? collect($r->prompts)->filter(fn ($p) => in_array('mentions_target', explode(';', $p['categories'])))->count(),
             'citations' => $r->metrics['citations'] ?? collect($r->prompts)->filter(fn ($p) => in_array('cites_target', explode(';', $p['categories'])))->count(),
         ]);
-        return compact('months', 'month', 'reports', 'report', 'countries', 'topics', 'prompts', 'summary');
+        return compact('months', 'month', 'reports', 'report', 'countries', 'topics', 'prompts', 'promptRows', 'strengthCounts', 'summary');
     }
 
     // AI Visibility tab
