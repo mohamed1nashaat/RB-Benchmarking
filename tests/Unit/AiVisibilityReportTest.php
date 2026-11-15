@@ -107,4 +107,26 @@ class AiVisibilityReportTest extends TestCase
         $this->assertSame('Claude', \App\Services\GA4AnalyticsService::aiPlatformName('claude.ai'));
         $this->assertSame('example.org', \App\Services\GA4AnalyticsService::aiPlatformName('example.org'));
     }
+
+    public function test_competitors_show_share_of_voice_and_score_rank(): void
+    {
+        $brand = fn ($name, $client, $score, $mentions) => ['name' => $name, 'domain' => strtolower($name).'.com', 'is_client' => $client, 'metrics' => ['overall_score' => $score, 'mentions' => $mentions, 'citations' => 10]];
+        $brands = ['2026-11' => [$brand('Brand', true, 25, 60), $brand('Alpha', false, 31, 20), $brand('Beta', false, 25, 20)]];
+        $report = fn () => (new AiVisibilityReport($this->months(), $this->snapshot(), [], 'Brand', '2026-11'))->withCompetitors($brands);
+
+        $c = $report()->build('2026-10')['competitors'];
+        $this->assertTrue($c['available']);
+        $this->assertSame('Brand', $c['sov'][0][0]);
+        $this->assertEqualsWithDelta(60.0, $c['share'], 0.01);
+        $this->assertSame('Alpha', $c['scores'][0]['name']);
+        $this->assertStringContainsString('1st of 3 on mentions', $c['summary']);
+        $this->assertStringContainsString('joint 2nd of 3. Alpha leads with 31.', $c['summary']);
+        $this->assertStringContainsString('November 2026 capture', $c['note']);
+
+        $this->assertNull($report()->build('2026-11')['competitors']['note']);
+        $this->assertFalse((new AiVisibilityReport($this->months(), $this->snapshot(), [], 'Brand', '2026-11'))->build()['competitors']['available']);
+        // A month without the client's own summary is ignored.
+        $noClient = (new AiVisibilityReport($this->months(), $this->snapshot(), [], 'Brand', '2026-11'))->withCompetitors(['2026-11' => [$brand('Alpha', false, 31, 20)]]);
+        $this->assertFalse($noClient->build()['competitors']['available']);
+    }
 }

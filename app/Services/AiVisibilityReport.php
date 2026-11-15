@@ -31,6 +31,9 @@ class AiVisibilityReport
 
     private ?array $clarityCache = null;
 
+    /** Semrush brand summaries by month: ['YYYY-MM' => [['name', 'domain', 'is_client', 'metrics'], …]]. */
+    private array $brands = [];
+
     public function __construct(array $months, ?array $snapshot, array $semrushClient = [], string $brand = 'the brand', ?string $currentMonth = null)
     {
         $this->months = collect($months)
@@ -41,6 +44,15 @@ class AiVisibilityReport
         $this->semrush = $semrushClient;
         $this->brand = $brand;
         $this->currentMonth = $currentMonth ?? now()->format('Y-m');
+    }
+
+    /** Adds the client and competitor Semrush summaries for the Overview competitor section. */
+    public function withCompetitors(array $brandsByMonth): static
+    {
+        $this->brands = array_filter($brandsByMonth, fn ($rows) => collect($rows)->contains('is_client', true));
+        ksort($this->brands);
+
+        return $this;
     }
 
     // ── Public entry point ───────────────────────────────────────────────
@@ -84,6 +96,7 @@ class AiVisibilityReport
             'grounding' => $this->grounding($ctx),
             'friction' => $this->friction($ctx),
             'competitive' => $this->competitive($ctx),
+            'competitors' => $this->competitors($ctx),
             'help' => self::help(),
         ];
     }
@@ -767,6 +780,80 @@ class AiVisibilityReport
         ];
     }
 
+    /** Client vs tracked competitors from Semrush brand summaries: share of voice and AI score ranking. */
+    private function competitors(array $ctx): array
+    {
+        if (! $this->brands) {
+            return ['available' => false];
+        }
+        $month = isset($this->brands[$ctx['sel']]) ? $ctx['sel'] : array_key_last($this->brands);
+        $num = fn ($v) => is_numeric($v) ? (float) $v : null;
+        $rows = collect($this->brands[$month])->map(fn ($b) => [
+            'name' => $b['name'],
+            'domain' => $b['domain'] ?? null,
+            'is_client' => (bool) ($b['is_client'] ?? false),
+            'score' => $num($b['metrics']['overall_score'] ?? null),
+            'mentions' => $num($b['metrics']['mentions'] ?? null),
+            'citations' => $num($b['metrics']['citations'] ?? null),
+            'cited_pages' => $num($b['metrics']['cited_pages'] ?? null),
+            'prompts' => $num($b['metrics']['prompts'] ?? null),
+        ])->sortByDesc(fn ($r) => [$r['score'] ?? -1, $r['mentions'] ?? -1])->values();
+        $client = $rows->firstWhere('is_client', true);
+        $others = $rows->where('is_client', false);
+
+        // Share of voice: client first (red slice), then the five competitors with most mentions.
+        $byMentions = $others->filter(fn ($r) => $r['mentions'] !== null)->sortByDesc('mentions')->values();
+        $sov = $client['mentions'] !== null ? [[$client['name'], $client['mentions']]] : [];
+        foreach ($byMentions->take(5) as $r) {
+            $sov[] = [$r['name'], $r['mentions']];
+        }
+        if ($byMentions->count() > 5) {
+            $sov[] = ['Other brands', $byMentions->slice(5)->sum('mentions')];
+        }
+        $totalMentions = $client['mentions'] !== null ? $client['mentions'] + $byMentions->sum('mentions') : null;
+        $share = $totalMentions ? $client['mentions'] / $totalMentions * 100 : null;
+
+        $rank = function (string $key) use ($rows, $client): ?array {
+            if ($client[$key] === null) {
+                return null;
+            }
+            $vals = $rows->pluck($key)->filter(fn ($v) => $v !== null);
+            $above = $vals->filter(fn ($v) => $v > $client[$key])->count();
+            $tied = $vals->filter(fn ($v) => $v == $client[$key])->count() > 1;
+
+            return ['pos' => $above + 1, 'of' => $vals->count(), 'tied' => $tied];
+        };
+        $ord = fn (int $n) => $n.(in_array($n % 100, [11, 12, 13], true) ? 'th' : (['th', 'st', 'nd', 'rd'][$n % 10] ?? 'th'));
+        $rankText = fn (?array $r) => $r ? ($r['tied'] ? 'joint ' : '').$ord($r['pos']).' of '.$r['of'] : null;
+        $mRank = $rank('mentions');
+        $sRank = $rank('score');
+        $leader = $others->filter(fn ($r) => $r['score'] !== null)->sortByDesc('score')->first();
+
+        $parts = [];
+        if ($share !== null) {
+            $parts[] = '<b>'.e($client['name']).'</b> holds <b>'.number_format($share, 1).'%</b> of AI mentions across '.($byMentions->count() + 1).' tracked brands, '.$rankText($mRank).' on mentions.';
+        }
+        if ($sRank) {
+            $lead = $leader && $leader['score'] > $client['score'] ? ' '.e($leader['name']).' leads with '.(int) $leader['score'].'.' : ' No tracked competitor scores higher.';
+            $parts[] = 'Its Semrush AI score of <b>'.(int) $client['score'].'/100</b> ranks '.$rankText($sRank).'.'.$lead;
+        }
+
+        $label = Carbon::parse($month.'-01')->format('F Y');
+
+        return [
+            'available' => $client !== null && $others->isNotEmpty(),
+            'month' => $month,
+            'src' => 'Semrush AI Visibility · brand summaries · '.$label,
+            'note' => $month !== $ctx['sel'] ? 'Competitor figures are from the '.$label.' capture, the latest available. Semrush brand summaries were not captured for '.Carbon::parse($ctx['sel'].'-01')->format('F Y').'.' : null,
+            'count' => $rows->count(),
+            'sov' => $sov,
+            'share' => $share,
+            'scores' => $rows->filter(fn ($r) => $r['score'] !== null)->values()->all(),
+            'rows' => $rows->all(),
+            'summary' => implode(' ', $parts),
+        ];
+    }
+
     // ── "?" help: where each number comes from and why it is on the page ─
 
     public static function help(): array
@@ -798,6 +885,9 @@ class AiVisibilityReport
             'onsite' => ['On-site experience', 'Microsoft Clarity dashboard with the AI channel filter, compared with all traffic.', 'Shows what happens after someone arrives from an AI answer, and whether friction is losing them.'],
             'friction' => ['Friction on AI landing pages', 'Microsoft Clarity: rage clicks, dead clicks, quick backs, scroll depth and speed for Channel = AIPlatform vs all traffic, last 30 days.', 'AI visitors arrive with a specific question. Friction on the landing page wastes the visibility we earned.'],
             'competitive' => ['Competitive watch', 'Semrush prompt set and topics, captured monthly.', 'Shows how assistants describe the brand and which high-demand topics we are missing from.'],
+            'competitors' => ['Competitors', 'Semrush AI Visibility brand summaries for the client and each brand on the Competitors tab, captured monthly.', 'Shows whether assistants talk about us more or less than the brands customers compare us with. Simulated, so read it as a direction.'],
+            'sov' => ['AI share of voice', 'Semrush brand mentions for each tracked brand, as a share of all mentions across the tracked brands. Brands beyond the top five competitors are grouped as "Other brands".', 'One number for "are we the brand AI names in our category?". Each brand has its own Semrush prompt set, so shares are directional.'],
+            'cmpscore' => ['AI visibility score by brand', 'Semrush AI Visibility score (0–100) for each tracked brand, with mentions, citations and cited pages from the same summary.', 'Ranks the brand against competitors on one comparable scale, and shows where a competitor is ahead.'],
             'sentiment' => ['How AI talks about the brand', 'Semrush prompt answers that name the brand, scored positive, neutral or cautious by the analyst.', 'Being mentioned is not enough; the tone decides whether the mention helps sales.'],
             'gaps' => ['Topic gap watch list', 'Semrush AI Visibility topics export: topics with visibility 0, sorted by monthly search volume.', 'High-demand topics where AI never mentions the brand. We report the gaps; fixing them is the content team\'s scope.'],
             'legend' => ['How to read this report', 'Observed figures come from platform logs. Simulated figures come from Semrush prompt runs.', 'Keeping the two apart stops directional estimates being read as measured results.'],

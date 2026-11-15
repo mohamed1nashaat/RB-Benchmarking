@@ -303,7 +303,26 @@ class ClientDashboard extends Component
             $this->dashboardData['client']['name'] ?? 'the brand',
         );
 
-        return $report->build($this->aiReportMonth ?: null);
+        return $report->withCompetitors($this->aiCompetitorBrands())->build($this->aiReportMonth ?: null);
+    }
+
+    /** Semrush brand summaries (client + competitors) by report month, named from the Competitors tab. */
+    private function aiCompetitorBrands(): array
+    {
+        $host = fn (?string $url) => preg_replace('/^www\./', '', strtolower(parse_url(str_contains($url ?? '', '://') ? $url : 'https://'.($url ?? ''), PHP_URL_HOST) ?? ''));
+        $names = collect($this->competitors ?? [])->mapWithKeys(fn ($c) => [$host($c['website'] ?? '') => $c['name']]);
+        $client = $this->dashboardData['client']['name'] ?? 'the brand';
+
+        return \App\Models\SemrushReport::where('tenant_id', $this->clientId)
+            ->get(['domain', 'is_client', 'metrics', 'report_month'])
+            ->groupBy('report_month')
+            ->map(fn ($rows) => $rows->map(fn ($r) => [
+                'name' => $r->is_client ? $client : ($names[$r->domain] ?? $r->domain),
+                'domain' => $r->domain,
+                'is_client' => (bool) $r->is_client,
+                'metrics' => $r->metrics ?? [],
+            ])->values()->all())
+            ->all();
     }
 
     public function setAiHeroMetric(string $metric): void
