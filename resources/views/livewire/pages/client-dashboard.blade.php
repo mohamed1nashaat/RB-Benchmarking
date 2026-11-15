@@ -43,7 +43,7 @@
                 <div>
                     <div class="micro-label mb-1">{{ __("RB Benchmarks") }}</div>
                     <h1 class="section-title">{{ $dashboardData['client']['name'] }}</h1>
-                    <p class="text-sm text-gray-500 mt-1">{{ $periodLabel }}</p>
+                    <p class="text-sm text-gray-500 mt-1">{{ $activeTabIndex === 3 ? 'AI visibility report' : $periodLabel }}</p>
                 </div>
                 <div class="flex items-center gap-x-3" x-data="{ open: false }">
                     <div class="relative">
@@ -70,7 +70,7 @@
         </div>
 
         {{-- Tab Navigation --}}
-        <div class="border-b border-white/10 mb-6">
+        <div class="border-b border-white/10 mb-6 overflow-x-auto">
             <nav class="-mb-px flex gap-x-8" aria-label="{{ __('client_dashboard.tabs.label') }}">
                 <button wire:click="setActiveTab(0)" @click="history.replaceState(null, '', window.location.pathname)" class="whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium transition-colors {{ $activeTabIndex === 0 ? 'border-brand-500 text-brand-400' : 'border-transparent text-gray-500 hover:text-gray-200 hover:border-white/15' }}">
                     <x-heroicon-o-chart-bar class="w-5 h-5 inline-block me-1.5 -mt-0.5" />

@@ -174,3 +174,47 @@ Proprietary - Red Bananas Digital Agency
 ## Support
 
 For support, contact the development team.
+
+### Semrush AI visibility exports
+
+The AI Visibility tab includes a Semrush export explorer with brand, report month,
+country, platform, and text filters. Source CSVs remain in private storage.
+Import paired `brand_topics_<domain>_worldwide.csv` and
+`prompts_<domain>_worldwide.csv` exports (including filenames with ` (1)` suffixes):
+
+```bash
+php artisan semrush:import storage/app/private/semrush-verified-exports \
+  --tenant=160 --domain=alshifahoney.com --date=2026-11-10
+```
+
+The date is the capture date supplied by the operator; CSVs do not contain a report
+period. Each domain must have both exports. Competitor domains must match websites
+already registered for that client. Imports run in a transaction and replace the
+same client/domain/month report when repeated. Only Semrush topic and prompt counts
+and the client's top 15 topics update existing dashboard summaries; existing overall
+AI scores, Google analytics and Clarity values are preserved.
+
+The November 10 archive contains 286 topic-country rows and 680
+prompt-country-platform records across AlShifa, Abou Nayef Honey and AlHawwaj.
+AlShifa has 78 topic rows and 191 response records (149 distinct prompt texts).
+There are no duplicate prompt/country/platform combinations in this archive.
+Mentions and citations are independent flags and overlap. `sources_count` and
+`mentioned_brands_count` describe all sources/brands in a response, not the target
+brand's citation count. Topic IDs remain strings because some exceed signed 64-bit
+integer limits. Topic visibility is not an overall brand AI score. Search volume,
+intent distributions, undated 12-value volume trends and response excerpts are
+retained; the files contain neither citation URLs nor complete response text.
+
+### AI visibility workspace
+
+The client AI visibility tab opens on Overview, with four headline metrics, two
+traffic trends, and a compact score comparison. Competitors, Traffic & conversions,
+Citations, and Topic & prompt research render separately. Data & settings contains
+Google setup, imports, sync controls, and the snapshot editor; Google property lists
+load only when settings is first opened.
+
+Competitor metrics are grouped into Visibility, Cited sources, Audience estimates,
+and Measured analytics. Semrush report dates and analytics periods are labelled
+separately, with reported zeroes preserved. Research retains brand/month/country/
+platform/search filters, and expanded record tables stay open during filtering.
+Chart instances are destroyed when leaving a section or changing the traffic period.

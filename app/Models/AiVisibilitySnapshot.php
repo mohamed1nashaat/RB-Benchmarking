@@ -12,7 +12,7 @@ class AiVisibilitySnapshot extends Model
         'ai_platforms', 'top_ai_pages', 'top_ai_countries',
         'ai_funnel', 'clarity_citations', 'clarity_data',
         'semrush_score', 'semrush_topics_count', 'semrush_prompts_count',
-        'semrush_top_topics', 'filename',
+        'semrush_top_topics', 'report_tables', 'filename',
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class AiVisibilitySnapshot extends Model
         'ai_funnel' => 'array',
         'clarity_data' => 'array',
         'semrush_top_topics' => 'array',
+        'report_tables' => 'array',
         'clarity_citations' => 'integer',
         'semrush_score' => 'integer',
         'semrush_topics_count' => 'integer',

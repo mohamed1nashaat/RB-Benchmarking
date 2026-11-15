@@ -162,7 +162,227 @@ class AiVisibilityParser
             'semrush_topics_count'  => $this->parseSemrushTopicsCount(),
             'semrush_prompts_count' => $this->parseSemrushPromptsCount(),
             'semrush_top_topics'    => $this->parseSemrushTopTopics(),
+            'report_tables'         => $this->parseReportTables(),
         ];
+    }
+
+    // ── Structured report tables (feed the Overview / Diagnostics report) ────
+
+    private function parseReportTables(): array
+    {
+        $captions = [];
+        foreach (['Data_GSC_Daily', 'Data_GA4_SourceMedium', 'GSC_AI_Pages', 'AI_Funnel', 'Clarity_AI', 'Semrush_Overview', 'Semrush_Topics'] as $name) {
+            $sheet = $this->spreadsheet->getSheetByName($name);
+            $text = $sheet ? $sheet->getCell('A2')->getValue() : null;
+            if ($text instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
+                $text = $text->getPlainText();
+            }
+            if (is_string($text) && trim($text) !== '') {
+                $captions[$name] = trim($text);
+            }
+        }
+
+        return [
+            'captions'           => $captions,
+            'gsc_daily'          => $this->parseGscDailyRows(),
+            'channels_monthly'   => $this->parseChannelsMonthly(),
+            'ai_sources_monthly' => $this->parseAiSourcesMonthly(),
+            'funnel_monthly'     => $this->parseFunnelMonthly(),
+            'clarity'            => $this->parseClarityTables(),
+            'semrush_overview'   => $this->parseSemrushOverview(),
+            'semrush_topics'     => $this->parseAllSemrushTopics(),
+        ];
+    }
+
+    /** [[Y-m-d, clicks, impressions, ai_impressions|null], …] */
+    private function parseGscDailyRows(): array
+    {
+        $days = [];
+        foreach ($this->gscDaily as $row) {
+            $date = $this->cellDate($row[0] ?? null);
+            if (!$date) continue;
+            $days[] = [
+                $date,
+                is_numeric($row[2] ?? null) ? (int)$row[2] : null,
+                is_numeric($row[3] ?? null) ? (int)$row[3] : null,
+                is_numeric($row[6] ?? null) ? (int)$row[6] : null,
+            ];
+        }
+        usort($days, fn($a, $b) => strcmp($a[0], $b[0]));
+        return $days;
+    }
+
+    /** {YYYY-MM: {channel: [sessions, key_events, revenue]}} */
+    private function parseChannelsMonthly(): array
+    {
+        $out = [];
+        foreach ($this->ga4Source as $row) {
+            $month = $this->gscMonthKey($row[5] ?? null);
+            $channel = trim((string)($row[3] ?? '')) ?: 'Unassigned';
+            if (!$month) continue;
+            $out[$month][$channel] ??= [0, 0, 0.0];
+            $out[$month][$channel][0] += (int)($row[6] ?? 0);
+            $out[$month][$channel][1] += (int)($row[12] ?? 0);
+            $out[$month][$channel][2] = round($out[$month][$channel][2] + (float)($row[14] ?? 0), 2);
+        }
+        ksort($out);
+        return $out;
+    }
+
+    /** {YYYY-MM: {platform: sessions}} — every row whose referrer maps to an AI platform. */
+    private function parseAiSourcesMonthly(): array
+    {
+        $out = [];
+        foreach ($this->ga4Source as $row) {
+            $month = $this->gscMonthKey($row[5] ?? null);
+            $platform = trim((string)($row[4] ?? ''));
+            if (!$month || $platform === '') continue;
+            $out[$month][$platform] = ($out[$month][$platform] ?? 0) + (int)($row[6] ?? 0);
+        }
+        foreach ($out as &$platforms) {
+            arsort($platforms);
+        }
+        unset($platforms);
+        ksort($out);
+        return $out;
+    }
+
+    /** {YYYY-MM: {label, events: {event: count}, revenue}} */
+    private function parseFunnelMonthly(): array
+    {
+        $rows = $this->readSheetRaw('AI_Funnel', 3);
+        if (!$rows) return [];
+        $header = array_shift($rows);
+        $known = $this->knownMonths();
+        $columns = [];
+        foreach ($header as $i => $label) {
+            if ($i === 0 || !is_string($label)) continue;
+            $month = $this->monthFromLabel($label, $known);
+            if ($month) {
+                $columns[$i] = ['month' => $month, 'label' => trim($label)];
+            }
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $name = trim((string)($row[0] ?? ''));
+            if ($name === '') continue;
+            $isRevenue = str_contains(strtolower($name), 'revenue');
+            if (!$isRevenue && !preg_match('/^[a-z_]+$/', $name)) continue; // skip ratio rows
+            foreach ($columns as $i => $col) {
+                $value = $row[$i] ?? null;
+                if (!is_numeric($value)) continue;
+                $out[$col['month']]['label'] = $col['label'];
+                if ($isRevenue) {
+                    $out[$col['month']]['revenue'] = (float)$value;
+                } else {
+                    $out[$col['month']]['events'][$name] = (int)$value;
+                }
+            }
+        }
+        ksort($out);
+        return $out;
+    }
+
+    /** Clarity_AI holds several stacked tables; keep each one with its columns. */
+    private function parseClarityTables(): array
+    {
+        $rows = $this->readSheetRaw('Clarity_AI', 2);
+        $out = ['summary' => [], 'queries' => [], 'topics' => [], 'pages' => [], 'behaviour' => []];
+        $section = null;
+        $num = fn($v) => is_numeric($v) ? $v + 0 : null;
+        foreach ($rows as $row) {
+            $a = trim((string)($row[0] ?? ''));
+            $b = $row[1] ?? null;
+            $filled = count(array_filter($row, fn($v) => $v !== null && $v !== ''));
+            if ($a === 'Metric' && $b === 'Value') { $section = 'summary'; continue; }
+            if ($a === 'Query') { $section = 'queries'; continue; }
+            if ($a === 'Topic') { $section = 'topics'; continue; }
+            if ($a === 'Page') { $section = 'pages'; continue; }
+            if ($a === 'Metric' && is_string($b) && str_contains($b, 'AI visitors')) { $section = 'behaviour'; continue; }
+            if ($filled === 1) { continue; } // table titles such as "Grounding queries"
+            if ($a === '' || $section === null) continue;
+            switch ($section) {
+                case 'summary':
+                    $out['summary'][$a] = $num($b) ?? $b;
+                    break;
+                case 'queries':
+                    $out['queries'][] = ['query' => $a, 'type' => (string)$b, 'citations' => $num($row[2] ?? null), 'share' => $num($row[3] ?? null)];
+                    break;
+                case 'topics':
+                    $out['topics'][] = ['topic' => $a, 'citations' => $num($b), 'share' => $num($row[2] ?? null)];
+                    break;
+                case 'pages':
+                    $out['pages'][] = ['page' => $a, 'citations' => $num($b)];
+                    break;
+                case 'behaviour':
+                    $out['behaviour'][$a] = ['ai' => $num($b), 'site' => $num($row[2] ?? null)];
+                    break;
+            }
+        }
+        return $out;
+    }
+
+    /** [{metric, value, change}] typed in from the Semrush screens. */
+    private function parseSemrushOverview(): array
+    {
+        $out = [];
+        foreach ($this->readSheetRaw('Semrush_Overview', 3) as $row) {
+            $metric = trim((string)($row[0] ?? ''));
+            if ($metric === '' || $metric === 'Metric' || !is_numeric($row[1] ?? null)) continue;
+            $out[] = ['metric' => $metric, 'value' => $row[1] + 0, 'change' => is_numeric($row[2] ?? null) ? (float)$row[2] : null];
+        }
+        return $out;
+    }
+
+    private function parseAllSemrushTopics(): array
+    {
+        $topics = [];
+        foreach ($this->readSheetRaw('Semrush_Topics', 3) as $row) {
+            $topic = trim((string)($row[0] ?? ''));
+            if ($topic === '' || !is_numeric($row[2] ?? null)) continue;
+            $topics[] = [
+                'topic' => $topic, 'market' => (string)($row[1] ?? ''),
+                'visibility' => (int)$row[2],
+                'difficulty' => is_numeric($row[3] ?? null) ? (int)$row[3] : null,
+                'mentions' => is_numeric($row[4] ?? null) ? (int)$row[4] : null,
+                'volume' => is_numeric($row[5] ?? null) ? (int)$row[5] : null,
+            ];
+        }
+        return $topics;
+    }
+
+    private function knownMonths(): array
+    {
+        $months = [];
+        foreach ($this->gscDaily as $row) { $months[] = $this->gscMonthKey($row[1] ?? null); }
+        foreach ($this->ga4Source as $row) { $months[] = $this->gscMonthKey($row[5] ?? null); }
+        $months = array_values(array_unique(array_filter($months)));
+        sort($months);
+        return $months;
+    }
+
+    /** "Oct 1-26" → the latest known YYYY-MM whose month is October. */
+    private function monthFromLabel(string $label, array $known): ?string
+    {
+        if (!preg_match('/^([A-Za-z]{3})/', trim($label), $m)) return null;
+        $num = date_parse($m[1].' 1 2000')['month'] ?? null;
+        if (!$num) return null;
+        $match = null;
+        foreach ($known as $ym) {
+            if ((int)substr($ym, 5, 2) === $num) $match = $ym;
+        }
+        return $match;
+    }
+
+    private function cellDate(mixed $value): ?string
+    {
+        if (is_numeric($value)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float)$value)->format('Y-m-d');
+        }
+        if (is_string($value) && strtotime($value)) {
+            return date('Y-m-d', strtotime($value));
+        }
+        return null;
     }
 
     private function parseAiPlatforms(): array

@@ -96,6 +96,69 @@ class ClientDashboard extends Component
     public string $editAccountCategory = '';
     public string $editAccountSubCategory = '';
 
+    public string $aiVisibilitySection = 'overview';
+    public bool $aiSettingsLoaded = false;
+
+    public function setAiVisibilitySection(string $section): void
+    {
+        // Older links used separate traffic/citations sections; both now live in Diagnostics.
+        $section = in_array($section, ['traffic', 'citations'], true) ? 'diagnostics' : $section;
+        if (in_array($section, ['overview', 'diagnostics', 'competitors', 'research', 'settings'], true)) {
+            if ($section === 'settings' && !$this->aiSettingsLoaded) {
+                $this->loadGoogleListsForAiTab();
+                $this->aiSettingsLoaded = true;
+            }
+            $this->aiVisibilitySection = $section;
+        }
+    }
+
+    public string $semrushDomain = '';
+    public string $semrushMonth = '';
+    public string $semrushCountry = '';
+    public string $semrushPlatform = '';
+    public string $semrushSearch = '';
+    public int $semrushLimit = 25;
+
+    public function updatedSemrushDomain(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushMonth(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushCountry(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushPlatform(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushSearch(): void { $this->semrushLimit = 25; }
+    public function resetSemrushFilters(): void
+    {
+        $this->reset('semrushDomain', 'semrushMonth', 'semrushCountry', 'semrushPlatform', 'semrushSearch', 'semrushLimit');
+    }
+
+    public function showMoreSemrush(): void { $this->semrushLimit = min(2000, $this->semrushLimit + 50); }
+
+    #[\Livewire\Attributes\Computed]
+    public function semrushData(): array
+    {
+        $query = \App\Models\SemrushReport::where('tenant_id', $this->clientId);
+        $months = (clone $query)->distinct()->orderByDesc('report_month')->pluck('report_month');
+        $month = $months->contains($this->semrushMonth) ? $this->semrushMonth : $months->first();
+        $reports = (clone $query)->where('report_month', $month)->orderBy('domain')->get();
+        $report = $reports->firstWhere('domain', $this->semrushDomain) ?? $reports->firstWhere('is_client', true) ?? $reports->first();
+        if (!$report) return [];
+        $allPrompts = collect($report->prompts);
+        $countries = collect($report->topics)->pluck('country')->merge($allPrompts->pluck('country'))->unique()->sort()->values();
+        $filter = function ($row, $text) {
+            return (!$this->semrushCountry || $row['country'] === $this->semrushCountry)
+                && (!$this->semrushSearch || mb_stripos($text, $this->semrushSearch) !== false);
+        };
+        $topics = collect($report->topics)->filter(fn ($r) => $filter($r, $r['name']))->sortByDesc('visibility')->values();
+        $prompts = $allPrompts->filter(fn ($r) => $filter($r, $r['prompt'].' '.$r['topic_name'].' '.$r['brief_response'])
+            && (!$this->semrushPlatform || $r['llm'] === $this->semrushPlatform))->values();
+        $summary = $reports->map(fn ($r) => [
+            'domain' => $r->domain, 'topics' => $r->metrics['topics'] ?? count($r->topics), 'prompts' => $r->metrics['prompts'] ?? count($r->prompts),
+            'monthly_audience' => $r->metrics['monthly_audience'] ?? null, 'estimated_gemini_visits' => $r->metrics['estimated_gemini_visits'] ?? null,
+            'overall_score' => $r->metrics['overall_score'] ?? null, 'cited_pages' => $r->metrics['cited_pages'] ?? null, 'cited_sources' => $r->metrics['cited_sources'] ?? null,
+            'mentions' => $r->metrics['mentions'] ?? collect($r->prompts)->filter(fn ($p) => in_array('mentions_target', explode(';', $p['categories'])))->count(),
+            'citations' => $r->metrics['citations'] ?? collect($r->prompts)->filter(fn ($p) => in_array('cites_target', explode(';', $p['categories'])))->count(),
+        ]);
+        return compact('months', 'month', 'reports', 'report', 'countries', 'topics', 'prompts', 'summary');
+    }
+
     // AI Visibility tab
     public $aiVisibilityFile = null;
     public bool $aiUploading = false;
@@ -107,6 +170,9 @@ class ClientDashboard extends Component
     public string $aiSyncError = '';
     public string $aiSyncSuccess = '';
     public int $aiPeriodMonths = 12;
+    // AI Visibility report: selected month (YYYY-MM, '' = default) and the headline metric.
+    public string $aiReportMonth = '';
+    public string $aiHeroMetric = 'imp';
     // Manual snapshot entry (Semrush + Clarity)
     public bool $aiSnapshotFormOpen = false;
     public string $aiSnapshotMonth = '';
@@ -162,7 +228,6 @@ class ClientDashboard extends Component
         if (request()->has('ai-visibility') || request()->query('tab') === 'ai-visibility') {
             $this->activeTabIndex = 3;
             $this->loadAiVisibilityData();
-            $this->loadGoogleListsForAiTab();
         }
     }
 
@@ -184,9 +249,9 @@ class ClientDashboard extends Component
             if ($this->aiMonths === null) {
                 $this->loadAiVisibilityData();
             }
-            $this->loadSeoProperties();
-            if ($this->seoHasIntegration && empty($this->seoSearchConsoleSites)) {
+            if ($this->aiVisibilitySection === 'settings' && !$this->aiSettingsLoaded) {
                 $this->loadGoogleListsForAiTab();
+                $this->aiSettingsLoaded = true;
             }
         }
     }
@@ -205,8 +270,39 @@ class ClientDashboard extends Component
             ->latest('report_month')
             ->first();
 
-        $this->aiSnapshot = $snapshot?->toArray();
+        // report_tables feeds the server-rendered report only; keep it out of the Livewire payload.
+        $this->aiSnapshot = $snapshot?->makeHidden('report_tables')->toArray();
         $this->loadCompetitors();
+    }
+
+    /** Overview + Diagnostics report, built per request from stored data (never serialised to the browser). */
+    private function buildAiReport(): array
+    {
+        $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+            ->whereNotNull('report_tables')
+            ->latest('report_month')
+            ->first()?->toArray() ?? $this->aiSnapshot;
+
+        $semrush = \App\Models\SemrushReport::where('tenant_id', $this->clientId)
+            ->where('is_client', true)
+            ->latest('report_month')
+            ->first(['metrics', 'topics', 'prompts']);
+
+        $report = new \App\Services\AiVisibilityReport(
+            $this->aiMonths ?? [],
+            $snapshot,
+            $semrush ? ['metrics' => $semrush->metrics ?? [], 'topics' => $semrush->topics ?? [], 'prompts' => $semrush->prompts ?? []] : [],
+            $this->dashboardData['client']['name'] ?? 'the brand',
+        );
+
+        return $report->build($this->aiReportMonth ?: null);
+    }
+
+    public function setAiHeroMetric(string $metric): void
+    {
+        if (in_array($metric, ['imp', 'cit', 'men'], true)) {
+            $this->aiHeroMetric = $metric;
+        }
     }
 
     public function uploadAiVisibility(): void
@@ -2213,6 +2309,8 @@ class ClientDashboard extends Component
             'categories' => $categories,
             'subCategories' => $subCategories,
             'campaignCategories' => $campaignCategories,
+            'aiReport' => $this->activeTabIndex === 3 && in_array($this->aiVisibilitySection, ['overview', 'diagnostics'], true)
+                ? $this->buildAiReport() : null,
         ])->layout('layouts.app');
     }
 }
