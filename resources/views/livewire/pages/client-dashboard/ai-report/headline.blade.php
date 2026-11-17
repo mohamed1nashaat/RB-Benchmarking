@@ -16,7 +16,19 @@
                 {!! $notCaptured !!}
             @else
                 <div class="air-big">{{ number_format($M['value']) }}</div>
+                @if(!empty($M['valueNote']))<p class="air-src" style="margin:2px 0 0">{{ $M['valueNote'] }}</p>@endif
                 @include('livewire.pages.client-dashboard.ai-delta', ['delta' => $M['delta']])
+            @endif
+            @if(!empty($M['platforms']))
+                <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--ai-border)">
+                    <p class="air-src" style="margin:0 0 6px">Other assistants · simulated · Semrush prompt runs</p>
+                    @foreach($M['platforms'] as $pl)
+                        <div style="display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:14px;color:var(--ai-text)">
+                            <span>{{ $pl['l'] }}</span>
+                            <span style="font-variant-numeric:tabular-nums"><b>{{ number_format($pl['cited']) }}</b> <span style="color:var(--ai-muted)">of {{ number_format($pl['of']) }} answers</span></span>
+                        </div>
+                    @endforeach
+                </div>
             @endif
         </div>
 
@@ -63,6 +75,24 @@
                     @include('livewire.pages.client-dashboard.ai-monthbars', ['mbars' => $ch['rows'], 'aria' => 'AI impressions by month'])
                 @endif
                 @if(!empty($ch['note']))<div class="air-caveat">{{ $ch['note'] }}</div>@endif
+            @elseif($heroKey === 'cit' && !empty($aiReport['platformCitations']['pie']))
+                @php $pcH = $aiReport['platformCitations']; @endphp
+                <h3>{{ $dashboardData['client']['name'] ?? 'Client' }} · AI citations by platform <x-ai-help :h="$help['platcit']" /></h3>
+                <div class="air-grid air-g-2" style="align-items:center">
+                    <div>
+                        <p class="air-src" style="margin:0 0 8px;font-weight:600">Copilot · observed</p>
+                        @if($hero['monthly']['cit'])
+                            @include('livewire.pages.client-dashboard.ai-monthbars', ['mbars' => $hero['monthly']['cit'], 'aria' => 'Copilot citations by month'])
+                        @else
+                            {!! $notCaptured !!}
+                        @endif
+                    </div>
+                    <div>
+                        <p class="air-src" style="margin:0 0 8px;font-weight:600">ChatGPT, Gemini, Google AI · simulated{{ $pcH['semLabel'] ? ' · '.$pcH['semLabel'] : '' }}</p>
+                        @include('livewire.pages.client-dashboard.ai-pie', ['rows' => $pcH['pie'], 'donut' => true, 'center' => number_format($pcH['semTotal']), 'centerSub' => 'of '.number_format($pcH['semPrompts']).' answers', 'aria' => 'Semrush citations by assistant'])
+                    </div>
+                </div>
+                <div class="air-caveat">Copilot citations are logged by Clarity as a 30-day total, one bar per monthly capture. The other assistants come from Semrush running a fixed prompt set, so they show direction and are never added to Copilot's count.</div>
             @else
                 <h3>{{ $dashboardData['client']['name'] ?? 'Client' }} · {{ $M['label'] }} by month <x-ai-help :h="$help['hero_'.$heroKey]" /></h3>
                 @if($hero['monthly'][$heroKey])

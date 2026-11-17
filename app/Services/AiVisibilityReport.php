@@ -480,8 +480,11 @@ class AiVisibilityReport
             ],
             'cit' => [
                 'label' => 'AI citations', 'type' => 'obs',
-                'sub' => 'Times Copilot and Bing partner surfaces cited a store page'.($this->semrushCitationTotal() ? '. Semrush: cited in '.number_format($this->semrushCitationTotal()).' answers from ChatGPT, Gemini and Google AI' : ''),
-                'src' => 'Bing via Microsoft Clarity · last 30 days',
+                'sub' => 'Times AI assistants linked to a store page as a source',
+                'src' => 'Clarity (Copilot) · Semrush (ChatGPT, Gemini, Google AI)',
+                'valueNote' => 'Copilot · logged by Microsoft Clarity, last 30 days',
+                'platforms' => collect($this->semrushByPlatform())->filter(fn ($v) => $v['prompts'] > 0)->sortByDesc('cited')
+                    ->map(fn ($v, $k) => ['l' => $k, 'cited' => $v['cited'], 'of' => $v['prompts']])->values()->all(),
                 'value' => $ctx['captured'] ? $c['total'] : null,
                 'delta' => ['text' => null, 'up' => null, 'vs' => 'Captured '.($this->clarityDay() ?? 'monthly').'; the trend starts with the next capture'],
             ],
@@ -949,7 +952,7 @@ class AiVisibilityReport
             'note' => ['Analyst note', 'Written from this month\'s data: Search Console, GA4, Clarity and Semrush.', 'One paragraph that says what moved and why, so nobody has to read every chart to get the story. If a line moves and we cannot explain it, it gets a caveat here.'],
             'headline' => ['Headline', 'Search Console (AI impressions), Bing via Clarity (citations), Semrush (mentions) and GA4 (AI sessions).', 'Answers two questions: is the brand showing up inside AI answers, and is anyone arriving on the site from them?'],
             'hero_imp' => ['AI impressions', 'Google Search Console → Performance → Search appearance "AI Overviews / AI Mode". Observed: Google counts each time a store page is shown inside an AI answer.', 'The largest observed AI visibility signal. It shows reach inside Google\'s AI answers before anyone clicks.'],
-            'hero_cit' => ['AI citations', 'Microsoft Clarity → AI Visibility → Citations (the same Copilot data as Bing Webmaster AI Performance), last 30 days, captured monthly.', 'A citation means the assistant linked to our page as a source. It is stronger proof of authority than a plain impression.'],
+            'hero_cit' => ['AI citations', 'Copilot: Microsoft Clarity → AI Visibility → Citations (the same data as Bing Webmaster AI Performance), last 30 days. ChatGPT, Gemini, Google AI Mode and AI Overviews: Semrush prompt export, answers whose sources link to the site.', 'A citation means the assistant linked to our page as a source. It is stronger proof of authority than a plain impression. Copilot is measured; the other assistants are simulated prompt runs, so the two are shown apart.'],
             'hero_men' => ['AI mentions', 'Semrush AI Visibility: Semrush asks ChatGPT, Gemini, Google AI Mode and AI Overviews a fixed prompt set each month and counts answers that name the brand.', 'Simulated, so it is directional. It shows whether assistants talk about the brand even when they do not link to it.'],
             'daily' => ['AI impressions by day', 'Search Console Generative AI features export, by date. The line is a 7-day rolling average.', 'Daily bars show spikes, for example a blog post being picked up. The 7-day average smooths out weekday noise.'],
             'soa' => ['Non-branded Share of Authority', 'Microsoft Clarity AI Visibility: our share of all citations Copilot showed on queries that do not contain the brand name.', 'This replaces "clicks". No tool reports clicks out of AI answers, and winning searches that do not name the brand is how new customers find us.'],

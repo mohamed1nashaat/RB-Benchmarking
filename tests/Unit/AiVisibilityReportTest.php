@@ -150,7 +150,7 @@ class AiVisibilityReportTest extends TestCase
         $this->assertSame([['Google AI Overviews', 2], ['ChatGPT', 1]], $pc['pie']);
         $this->assertSame([3, 5, 'Nov 2026'], [$pc['semTotal'], $pc['semPrompts'], $pc['semLabel']]);
         $this->assertStringContainsString('3 of 5 answers', $pc['summary']);
-        $this->assertStringContainsString('cited in 3 answers', $this->reportHeroSub($prompts));
+        $this->assertSame([['l' => 'Google AI Overviews', 'cited' => 2, 'of' => 2], ['l' => 'ChatGPT', 'cited' => 1, 'of' => 2], ['l' => 'Gemini', 'cited' => 0, 'of' => 1]], $this->heroPlatforms($prompts));
 
         // GA4-only assistants still appear, with no citation source.
         $snap = $this->snapshot();
@@ -159,8 +159,8 @@ class AiVisibilityReportTest extends TestCase
         $this->assertSame([null, 3], [$rows['Perplexity']['citations'], $rows['Perplexity']['visits']]);
     }
 
-    private function reportHeroSub(array $prompts): string
+    private function heroPlatforms(array $prompts): array
     {
-        return (new AiVisibilityReport($this->months(), $this->snapshot(), ['prompts' => $prompts], 'Brand', '2026-11'))->build('2026-10')['hero']['metrics']['cit']['sub'];
+        return (new AiVisibilityReport($this->months(), $this->snapshot(), ['prompts' => $prompts], 'Brand', '2026-11'))->build('2026-10')['hero']['metrics']['cit']['platforms'];
     }
 }
