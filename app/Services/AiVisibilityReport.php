@@ -94,6 +94,7 @@ class AiVisibilityReport
             'funnel' => $this->funnel($ctx),
             'traffic' => $this->trafficQuality($ctx),
             'grounding' => $this->grounding($ctx),
+            'platformCitations' => $this->platformCitations($ctx),
             'friction' => $this->friction($ctx),
             'competitive' => $this->competitive($ctx),
             'competitors' => $this->competitors($ctx),
@@ -479,7 +480,7 @@ class AiVisibilityReport
             ],
             'cit' => [
                 'label' => 'AI citations', 'type' => 'obs',
-                'sub' => 'Times Copilot and Bing partner surfaces cited a store page',
+                'sub' => 'Times Copilot and Bing partner surfaces cited a store page'.($this->semrushCitationTotal() ? '. Semrush: cited in '.number_format($this->semrushCitationTotal()).' answers from ChatGPT, Gemini and Google AI' : ''),
                 'src' => 'Bing via Microsoft Clarity · last 30 days',
                 'value' => $ctx['captured'] ? $c['total'] : null,
                 'delta' => ['text' => null, 'up' => null, 'vs' => 'Captured '.($this->clarityDay() ?? 'monthly').'; the trend starts with the next capture'],
@@ -717,6 +718,92 @@ class AiVisibilityReport
         ];
     }
 
+    private const LLM_NAMES = ['chatgpt' => 'ChatGPT', 'gemini' => 'Gemini', 'google_ai_mode' => 'Google AI Mode', 'ai_mode' => 'Google AI Mode', 'google_ai_overview' => 'Google AI Overviews', 'ai_overview' => 'Google AI Overviews', 'perplexity' => 'Perplexity', 'copilot' => 'Copilot', 'claude' => 'Claude'];
+
+    /** Semrush prompt answers by assistant: ['ChatGPT' => ['prompts' => n, 'cited' => n, 'mentioned' => n], …]. */
+    private function semrushByPlatform(): array
+    {
+        $out = [];
+        foreach ($this->semrush['prompts'] ?? [] as $p) {
+            $llm = strtolower($p['llm'] ?? '');
+            $name = self::LLM_NAMES[$llm] ?? ($llm !== '' ? ucwords(str_replace('_', ' ', $llm)) : 'Other');
+            $cat = $p['categories'] ?? '';
+            $out[$name] ??= ['prompts' => 0, 'cited' => 0, 'mentioned' => 0];
+            $out[$name]['prompts']++;
+            $out[$name]['cited'] += str_contains($cat, 'cites_target') ? 1 : 0;
+            $out[$name]['mentioned'] += str_contains($cat, 'mentions_target') ? 1 : 0;
+        }
+
+        return $out;
+    }
+
+    private function semrushCitationTotal(): int
+    {
+        return (int) collect($this->semrushByPlatform())->sum('cited');
+    }
+
+    /**
+     * Citations for every assistant in one place: Copilot from Clarity (observed),
+     * ChatGPT / Gemini / Google AI from Semrush prompt runs (simulated), and the AI
+     * visits each assistant sent that month from GA4 (observed).
+     */
+    private function platformCitations(array $ctx): array
+    {
+        $c = $this->clarity();
+        $sem = $this->semrushByPlatform();
+        $visits = $this->tables['ai_sources_monthly'][$ctx['sel']] ?? [];
+        $semMonth = $this->semrush['month'] ?? null;
+        $semLabel = $semMonth ? Carbon::parse($semMonth.'-01')->format('M Y') : null;
+        $clarityLabel = $this->clarityDay() ? 'captured '.$this->clarityDay() : 'last 30 days';
+
+        $order = ['Copilot', 'ChatGPT', 'Gemini', 'Google AI Mode', 'Google AI Overviews', 'Perplexity', 'Claude'];
+        $names = collect($order)->merge(array_keys($sem))->merge(array_keys($visits))->unique()->values();
+
+        $rows = $names->map(function ($name) use ($c, $sem, $visits, $semLabel, $clarityLabel) {
+            $row = ['platform' => $name, 'citations' => null, 'of' => null, 'type' => null, 'src' => null, 'visits' => isset($visits[$name]) ? (int) $visits[$name] : null];
+            if ($name === 'Copilot' && $c['total']) {
+                $row = array_merge($row, ['citations' => (int) $c['total'], 'type' => 'obs', 'src' => 'Clarity · '.$clarityLabel]);
+            } elseif (isset($sem[$name])) {
+                $row = array_merge($row, ['citations' => $sem[$name]['cited'], 'of' => $sem[$name]['prompts'], 'type' => 'sim', 'src' => 'Semrush prompts'.($semLabel ? ' · '.$semLabel : '')]);
+            }
+
+            return $row;
+        })->filter(fn ($r) => $r['citations'] !== null || $r['visits'] !== null)->values()->all();
+
+        $pie = collect($sem)->map(fn ($v, $k) => [$k, $v['cited']])->filter(fn ($r) => $r[1] > 0)->sortByDesc(1)->values()->all();
+        $semTotal = $this->semrushCitationTotal();
+        $semPrompts = (int) collect($sem)->sum('prompts');
+        $gaTotal = array_sum($visits);
+        $noCite = collect($rows)->filter(fn ($r) => $r['citations'] === null)->pluck('platform')->all();
+
+        $summary = [];
+        if ($semTotal) {
+            $top = $pie[0] ?? null;
+            $summary[] = 'Semrush found a link to the site in <b>'.number_format($semTotal).' of '.number_format($semPrompts).' answers</b>'.($top ? ', most often in '.e($top[0]).' ('.number_format($top[1]).')' : '').'.';
+        }
+        if ($c['total']) {
+            $summary[] = 'Clarity logged <b>'.number_format($c['total']).' Copilot citations</b> ('.$clarityLabel.').';
+        }
+        if ($gaTotal) {
+            $topVisit = collect($visits)->sortDesc();
+            $summary[] = 'GA4 counted <b>'.number_format($gaTotal).' AI visits</b> in '.Carbon::parse($ctx['sel'].'-01')->format('F').', '.number_format($topVisit->first() / $gaTotal * 100, 0).'% from '.e($topVisit->keys()->first()).'.';
+        }
+        if ($noCite) {
+            $summary[] = 'No tool reports citations for '.e(implode(' or ', $noCite)).' yet, so only their visits are shown.';
+        }
+
+        return [
+            'available' => (bool) $rows,
+            'rows' => $rows,
+            'pie' => $pie,
+            'semTotal' => $semTotal,
+            'semPrompts' => $semPrompts,
+            'semLabel' => $semLabel,
+            'gaMonth' => Carbon::parse($ctx['sel'].'-01')->format('M Y'),
+            'summary' => implode(' ', $summary),
+        ];
+    }
+
     private function friction(array $ctx): array
     {
         $b = $this->clarity()['behaviour'];
@@ -875,7 +962,8 @@ class AiVisibilityReport
             'platsess' => ['AI-sourced sessions by platform', 'GA4 sessions where the referrer is an AI assistant, grouped by platform.', 'Observed visits. Read it beside the simulated mentions chart above, never merged with it.'],
             'cmp' => ['AI visitors vs organic visitors', 'GA4 key events and revenue per session, AI Assistant vs Organic Search, same site and same month.', 'Tells us whether an AI visitor is worth more or less than a search visitor. AI samples are small, so read the ratio as a direction.'],
             'landing' => ['Top AI landing pages', 'Google Analytics 4 → landing page for sessions in the AI Assistant channel, for the selected month (live sync).', 'Shows which pages AI visitors land on, so we know which pages to keep fast and conversion-ready.'],
-            'grounding' => ['Grounding and citations', 'Search Console, Bing via Clarity and Clarity.', 'Explains the "why" behind visibility: which searches the assistant ran and which of our pages it chose to cite.'],
+            'platcit' => ['AI citations by platform', 'Copilot from Microsoft Clarity (observed). ChatGPT, Gemini, Google AI Mode and AI Overviews from the Semrush prompt export: answers whose sources link to the site (simulated). AI visits per assistant from GA4 session source (observed).', 'No single tool covers every assistant, so this lines the three sources up side by side. Observed and simulated numbers are labelled and never added together.'],
+            'grounding' => ['Grounding and citations', 'Search Console, Microsoft Clarity (Copilot), Semrush (ChatGPT, Gemini, Google AI) and GA4 (AI visits).', 'Explains the "why" behind visibility: which searches the assistant ran and which of our pages it chose to cite.'],
             'gq' => ['Top grounding queries', 'Microsoft Clarity AI Visibility → Grounding queries: the searches Copilot ran to build its answers, with our citation count and share.', 'Shows the questions where we are already a trusted source, and where competitors take most of the citations.'],
             'aipages' => ['Pages Google shows in AI answers', 'Search Console Generative AI features report → Pages tab.', 'Shows which pages Google trusts enough to show inside AI Overviews and AI Mode, mostly blog content.'],
             'citpages' => ['Pages Copilot cites', 'Microsoft Clarity AI Visibility → Cited pages, last 30 days.', 'Shows which pages Copilot uses as evidence. Pages missing from this list are candidates for better structure and facts.'],

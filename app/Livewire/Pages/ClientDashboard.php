@@ -345,12 +345,12 @@ class ClientDashboard extends Component
         $semrush = \App\Models\SemrushReport::where('tenant_id', $this->clientId)
             ->where('is_client', true)
             ->latest('report_month')
-            ->first(['metrics', 'topics', 'prompts']);
+            ->first(['metrics', 'topics', 'prompts', 'report_month']);
 
         $report = new \App\Services\AiVisibilityReport(
             $this->aiMonths ?? [],
             $snapshot,
-            $semrush ? ['metrics' => $semrush->metrics ?? [], 'topics' => $semrush->topics ?? [], 'prompts' => $semrush->prompts ?? []] : [],
+            $semrush ? ['metrics' => $semrush->metrics ?? [], 'topics' => $semrush->topics ?? [], 'prompts' => $semrush->prompts ?? [], 'month' => $semrush->report_month] : [],
             $this->dashboardData['client']['name'] ?? 'the brand',
         );
 

@@ -1,6 +1,44 @@
 {{-- Grounding and citations --}}
 <section aria-labelledby="air-d2">
-    <div class="air-sec-h"><h2 id="air-d2"><x-heroicon-o-link />Grounding and citations <x-ai-help :h="$help['grounding']" /></h2><p>Observed · Search Console, Bing (via Clarity), Clarity</p></div>
+    <div class="air-sec-h"><h2 id="air-d2"><x-heroicon-o-link />Grounding and citations <x-ai-help :h="$help['grounding']" /></h2><p>Search Console, Clarity (Copilot), Semrush (ChatGPT, Gemini, Google AI) and GA4</p></div>
+
+    {{-- Every assistant side by side: Clarity, Semrush and GA4 --}}
+    @php $pc = $aiReport['platformCitations'] ?? ['available' => false]; @endphp
+    <div class="card air-card" style="margin-bottom:14px">
+        <h3>AI citations by platform <x-ai-help :h="$help['platcit']" /></h3>
+        <div class="air-sub">Where each assistant links to the site, and the visits it sends</div>
+        <p class="air-src">Observed · Clarity (Copilot) and GA4 (visits) · Simulated · Semrush prompt runs{{ $pc['semLabel'] ?? null ? ' · '.$pc['semLabel'] : '' }}</p>
+        @if($pc['available'])
+            <div class="air-tbl"><table class="data-table">
+                <thead><tr><th>Assistant</th><th>Citations</th><th>Citation source</th><th>AI visits · {{ $pc['gaMonth'] }}</th></tr></thead>
+                <tbody>
+                @foreach($pc['rows'] as $r)
+                    <tr>
+                        <td>{{ $r['platform'] }}</td>
+                        <td>@if($r['citations'] !== null)<b>{{ number_format($r['citations']) }}</b>@if($r['of']) <span class="air-tag">of {{ number_format($r['of']) }} answers</span>@endif @else — @endif</td>
+                        <td>@if($r['type'])<span class="air-tag">{{ $r['type'] === 'obs' ? 'Observed' : 'Simulated' }} · {{ $r['src'] }}</span>@else<span class="air-tag">No citation data</span>@endif</td>
+                        <td>{{ $r['visits'] !== null ? number_format($r['visits']) : '—' }}</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table></div>
+            <div class="air-grid air-g-2" style="align-items:center;margin-top:14px">
+                <div>
+                    <p class="air-src" style="margin:0 0 8px;font-weight:600">Semrush answers citing the site, by assistant</p>
+                    @if($pc['pie'])
+                        @include('livewire.pages.client-dashboard.ai-pie', ['rows' => $pc['pie'], 'donut' => true, 'center' => number_format($pc['semTotal']), 'centerSub' => 'of '.number_format($pc['semPrompts']).' answers', 'aria' => 'Semrush citations by assistant'])
+                    @else
+                        <div class="air-empty">No Semrush prompt export yet. Upload the prompts CSV in Data &amp; settings.</div>
+                    @endif
+                </div>
+                @if($pc['summary'])<p style="margin:0;font-size:14px;line-height:1.6;color:var(--ai-text)">{!! $pc['summary'] !!}</p>@endif
+            </div>
+            <div class="air-caveat">Copilot counts are real citations logged by Clarity. The other assistants' counts come from Semrush asking a fixed prompt set, so they show direction, not totals. The two are never added together. GA4 counts visits from Google AI Overviews and AI Mode as Google organic search, so those rows show no visits; their reach is the AI impressions figure from Search Console.</div>
+        @else
+            {!! $notCaptured !!}
+        @endif
+    </div>
+
     <div class="card air-card">
         <h3>Top grounding queries and our citation share <x-ai-help :h="$help['gq']" /></h3>
         <div class="air-sub">The searches Copilot ran to build its answers, and how often it cited us</div>

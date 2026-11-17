@@ -129,4 +129,38 @@ class AiVisibilityReportTest extends TestCase
         $noClient = (new AiVisibilityReport($this->months(), $this->snapshot(), [], 'Brand', '2026-11'))->withCompetitors(['2026-11' => [$brand('Alpha', false, 31, 20)]]);
         $this->assertFalse($noClient->build()['competitors']['available']);
     }
+
+    public function test_citations_by_platform_combine_clarity_semrush_and_ga4(): void
+    {
+        $prompts = [
+            ['llm' => 'chatgpt', 'categories' => 'mentions_target;cites_target'],
+            ['llm' => 'chatgpt', 'categories' => 'mentions_target'],
+            ['llm' => 'google_ai_overview', 'categories' => 'cites_target'],
+            ['llm' => 'google_ai_overview', 'categories' => 'cites_target'],
+            ['llm' => 'gemini', 'categories' => 'mentions_target'],
+        ];
+        $pc = (new AiVisibilityReport($this->months(), $this->snapshot(), ['prompts' => $prompts, 'month' => '2026-11'], 'Brand', '2026-11'))->build('2026-10')['platformCitations'];
+        $rows = collect($pc['rows'])->keyBy('platform');
+
+        $this->assertTrue($pc['available']);
+        $this->assertSame(['citations' => 100, 'type' => 'obs', 'visits' => null], array_intersect_key($rows['Copilot'], array_flip(['citations', 'type', 'visits'])));
+        $this->assertSame([1, 2, 'sim', 110], [$rows['ChatGPT']['citations'], $rows['ChatGPT']['of'], $rows['ChatGPT']['type'], $rows['ChatGPT']['visits']]);
+        $this->assertSame([0, 1, 10], [$rows['Gemini']['citations'], $rows['Gemini']['of'], $rows['Gemini']['visits']]);
+        $this->assertSame(2, $rows['Google AI Overviews']['citations']);
+        $this->assertSame([['Google AI Overviews', 2], ['ChatGPT', 1]], $pc['pie']);
+        $this->assertSame([3, 5, 'Nov 2026'], [$pc['semTotal'], $pc['semPrompts'], $pc['semLabel']]);
+        $this->assertStringContainsString('3 of 5 answers', $pc['summary']);
+        $this->assertStringContainsString('cited in 3 answers', $this->reportHeroSub($prompts));
+
+        // GA4-only assistants still appear, with no citation source.
+        $snap = $this->snapshot();
+        $snap['report_tables']['ai_sources_monthly']['2026-10']['Perplexity'] = 3;
+        $rows = collect((new AiVisibilityReport($this->months(), $snap, [], 'Brand', '2026-11'))->build('2026-10')['platformCitations']['rows'])->keyBy('platform');
+        $this->assertSame([null, 3], [$rows['Perplexity']['citations'], $rows['Perplexity']['visits']]);
+    }
+
+    private function reportHeroSub(array $prompts): string
+    {
+        return (new AiVisibilityReport($this->months(), $this->snapshot(), ['prompts' => $prompts], 'Brand', '2026-11'))->build('2026-10')['hero']['metrics']['cit']['sub'];
+    }
 }
