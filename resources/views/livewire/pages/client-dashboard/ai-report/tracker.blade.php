@@ -1,7 +1,7 @@
-{{-- Live prompt tracking: our own weekly runs on ChatGPT, Gemini and Perplexity --}}
+{{-- Live prompt tracking: our own weekly runs on ChatGPT, Gemini and Perplexity, plus an optional simulated open model --}}
 @php
     $tk = $aiTracker ?? null;
-    $tkHelp = ['AI prompt tracking', 'Our own weekly run: each tracked prompt is asked to ChatGPT, Gemini and Perplexity through their APIs with live web search. Each answer is checked for the brand and every competitor in the Competitors tab.', 'This is the one AI visibility number we measure ourselves every week, for every assistant, with the same prompts each time, so week-on-week changes are real changes in the answers.'];
+    $tkHelp = ['AI prompt tracking', 'Our own weekly run: each tracked prompt is asked to ChatGPT, Gemini and Perplexity through their APIs with live web search. Each answer is checked for the brand and every competitor in the Competitors tab. An open model on Ollama can also be asked, using Ollama web search. It is not one of the assistants shoppers use, so its answers are shown separately as simulated and are not counted in the headline numbers.', 'This is the one AI visibility number we measure ourselves every week, for every assistant, with the same prompts each time, so week-on-week changes are real changes in the answers.'];
     $tkPct = fn ($v) => $v === null ? '—' : number_format($v, 0).'%';
     $tkDelta = function ($d, bool $lowerIsBetter = false, string $unit = ' pts') {
         if ($d === null) return null;
@@ -42,7 +42,14 @@
                 </div>
             @endforeach
         </div>
-        <p class="air-src" style="margin:8px 0 0">Measured · our weekly run · {{ number_format($tk['answers']) }} answers · last asked {{ $tk['lastRun'] }}</p>
+        <p class="air-src" style="margin:8px 0 0">
+            @if($tk['basis'] === 'simulated')
+                Simulated · {{ implode(', ', $tk['simulatedLabels']) }} only, not ChatGPT, Gemini or Perplexity · {{ number_format($tk['answers']) }} answers · last asked {{ $tk['lastRun'] }}
+            @else
+                Measured · our weekly run · {{ number_format($tk['answers']) }} answers · last asked {{ $tk['lastRun'] }}
+                @if($tk['simulatedLabels']) · {{ implode(', ', $tk['simulatedLabels']) }} is simulated and not counted here @endif
+            @endif
+        </p>
 
         <div class="air-grid air-g-2" style="margin-top:14px">
             <div class="card air-card">
@@ -52,7 +59,7 @@
                     <thead><tr><th>Assistant</th><th>Visibility</th><th>Cited</th><th>Avg position</th><th>Answers</th></tr></thead>
                     <tbody>
                     @foreach($tk['engines'] as $e)
-                        <tr><td>{{ $e['engine'] }}</td><td><b>{{ $tkPct($e['visibility']) }}</b></td><td>{{ $tkPct($e['citation']) }}</td><td>{{ $e['rank'] ? '#'.number_format($e['rank'], 1) : '—' }}</td><td>{{ number_format($e['answers']) }}</td></tr>
+                        <tr><td>{{ $e['engine'] }}@if($e['simulated'])<span class="air-tag"> · simulated</span>@endif</td><td><b>{{ $tkPct($e['visibility']) }}</b></td><td>{{ $tkPct($e['citation']) }}</td><td>{{ $e['rank'] ? '#'.number_format($e['rank'], 1) : '—' }}</td><td>{{ number_format($e['answers']) }}</td></tr>
                     @endforeach
                     </tbody>
                 </table></div>
@@ -117,7 +124,7 @@
         <details class="card air-card" style="margin-top:14px">
             <summary style="cursor:pointer;font-weight:600;color:var(--ai-text)">Every prompt and each assistant's answer ({{ count($tk['rows']) }})</summary>
             <div class="air-tbl" style="margin-top:10px"><table class="data-table">
-                <thead><tr><th>Prompt</th>@foreach($tk['engineLabels'] as $lbl)<th>{{ $lbl }}</th>@endforeach</tr></thead>
+                <thead><tr><th>Prompt</th>@foreach($tk['engineLabels'] as $ek => $lbl)<th>{{ $lbl }}{{ \App\Services\AiTracking\AiEngineClient::simulated($ek) ? ' · simulated' : '' }}</th>@endforeach</tr></thead>
                 <tbody>
                 @foreach($tk['rows'] as $r)
                     <tr>

@@ -26,7 +26,7 @@
             @foreach($at['engines'] as $k => $e)
                 <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ai-text)">
                     <input type="checkbox" wire:model="aiTrackEngines" value="{{ $k }}">
-                    {{ $e['label'] }}
+                    {{ $e['label'] }}@if($e['simulated'])<span style="font-size:12px;color:var(--ai-muted)">simulated, not counted in the headline numbers</span>@endif
                     <span style="font-size:12px;color:{{ $e['key'] ? 'var(--air-good)' : 'var(--ai-muted)' }}">{{ $e['key'] ? 'key set · '.$e['model'] : 'no API key yet' }}</span>
                 </label>
             @endforeach

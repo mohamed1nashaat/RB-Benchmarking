@@ -45,20 +45,24 @@ class TrackerReport
             return $base;
         }
 
-        // Group by ISO week (Monday). Within a week keep the latest answer per prompt and engine.
-        $byWeek = collect($runs)->groupBy(fn ($r) => Carbon::parse($r['run_on'])->startOfWeek()->toDateString())
-            ->map(fn (Collection $w) => $w->sortBy('run_on')->keyBy(fn ($r) => $r['prompt'].'|'.$r['engine'])->values())
-            ->sortKeys();
+        // Headline numbers use the real assistants only. Simulated engines (an open model on
+        // Ollama) get their own rows, and drive the headline only when nothing real has run.
+        $real = array_values(array_filter($runs, fn ($r) => ! AiEngineClient::simulated($r['engine'])));
+        $basis = $real ? 'measured' : 'simulated';
+        $allByWeek = self::byWeek($runs);
+        $byWeek = $real ? self::byWeek($real) : $allByWeek;
         $weeks = $byWeek->keys()->all();
         $cur = $byWeek->last();
         $prev = count($weeks) > 1 ? $byWeek[$weeks[count($weeks) - 2]] : null;
         $curWeek = end($weeks);
+        $curAll = $allByWeek[$curWeek] ?? $cur;
 
         $kpis = self::kpis($cur);
         $prevKpis = $prev ? self::kpis($prev) : null;
         $delta = fn ($k) => $prevKpis && $kpis[$k] !== null && $prevKpis[$k] !== null ? $kpis[$k] - $prevKpis[$k] : null;
 
-        $engines = $cur->groupBy('engine')->map(fn ($g, $e) => ['engine' => AiEngineClient::label($e)] + self::kpis($g))->sortByDesc('visibility')->values()->all();
+        $engines = $curAll->groupBy('engine')->map(fn ($g, $e) => ['engine' => AiEngineClient::label($e), 'simulated' => AiEngineClient::simulated($e)] + self::kpis($g))
+            ->sortBy([['simulated', 'asc'], ['visibility', 'desc']])->values()->all();
 
         // Brands: mentions, average rank and citations across this week's answers.
         $brands = [];
@@ -100,16 +104,18 @@ class TrackerReport
         ])->values()->all();
 
         // Prompt table: this week's result per assistant, plus gaps where only competitors are named.
-        $engineKeys = $cur->pluck('engine')->unique()->sort(fn ($a, $b) => array_search($a, array_keys(AiEngineClient::ENGINES)) <=> array_search($b, array_keys(AiEngineClient::ENGINES)))->values()->all();
-        $rows = $cur->groupBy('prompt')->map(function ($g, $pid) use ($prompts, $engineKeys) {
+        $engineKeys = $curAll->pluck('engine')->unique()->sort(fn ($a, $b) => array_search($a, array_keys(AiEngineClient::ENGINES)) <=> array_search($b, array_keys(AiEngineClient::ENGINES)))->values()->all();
+        $rows = $curAll->groupBy('prompt')->map(function ($g, $pid) use ($prompts, $engineKeys, $basis) {
             $cells = [];
             foreach ($engineKeys as $e) {
                 $r = $g->firstWhere('engine', $e);
                 $cells[$e] = $r ? ['mentioned' => $r['mentioned'], 'rank' => $r['rank'], 'cited' => $r['cited'], 'sentiment' => $r['sentiment'],
                     'rivals' => collect($r['brands'])->where('client', false)->whereNotNull('rank')->sortBy('rank')->pluck('name')->all()] : null;
             }
-            $hits = collect($cells)->filter(fn ($c) => $c && $c['mentioned'])->count();
-            $rivals = collect($cells)->filter()->pluck('rivals')->flatten()->unique()->values()->all();
+            // Gaps and ordering follow the same basis as the headline numbers.
+            $counted = collect($cells)->filter(fn ($c, $e) => $c && ($basis === 'simulated' || ! AiEngineClient::simulated($e)));
+            $hits = $counted->filter(fn ($c) => $c['mentioned'])->count();
+            $rivals = $counted->pluck('rivals')->flatten()->unique()->values()->all();
 
             return ['id' => $pid, 'prompt' => $prompts[$pid]['prompt'] ?? '—', 'topic' => $prompts[$pid]['topic'] ?? null, 'volume' => $prompts[$pid]['volume'] ?? null,
                 'country' => $prompts[$pid]['country'] ?? null, 'cells' => $cells, 'hits' => $hits, 'rivals' => $rivals, 'gap' => $hits === 0 && $rivals];
@@ -125,6 +131,8 @@ class TrackerReport
             'weekLabel' => 'Week of '.Carbon::parse($curWeek)->format('j M Y'),
             'lastRun' => Carbon::parse($cur->max('run_on'))->format('j M Y'),
             'answers' => $answers,
+            'basis' => $basis,
+            'simulatedLabels' => $curAll->pluck('engine')->unique()->filter(fn ($e) => AiEngineClient::simulated($e))->map(fn ($e) => AiEngineClient::label($e))->values()->all(),
             'promptCount' => $cur->pluck('prompt')->unique()->count(),
             'engineKeys' => $engineKeys,
             'engineLabels' => collect($engineKeys)->mapWithKeys(fn ($e) => [$e => AiEngineClient::label($e)])->all(),
@@ -140,6 +148,14 @@ class TrackerReport
             'gaps' => $gaps,
             'sentiment' => $sent->sum() ? ['positive' => $sent['positive'] ?? 0, 'neutral' => $sent['neutral'] ?? 0, 'negative' => $sent['negative'] ?? 0] : null,
         ];
+    }
+
+    /** Runs grouped by ISO week (Monday), keeping the latest answer per prompt and engine in each week. */
+    private static function byWeek(array $runs): Collection
+    {
+        return collect($runs)->groupBy(fn ($r) => Carbon::parse($r['run_on'])->startOfWeek()->toDateString())
+            ->map(fn (Collection $w) => $w->sortBy('run_on')->keyBy(fn ($r) => $r['prompt'].'|'.$r['engine'])->values())
+            ->sortKeys();
     }
 
     /** visibility %, citation rate %, average rank when named, answers. */

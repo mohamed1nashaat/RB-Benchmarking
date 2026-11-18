@@ -89,6 +89,8 @@ return [
         'openai' => ['key' => env('OPENAI_API_KEY'), 'model' => env('AI_TRACKING_OPENAI_MODEL', 'gpt-5-mini')],
         'gemini' => ['key' => env('GEMINI_API_KEY'), 'model' => env('AI_TRACKING_GEMINI_MODEL', 'gemini-2.5-flash')],
         'perplexity' => ['key' => env('PERPLEXITY_API_KEY'), 'model' => env('AI_TRACKING_PERPLEXITY_MODEL', 'sonar')],
+        // Simulated: an open model on Ollama Cloud, reported apart from the real assistants.
+        'ollama' => ['key' => env('AI_TRACKING_OLLAMA_KEY', env('OLLAMA_API_KEY')), 'host' => env('AI_TRACKING_OLLAMA_HOST', 'https://ollama.com'), 'model' => env('AI_TRACKING_OLLAMA_MODEL', 'gpt-oss:120b')],
     ],
 
 ];

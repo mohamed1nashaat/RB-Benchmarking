@@ -15,7 +15,15 @@ class AiEngineClient
         'chatgpt' => ['label' => 'ChatGPT', 'config' => 'openai'],
         'gemini' => ['label' => 'Gemini', 'config' => 'gemini'],
         'perplexity' => ['label' => 'Perplexity', 'config' => 'perplexity'],
+        // Not a consumer assistant: an open model on Ollama answering from Ollama web search.
+        'ollama' => ['label' => 'Open model (Ollama)', 'config' => 'ollama', 'simulated' => true],
     ];
+
+    /** True for engines that only imitate an assistant, so they are reported apart from the real ones. */
+    public static function simulated(string $engine): bool
+    {
+        return (bool) (self::ENGINES[$engine]['simulated'] ?? false);
+    }
 
     public static function label(string $engine): string
     {
@@ -49,6 +57,7 @@ class AiEngineClient
             'chatgpt' => $this->openai($prompt, $country),
             'gemini' => $this->gemini($prompt),
             'perplexity' => $this->perplexity($prompt, $country),
+            'ollama' => $this->ollama($prompt, $country),
         };
     }
 
@@ -137,6 +146,46 @@ class AiEngineClient
         foreach ($r['citations'] ?? [] as $url) {
             if (is_string($url)) {
                 $sources[] = self::source($url, null);
+            }
+        }
+
+        return ['text' => $text, 'sources' => self::unique($sources), 'model' => $r['model'] ?? $model];
+    }
+
+    /**
+     * Ollama has no assistant with built-in search, so search first with Ollama's web
+     * search, then ask the model to answer from those results and cite them as [1], [2].
+     * Only the results the answer actually cites count as sources.
+     */
+    private function ollama(string $prompt, ?string $country): array
+    {
+        $host = rtrim((string) config('services.ai_tracking.ollama.host', 'https://ollama.com'), '/');
+        $key = config('services.ai_tracking.ollama.key');
+        $model = self::model('ollama');
+
+        $results = $this->http()->withToken($key)
+            ->post($host.'/api/web_search', ['query' => $prompt, 'max_results' => 5])
+            ->throw()->json('results') ?? [];
+        $results = array_values(array_filter($results, fn ($r) => is_array($r) && ! empty($r['url'])));
+        $context = collect($results)->map(fn ($r, $i) => '['.($i + 1).'] '.trim(($r['title'] ?? '').' '.$r['url'])."\n"
+            .\Illuminate\Support\Str::limit(trim((string) ($r['content'] ?? '')), 1500))->implode("\n\n");
+
+        $system = 'You are an AI shopping assistant answering a customer. Use the web results below where they help and cite them inline as [1], [2]. '
+            .'Name specific brands and stores when you recommend them. Answer in the language of the question.'
+            .($country && strlen($country) === 2 ? ' The customer is in '.strtoupper($country).'.' : '')
+            ."\n\nWeb results:\n".($context !== '' ? $context : 'none');
+
+        $r = $this->http()->withToken($key)->post($host.'/api/chat', [
+            'model' => $model, 'stream' => false,
+            'messages' => [['role' => 'system', 'content' => $system], ['role' => 'user', 'content' => $prompt]],
+        ])->throw()->json();
+
+        $text = (string) ($r['message']['content'] ?? '');
+        preg_match_all('/\[(\d{1,2})\]/', $text, $m);
+        $sources = [];
+        foreach (array_unique($m[1]) as $n) {
+            if (isset($results[(int) $n - 1])) {
+                $sources[] = self::source($results[(int) $n - 1]['url'], $results[(int) $n - 1]['title'] ?? null);
             }
         }
 

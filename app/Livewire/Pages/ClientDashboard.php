@@ -838,7 +838,7 @@ class ClientDashboard extends Component
         return [
             'prompts' => $prompts,
             'limit' => (int) config('services.ai_tracking.max_prompts', 50),
-            'engines' => collect(\App\Services\AiTracking\AiEngineClient::ENGINES)->map(fn ($e, $k) => ['label' => $e['label'], 'key' => \App\Services\AiTracking\AiEngineClient::configured($k), 'model' => \App\Services\AiTracking\AiEngineClient::model($k)])->all(),
+            'engines' => collect(\App\Services\AiTracking\AiEngineClient::ENGINES)->map(fn ($e, $k) => ['label' => $e['label'], 'simulated' => \App\Services\AiTracking\AiEngineClient::simulated($k), 'key' => \App\Services\AiTracking\AiEngineClient::configured($k), 'model' => \App\Services\AiTracking\AiEngineClient::model($k)])->all(),
             'lastRun' => $last ? Carbon::parse($last)->format('j M Y') : null,
         ];
     }

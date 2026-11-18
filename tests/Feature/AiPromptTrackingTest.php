@@ -29,6 +29,7 @@ class AiPromptTrackingTest extends TestCase
             'services.ai_tracking.openai' => ['key' => 'test-openai', 'model' => 'gpt-test'],
             'services.ai_tracking.gemini' => ['key' => 'test-gemini', 'model' => 'gemini-test'],
             'services.ai_tracking.perplexity' => ['key' => 'test-pplx', 'model' => 'sonar'],
+            'services.ai_tracking.ollama' => ['key' => 'test-ollama', 'host' => 'https://ollama.com', 'model' => 'gpt-oss:120b'],
             'services.ai_tracking.sentiment' => 'off',
         ]);
     }
@@ -167,5 +168,56 @@ class AiPromptTrackingTest extends TestCase
         $this->assertSame(['positive' => 1, 'neutral' => 1, 'negative' => 0], $r['sentiment']);
         $this->assertSame(['ChatGPT', 'Gemini'], array_values($r['engineLabels']));
         $this->assertFalse(TrackerReport::build([], [], null)['available']);
+    }
+
+    public function test_ollama_searches_first_and_keeps_only_the_results_it_cites(): void
+    {
+        Http::fake([
+            'ollama.com/api/web_search' => Http::response(['results' => [
+                ['title' => 'Rashof', 'url' => 'https://rashof.com/sidr', 'content' => 'Rashof sells sidr honey.'],
+                ['title' => 'Al Shifa', 'url' => 'https://www.alshifahoney.com/en', 'content' => 'Al Shifa honey since 1984.'],
+                ['title' => 'Noon', 'url' => 'https://noon.com/honey', 'content' => 'Honey on noon.'],
+            ]]),
+            'ollama.com/api/chat' => Http::response(['model' => 'gpt-oss:120b', 'message' => ['role' => 'assistant', 'content' => 'Try Al Shifa [2], or Rashof [1]. [9]']]),
+        ]);
+
+        $r = (new AiEngineClient)->ask('ollama', 'best sidr honey', 'sa');
+        $this->assertSame('Try Al Shifa [2], or Rashof [1]. [9]', $r['text']);
+        $this->assertSame(['alshifahoney.com', 'rashof.com'], array_column($r['sources'], 'domain'));
+        $this->assertSame('gpt-oss:120b', $r['model']);
+        $this->assertTrue(AiEngineClient::simulated('ollama'));
+        $this->assertFalse(AiEngineClient::simulated('chatgpt'));
+
+        Http::assertSent(fn ($req) => str_ends_with($req->url(), '/api/web_search') && $req['query'] === 'best sidr honey' && $req->hasHeader('Authorization', 'Bearer test-ollama'));
+        Http::assertSent(fn ($req) => str_ends_with($req->url(), '/api/chat') && $req['stream'] === false
+            && str_contains($req['messages'][0]['content'], '[2] Al Shifa https://www.alshifahoney.com/en')
+            && str_contains($req['messages'][0]['content'], 'The customer is in SA.')
+            && $req['messages'][1]['content'] === 'best sidr honey');
+    }
+
+    public function test_simulated_engine_is_kept_out_of_headline_numbers(): void
+    {
+        $b = fn ($client, $rival) => [['name' => 'Brand', 'client' => true, 'rank' => $client, 'cited' => false], ['name' => 'Rival', 'client' => false, 'rank' => $rival, 'cited' => false]];
+        $run = fn ($p, $e, $m) => ['prompt' => $p, 'engine' => $e, 'run_on' => '2026-11-10', 'mentioned' => $m, 'rank' => $m ? 1 : null, 'cited' => false,
+            'brands' => $b($m ? 1 : null, 2), 'sources' => $m ? [['domain' => 'sim.com']] : [], 'sentiment' => null];
+        $prompts = [1 => ['prompt' => 'p1', 'volume' => 10], 2 => ['prompt' => 'p2', 'volume' => 20]];
+
+        // ChatGPT names the brand in neither answer; the open model names it in both.
+        $r = TrackerReport::build([$run(1, 'chatgpt', false), $run(2, 'chatgpt', false), $run(1, 'ollama', true), $run(2, 'ollama', true)], $prompts, 'brand.com');
+        $this->assertSame('measured', $r['basis']);
+        $this->assertEqualsWithDelta(0.0, $r['kpis']['visibility'], 0.01);
+        $this->assertSame(2, $r['answers']);
+        $this->assertSame([], $r['sources']);
+        $this->assertSame([2, 1], array_column($r['gaps'], 'id'));
+        $this->assertSame(['Open model (Ollama)'], $r['simulatedLabels']);
+        $this->assertSame([['ChatGPT', false], ['Open model (Ollama)', true]], array_map(fn ($e) => [$e['engine'], $e['simulated']], $r['engines']));
+        $this->assertEqualsWithDelta(100.0, $r['engines'][1]['visibility'], 0.01);
+        $this->assertSame(['chatgpt', 'ollama'], $r['engineKeys']);
+
+        // With only the open model, the headline uses it and says so.
+        $sim = TrackerReport::build([$run(1, 'ollama', true), $run(2, 'ollama', false)], $prompts, 'brand.com');
+        $this->assertSame('simulated', $sim['basis']);
+        $this->assertEqualsWithDelta(50.0, $sim['kpis']['visibility'], 0.01);
+        $this->assertSame([2], array_column($sim['gaps'], 'id'));
     }
 }
