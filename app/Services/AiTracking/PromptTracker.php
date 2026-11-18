@@ -26,7 +26,7 @@ class PromptTracker
         $tenant = Tenant::find($profile->tenant_id);
         $brands = [['name' => $tenant?->name ?? 'Client', 'domain' => $profile->domain, 'aliases' => $profile->aliases ?? [], 'client' => true]];
         foreach (Competitor::where('tenant_id', $profile->tenant_id)->orderBy('sort_order')->orderBy('name')->get() as $c) {
-            $brands[] = ['name' => $c->name, 'domain' => $c->website ? AiEngineClient::domainOf($c->website) : null, 'aliases' => [], 'client' => false];
+            $brands[] = ['name' => $c->name, 'domain' => $c->website ? AiEngineClient::domainOf($c->website) : null, 'aliases' => $c->aliases ?? [], 'client' => false];
         }
 
         return $brands;

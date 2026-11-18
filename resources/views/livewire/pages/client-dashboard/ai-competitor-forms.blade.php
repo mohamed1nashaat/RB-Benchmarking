@@ -13,6 +13,11 @@
                     <input wire:model="competitorWebsite" type="text" placeholder="e.g. sidrhoney.com"
                         class="w-full rounded-lg px-3 py-2 text-xs bg-white/5 border border-white/15 text-white focus:outline-none focus:border-brand-500/50">
                 </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-[11px] text-gray-500 mb-1">Other names</label>
+                    <input wire:model="competitorAliases" type="text" placeholder="e.g. Arabic name, comma separated"
+                        class="w-full rounded-lg px-3 py-2 text-xs bg-white/5 border border-white/15 text-white focus:outline-none focus:border-brand-500/50">
+                </div>
                 <div>
                     <label class="block text-[11px] text-gray-500 mb-1">Industry</label>
                     <input wire:model="competitorIndustry" type="text" placeholder="e.g. e-commerce / honey"

@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Competitor extends Model
 {
-    protected $fillable = ['tenant_id', 'name', 'website', 'industry', 'notes', 'sort_order'];
+    protected $fillable = ['tenant_id', 'name', 'website', 'aliases', 'industry', 'notes', 'sort_order'];
+
+    protected $casts = ['aliases' => 'array'];
 
     public function tenant(): BelongsTo
     {

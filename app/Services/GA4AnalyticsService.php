@@ -965,6 +965,7 @@ class GA4AnalyticsService
      *  ai_sources_monthly   {YYYY-MM: {platform: sessions}}
      *  funnel_monthly       {YYYY-MM: {label, events: {event: count}, revenue}}
      *  landing_pages_monthly {YYYY-MM: [[page, sessions, key_events, revenue], ...top 10]}
+     *  ai_new_users_monthly {YYYY-MM: new users whose first visit came from AI}
      * Each table is omitted when its GA4 query fails, so callers never overwrite with blanks.
      */
     public function getAiReportTables(Integration $integration, string $propertyId, string $startDate, string $endDate): array
@@ -1004,6 +1005,20 @@ class GA4AnalyticsService
                 arsort($p);
             }
             unset($p);
+        }
+
+        // New users whose first visit came from an AI assistant (GA4 first-user channel).
+        $rows = $this->aiReportRows($token, $propertyId, [
+            'dateRanges' => $range,
+            'dimensions' => [['name' => 'yearMonth']],
+            'metrics' => [['name' => 'newUsers']],
+            'dimensionFilter' => ['filter' => ['fieldName' => 'firstUserDefaultChannelGroup', 'stringFilter' => ['matchType' => 'EXACT', 'value' => self::AI_CHANNEL]]],
+            'limit' => 500,
+        ]);
+        if ($rows !== null) {
+            foreach ($rows as $r) {
+                $out['ai_new_users_monthly'][$ym($r[0])] = (int) $r[1];
+            }
         }
 
         $funnelEvents = ['session_start', 'view_item', 'add_to_cart', 'view_cart', 'begin_checkout', 'purchase'];

@@ -52,148 +52,45 @@
         ]);
     }
     $entitiesWithScore = $allEntities->filter(fn($e) => $e['semrush_score'] !== null)->sortByDesc('semrush_score')->values();
-    // Report helpers shared by the Overview / Diagnostics partials.
-    $airNice = function ($v) {
-        if ($v <= 0) return 1;
-        $p = pow(10, floor(log10($v)));
-        $n = $v / $p;
-        return ($n <= 1 ? 1 : ($n <= 2 ? 2 : ($n <= 2.5 ? 2.5 : ($n <= 5 ? 5 : 10)))) * $p;
-    };
-    $airFmt = fn($v, string $f) => match ($f) {
-        'k' => number_format($v / 1000, 1).'k',
-        'pct1' => number_format($v, 1).'%',
-        'pct2' => number_format($v, 2).'%',
-        'sar' => 'SAR '.number_format($v, 2),
-        'fr_pct' => number_format($v * 100, 2).'%',
-        'fr_pct1' => number_format($v * 100, 1).'%',
-        'fr_dec' => number_format($v, 2),
-        'fr_sec' => number_format($v, 1).' s',
-        'fr_secs' => number_format($v).' s',
-        'fr_ms' => number_format($v).' ms',
-        'fr_cls' => number_format($v, 3),
-        'fr_int' => number_format($v),
-        default => number_format($v),
-    };
 @endphp
-<div class="ai-workspace space-y-6" data-testid="ai-visibility-workspace">
-    <div class="ai-workspace-header">
-        <div>
-            <h2 class="section-title">AI visibility report</h2>
-            <p>Is the brand showing up inside AI answers, and is anyone arriving from them? Use the ? next to any section to see where its numbers come from.</p>
-        </div>
+<div class="ai-workspace" data-testid="ai-visibility-workspace">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px">
         @if($aiVisibilitySection === 'settings')
             <button type="button" wire:click="setAiVisibilitySection('overview')" class="btn-secondary">Back to report</button>
         @else
+            @if(!empty($aiPartOne['months']))
+                <label for="av-month" class="micro-label">Month</label>
+                <select id="av-month" wire:model.live="aiReportMonth" class="input-field" style="width:auto">
+                    @foreach($aiPartOne['months'] as $ym => $lbl)
+                        <option value="{{ $ym }}" @selected($ym === $aiPartOne['month'])>{{ $lbl }}</option>
+                    @endforeach
+                </select>
+            @endif
             <button type="button" wire:click="setAiVisibilitySection('settings')" class="btn-secondary">Data &amp; settings</button>
         @endif
     </div>
 
     @if($aiVisibilitySection === 'settings')
-        <div class="space-y-6" data-ai-section="settings">
+        <div class="space-y-6 mt-6" data-ai-section="settings">
             @include('livewire.pages.client-dashboard.ai-data-settings')
-        </div>
-    @else
-    @php
-        $hasReport = $aiReport && !$aiReport['empty'];
-        $airParts = [
-            'air-summary' => ['Summary', 'What changed this month and the headline numbers.'],
-            'air-visibility' => ['Visibility in AI answers', 'Before the click: are AI assistants showing, citing and mentioning the brand?'],
-            'air-traffic' => ['Traffic and sales from AI', 'After the click: who arrives from AI answers, what they buy and where they struggle.'],
-            'air-competitors' => ['Competitors', 'How the brand compares with the brands customers weigh it against.'],
-            'air-topics' => ['Topics and prompts', 'Where AI never mentions the brand, and the Semrush prompts behind the simulated numbers.'],
-        ];
-        if ($hasReport) {
-            $ctx = $aiReport['ctx'];
-            $help = $aiReport['help'];
-            $hero = $aiReport['hero'];
-            $heroKey = in_array($aiHeroMetric, ['imp', 'cit', 'men'], true) ? $aiHeroMetric : 'imp';
-            $M = $hero['metrics'][$heroKey];
-            $otherKey = $heroKey === 'imp' ? 'cit' : 'imp';
-            $O = $hero['metrics'][$otherKey];
-            $tq = $aiReport['traffic'];
-            $gr = $aiReport['grounding'];
-            $fr = $aiReport['friction'];
-            $cw = $aiReport['competitive'];
-            $captureMonth = $hero['captureMonth'];
-            $notCaptured = '<div class="air-empty"><b>Not captured for this month.</b> This source is captured once a month'.($captureMonth ? '; the latest capture is '.e($captureMonth) : '').'.</div>';
-            $brand = $dashboardData['client']['name'] ?? 'the brand';
-        }
-        $airSec = fn (string $name) => 'livewire.pages.client-dashboard.ai-report.'.$name;
-    @endphp
-    <div data-ai-section="report" class="space-y-6">
-        @if($hasReport)
-            <div class="air-filters" aria-label="Filters">
-                <label for="air-month" class="micro-label">Month</label>
-                <select id="air-month" wire:model.live="aiReportMonth" class="input-field">
-                    @foreach($aiReport['months'] as $ym => $lbl)
-                        <option value="{{ $ym }}" @selected($ym === $ctx['sel'])>{{ $lbl }}</option>
-                    @endforeach
-                </select>
-                <span class="air-fresh">{{ $aiReport['fresh']['line'] }}</span>
-            </div>
-            <nav aria-label="On this page" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;font-size:13px">
-                <span class="micro-label">On this page</span>
-                @foreach($airParts as $id => [$title])
-                    <a href="#{{ $id }}" style="color:var(--ai-text);text-decoration:underline;text-decoration-color:var(--ai-border);text-underline-offset:4px">{{ $title }}</a>
-                @endforeach
-            </nav>
-        @endif
-    </div>
-
-    @if($hasReport)
-        <div wire:key="air-p1-{{ $aiReportMonth }}-{{ $aiHeroMetric }}" class="air-panel">
-            @include($airSec('part'), ['id' => 'air-summary', 'title' => $airParts['air-summary'][0], 'sub' => $airParts['air-summary'][1]])
-            @include($airSec('note'))
-            @include($airSec('headline'))
-        </div>
-        <div wire:key="air-p2-{{ $aiReportMonth }}" class="air-panel">
-            @include($airSec('part'), ['id' => 'air-visibility', 'title' => $airParts['air-visibility'][0], 'sub' => $airParts['air-visibility'][1]])
-            @include($airSec('tracker'))
-            @include($airSec('landscape'))
-            @include($airSec('grounding'))
-        </div>
-        <div wire:key="air-p3-{{ $aiReportMonth }}" class="air-panel">
-            @include($airSec('part'), ['id' => 'air-traffic', 'title' => $airParts['air-traffic'][0], 'sub' => $airParts['air-traffic'][1]])
-            @include($airSec('postclick'))
-            @include($airSec('traffic'))
-            @include($airSec('onsite'))
-        </div>
-    @else
-        <div class="card ai-empty-state"><h3>No AI visibility data yet</h3><p>Connect Google or import the monthly workbook in Data &amp; settings.</p></div>
-    @endif
-
-    <div wire:key="air-p4-{{ $aiReportMonth }}" class="air-panel">
-        @include($airSec('part'), ['id' => 'air-competitors', 'title' => $airParts['air-competitors'][0], 'sub' => $airParts['air-competitors'][1]])
-        @if($hasReport)@include($airSec('competitors'))@endif
-        <div>@include('livewire.pages.client-dashboard.ai-competitors')</div>
-    </div>
-
-    <div class="air-panel">
-        @include($airSec('part'), ['id' => 'air-topics', 'title' => $airParts['air-topics'][0], 'sub' => $airParts['air-topics'][1]])
-        @if($hasReport)<div wire:key="air-p5-{{ $aiReportMonth }}">@include($airSec('gaps'))</div>@endif
-        <div x-data="{ open: false }">
-            <button type="button" class="btn-secondary" @click="open = !open" :aria-expanded="open.toString()" aria-controls="air-explorer"><span x-text="open ? 'Hide topic & prompt explorer' : 'Show topic & prompt explorer'">Show topic &amp; prompt explorer</span></button>
-            <div id="air-explorer" x-show="open" x-cloak class="mt-4">
-                @if($comparisonReports->isNotEmpty())
-                    @include('livewire.pages.client-dashboard.semrush-exports')
-                @elseif(!empty($aiSnapshot['semrush_top_topics']))
-                    @include('livewire.pages.client-dashboard.ai-legacy-topics')
-                @else
-                    <div class="card ai-empty-state"><h3>No topic or prompt exports yet</h3><p>Imported Semrush records will appear here.</p></div>
-                @endif
+            <div>@include('livewire.pages.client-dashboard.ai-competitors')</div>
+            <div x-data="{ open: false }">
+                <button type="button" class="btn-secondary" @click="open = !open" :aria-expanded="open.toString()" aria-controls="air-explorer"><span x-text="open ? 'Hide topic & prompt explorer' : 'Show topic & prompt explorer'">Show topic &amp; prompt explorer</span></button>
+                <div id="air-explorer" x-show="open" x-cloak class="mt-4">
+                    @if($comparisonReports->isNotEmpty())
+                        @include('livewire.pages.client-dashboard.semrush-exports')
+                    @elseif(!empty($aiSnapshot['semrush_top_topics']))
+                        @include('livewire.pages.client-dashboard.ai-legacy-topics')
+                    @else
+                        <div class="card ai-empty-state"><h3>No topic or prompt exports yet</h3><p>Imported Semrush records will appear here.</p></div>
+                    @endif
+                </div>
             </div>
         </div>
-    </div>
-
-    @if($hasReport)
-        <section aria-label="How to read this report" class="card air-card">
-            <div class="air-foot">
-                <div><h4><span class="kpi-label">Observed</span><x-ai-help :h="$help['legend']" /></h4><p>Recorded by the platform from real events in its own logs: Search Console, Bing (via Clarity), Clarity, GA4.</p></div>
-                <div><h4><span class="kpi-label">Simulated</span></h4><p>Produced by asking AI models a fixed set of prompts each month and recording the answers (Semrush). Directional, never mixed with observed figures.</p></div>
-                <div><h4><span class="kpi-label">Refresh</span></h4><p>{{ $aiReport['fresh']['refresh'] }}</p></div>
-            </div>
-        </section>
-    @endif
+    @elseif($aiPartOne)
+        <div wire:key="av-{{ $aiPartOne['month'] }}" data-ai-section="report">
+            @include('livewire.pages.client-dashboard.ai-report.av', ['av' => $aiPartOne])
+        </div>
     @endif
     @include('livewire.pages.client-dashboard.ai-snapshot-form')
 </div>

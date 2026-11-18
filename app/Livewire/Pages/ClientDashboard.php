@@ -227,7 +227,6 @@ class ClientDashboard extends Component
     public int $aiPeriodMonths = 12;
     // AI Visibility report: selected month (YYYY-MM, '' = default) and the headline metric.
     public string $aiReportMonth = '';
-    public string $aiHeroMetric = 'imp';
     // Monthly upload: workbook + Semrush exports, checked before saving.
     public $aiImportFiles = [];
     public string $aiImportDate = '';
@@ -259,6 +258,7 @@ class ClientDashboard extends Component
     public string $competitorWebsite = '';
     public string $competitorIndustry = '';
     public string $competitorNotes = '';
+    public string $competitorAliases = '';
     public ?int $editingCompetitorId = null;
     // Competitor visibility entry form
     public bool $competitorVisFormOpen = false;
@@ -343,55 +343,6 @@ class ClientDashboard extends Component
         // report_tables feeds the server-rendered report only; keep it out of the Livewire payload.
         $this->aiSnapshot = $snapshot?->makeHidden('report_tables')->toArray();
         $this->loadCompetitors();
-    }
-
-    /** Overview + Diagnostics report, built per request from stored data (never serialised to the browser). */
-    private function buildAiReport(): array
-    {
-        $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
-            ->whereNotNull('report_tables')
-            ->latest('report_month')
-            ->first()?->toArray() ?? $this->aiSnapshot;
-
-        $semrush = \App\Models\SemrushReport::where('tenant_id', $this->clientId)
-            ->where('is_client', true)
-            ->latest('report_month')
-            ->first(['metrics', 'topics', 'prompts', 'report_month']);
-
-        $report = new \App\Services\AiVisibilityReport(
-            $this->aiMonths ?? [],
-            $snapshot,
-            $semrush ? ['metrics' => $semrush->metrics ?? [], 'topics' => $semrush->topics ?? [], 'prompts' => $semrush->prompts ?? [], 'month' => $semrush->report_month] : [],
-            $this->dashboardData['client']['name'] ?? 'the brand',
-        );
-
-        return $report->withCompetitors($this->aiCompetitorBrands())->build($this->aiReportMonth ?: null);
-    }
-
-    /** Semrush brand summaries (client + competitors) by report month, named from the Competitors tab. */
-    private function aiCompetitorBrands(): array
-    {
-        $host = fn (?string $url) => preg_replace('/^www\./', '', strtolower(parse_url(str_contains($url ?? '', '://') ? $url : 'https://'.($url ?? ''), PHP_URL_HOST) ?? ''));
-        $names = collect($this->competitors ?? [])->mapWithKeys(fn ($c) => [$host($c['website'] ?? '') => $c['name']]);
-        $client = $this->dashboardData['client']['name'] ?? 'the brand';
-
-        return \App\Models\SemrushReport::where('tenant_id', $this->clientId)
-            ->get(['domain', 'is_client', 'metrics', 'report_month'])
-            ->groupBy('report_month')
-            ->map(fn ($rows) => $rows->map(fn ($r) => [
-                'name' => $r->is_client ? $client : ($names[$r->domain] ?? $r->domain),
-                'domain' => $r->domain,
-                'is_client' => (bool) $r->is_client,
-                'metrics' => $r->metrics ?? [],
-            ])->values()->all())
-            ->all();
-    }
-
-    public function setAiHeroMetric(string $metric): void
-    {
-        if (in_array($metric, ['imp', 'cit', 'men'], true)) {
-            $this->aiHeroMetric = $metric;
-        }
     }
 
     public function uploadAiVisibility(): void
@@ -868,15 +819,17 @@ class ClientDashboard extends Component
             $this->competitorWebsite  = $comp?->website ?? '';
             $this->competitorIndustry = $comp?->industry ?? '';
             $this->competitorNotes    = $comp?->notes ?? '';
+            $this->competitorAliases  = implode(', ', $comp?->aliases ?? []);
         } else {
-            $this->competitorName = $this->competitorWebsite = $this->competitorIndustry = $this->competitorNotes = '';
+            $this->competitorName = $this->competitorWebsite = $this->competitorIndustry = $this->competitorNotes = $this->competitorAliases = '';
         }
         $this->competitorFormOpen = true;
     }
 
     public function saveCompetitor(): void
     {
-        $this->validate(['competitorName' => 'required|string|max:255']);
+        $this->validate(['competitorName' => 'required|string|max:255', 'competitorAliases' => 'nullable|string|max:500']);
+        $aliases = collect(explode(',', $this->competitorAliases))->map(fn ($a) => trim($a))->filter()->unique()->values()->all();
 
         if ($this->editingCompetitorId) {
             Competitor::where('id', $this->editingCompetitorId)
@@ -884,6 +837,7 @@ class ClientDashboard extends Component
                 ->update([
                     'name'     => $this->competitorName,
                     'website'  => $this->competitorWebsite ?: null,
+                    'aliases'  => $aliases ?: null,
                     'industry' => $this->competitorIndustry ?: null,
                     'notes'    => $this->competitorNotes ?: null,
                 ]);
@@ -892,6 +846,7 @@ class ClientDashboard extends Component
                 'tenant_id' => $this->clientId,
                 'name'      => $this->competitorName,
                 'website'   => $this->competitorWebsite ?: null,
+                'aliases'   => $aliases ?: null,
                 'industry'  => $this->competitorIndustry ?: null,
                 'notes'     => $this->competitorNotes ?: null,
             ]);
@@ -2548,10 +2503,8 @@ class ClientDashboard extends Component
             'categories' => $categories,
             'subCategories' => $subCategories,
             'campaignCategories' => $campaignCategories,
-            'aiReport' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
-                ? $this->buildAiReport() : null,
-            'aiTracker' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
-                ? \App\Services\AiTracking\TrackerReport::forTenant($this->clientId) : null,
+            'aiPartOne' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
+                ? \App\Services\AiVisibilityPartOne::forTenant($this->clientId, $this->dashboardData['client']['name'] ?? 'the brand', $this->aiReportMonth ?: null) : null,
             'aiTracking' => $this->activeTabIndex === 3 && $this->aiVisibilitySection === 'settings'
                 ? $this->aiTrackingSettingsData() : null,
         ])->layout('layouts.app');
