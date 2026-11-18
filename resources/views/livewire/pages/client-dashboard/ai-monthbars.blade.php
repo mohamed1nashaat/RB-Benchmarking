@@ -4,7 +4,7 @@
     $mmax = $airNice(max(1, max(array_column($mbars, 'v'))) * 1.1);
     $band = ($W - $L - $R) / max(count($mbars), 4); $bw = min(64, $band * 0.55);
 @endphp
-<div class="air-legend"><span><i style="background:var(--air-bar)"></i>Selected month</span><span><i style="background:var(--air-bar-dim)"></i>Earlier months</span></div>
+<div class="air-legend"><span><i style="background:var(--air-bar)"></i>{{ $mbarCur ?? 'Selected month' }}</span><span><i style="background:var(--air-bar-dim)"></i>{{ $mbarPrev ?? 'Earlier months' }}</span></div>
 <div class="air-chart">
     <svg viewBox="0 0 {{ $W }} {{ $H }}" role="img" aria-label="{{ $aria ?? 'By month' }}">
         @for($g = 0; $g <= 4; $g++)

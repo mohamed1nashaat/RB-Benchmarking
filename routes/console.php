@@ -208,3 +208,11 @@ Schedule::command('ai:embed-metrics --days=30')
     ->dailyAt('02:30')
     ->onFailure($onFailure('ai:embed-metrics'))
     ->description('Nightly AI vector embedding of ad metrics and benchmarks');
+
+// AI prompt tracking: ask every client's buyer prompts to ChatGPT, Gemini and Perplexity weekly.
+Schedule::command('ai:track-prompts')
+    ->weeklyOn(1, '05:00')
+    ->withoutOverlapping(360)
+    ->runInBackground()
+    ->onFailure($onFailure('ai:track-prompts'))
+    ->description('Weekly AI prompt tracking (mentions, rank, citations)');

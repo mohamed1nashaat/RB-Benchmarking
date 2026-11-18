@@ -109,6 +109,9 @@ class ClientDashboard extends Component
                 $this->loadGoogleListsForAiTab();
                 $this->aiSettingsLoaded = true;
             }
+            if ($section === 'settings') {
+                $this->loadAiTracking();
+            }
             $this->aiVisibilitySection = $section;
         }
     }
@@ -240,6 +243,14 @@ class ClientDashboard extends Component
     public ?int $aiSnapshotSemrushPrompts = null;
     public ?int $aiSnapshotClarityCitations = null;
     public string $aiSnapshotSaveSuccess = '';
+
+    // AI prompt tracking (ChatGPT, Gemini, Perplexity)
+    public string $aiTrackDomain = '';
+    public string $aiTrackAliases = '';
+    public array $aiTrackEngines = [];
+    public string $aiNewPrompt = '';
+    public string $aiNewPromptCountry = '';
+    public string $aiTrackSaved = '';
 
     // Competitors
     public ?array $competitors = null;
@@ -757,6 +768,79 @@ class ClientDashboard extends Component
         $this->aiSnapshotSaveSuccess = 'Saved for ' . $this->aiSnapshotMonth;
         $this->aiSnapshotFormOpen    = false;
         $this->loadAiVisibilityData();
+    }
+
+    // ─── AI prompt tracking ───────────────────────────────────────────────────
+
+    private function aiTrackingProfile(): \App\Models\AiTrackingProfile
+    {
+        return \App\Models\AiTrackingProfile::firstOrCreate(
+            ['tenant_id' => $this->clientId],
+            ['domain' => \App\Models\SemrushReport::where('tenant_id', $this->clientId)->where('is_client', true)->latest('report_month')->value('domain'),
+                'engines' => array_keys(\App\Services\AiTracking\AiEngineClient::ENGINES)]
+        );
+    }
+
+    public function loadAiTracking(): void
+    {
+        $p = $this->aiTrackingProfile();
+        $this->aiTrackDomain = (string) $p->domain;
+        $this->aiTrackAliases = implode(', ', $p->aliases ?? []);
+        $this->aiTrackEngines = $p->engines ?? [];
+    }
+
+    public function saveAiTracking(): void
+    {
+        $this->validate(['aiTrackDomain' => 'nullable|string|max:255', 'aiTrackAliases' => 'nullable|string|max:1000']);
+        $domain = $this->aiTrackDomain ? \App\Services\AiTracking\AiEngineClient::domainOf(trim($this->aiTrackDomain)) : null;
+        $this->aiTrackingProfile()->update([
+            'domain' => $domain,
+            'aliases' => collect(explode(',', $this->aiTrackAliases))->map(fn ($a) => trim($a))->filter()->unique()->values()->all(),
+            'engines' => array_values(array_intersect(array_keys(\App\Services\AiTracking\AiEngineClient::ENGINES), $this->aiTrackEngines)),
+        ]);
+        $this->aiTrackDomain = (string) $domain;
+        $this->aiTrackSaved = 'Saved';
+    }
+
+    public function addAiPrompt(): void
+    {
+        $this->validate(['aiNewPrompt' => 'required|string|min:3|max:500', 'aiNewPromptCountry' => 'nullable|alpha|size:2']);
+        $this->aiTrackingProfile();
+        \App\Models\AiTrackedPrompt::firstOrCreate(
+            ['tenant_id' => $this->clientId, 'prompt_hash' => \App\Models\AiTrackedPrompt::hashOf($this->aiNewPrompt)],
+            ['prompt' => trim($this->aiNewPrompt), 'country' => $this->aiNewPromptCountry ? strtolower($this->aiNewPromptCountry) : null, 'source' => 'manual', 'active' => true]
+        )->update(['active' => true]);
+        $this->aiNewPrompt = '';
+    }
+
+    public function toggleAiPrompt(int $id): void
+    {
+        $p = \App\Models\AiTrackedPrompt::where('tenant_id', $this->clientId)->findOrFail($id);
+        $p->update(['active' => ! $p->active]);
+    }
+
+    public function deleteAiPrompt(int $id): void
+    {
+        \App\Models\AiTrackedPrompt::where('tenant_id', $this->clientId)->where('id', $id)->delete();
+    }
+
+    public function seedAiPrompts(): void
+    {
+        $added = app(\App\Services\AiTracking\PromptTracker::class)->seedFromSemrush($this->clientId, (int) config('services.ai_tracking.max_prompts', 50));
+        $this->aiTrackSaved = $added ? "Added {$added} prompts from Semrush" : 'No new Semrush prompts to add';
+    }
+
+    private function aiTrackingSettingsData(): array
+    {
+        $prompts = \App\Models\AiTrackedPrompt::where('tenant_id', $this->clientId)->orderByDesc('active')->orderByDesc('volume')->orderBy('id')->get();
+        $last = \App\Models\AiPromptRun::where('tenant_id', $this->clientId)->max('run_on');
+
+        return [
+            'prompts' => $prompts,
+            'limit' => (int) config('services.ai_tracking.max_prompts', 50),
+            'engines' => collect(\App\Services\AiTracking\AiEngineClient::ENGINES)->map(fn ($e, $k) => ['label' => $e['label'], 'key' => \App\Services\AiTracking\AiEngineClient::configured($k), 'model' => \App\Services\AiTracking\AiEngineClient::model($k)])->all(),
+            'lastRun' => $last ? Carbon::parse($last)->format('j M Y') : null,
+        ];
     }
 
     // ─── Competitor Methods ───────────────────────────────────────────────────
@@ -2466,6 +2550,10 @@ class ClientDashboard extends Component
             'campaignCategories' => $campaignCategories,
             'aiReport' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
                 ? $this->buildAiReport() : null,
+            'aiTracker' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
+                ? \App\Services\AiTracking\TrackerReport::forTenant($this->clientId) : null,
+            'aiTracking' => $this->activeTabIndex === 3 && $this->aiVisibilitySection === 'settings'
+                ? $this->aiTrackingSettingsData() : null,
         ])->layout('layouts.app');
     }
 }

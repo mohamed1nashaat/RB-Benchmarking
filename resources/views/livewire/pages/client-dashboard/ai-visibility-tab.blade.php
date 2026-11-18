@@ -148,6 +148,7 @@
         </div>
         <div wire:key="air-p2-{{ $aiReportMonth }}" class="air-panel">
             @include($airSec('part'), ['id' => 'air-visibility', 'title' => $airParts['air-visibility'][0], 'sub' => $airParts['air-visibility'][1]])
+            @include($airSec('tracker'))
             @include($airSec('landscape'))
             @include($airSec('grounding'))
         </div>

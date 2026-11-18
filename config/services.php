@@ -82,4 +82,13 @@ return [
         'api_key'     => env('OLLAMA_API_KEY'),
     ],
 
+    // AI prompt tracking: each engine runs only when its key is set.
+    'ai_tracking' => [
+        'max_prompts' => (int) env('AI_TRACKING_MAX_PROMPTS', 50),
+        'sentiment' => env('AI_TRACKING_SENTIMENT', 'ollama'),
+        'openai' => ['key' => env('OPENAI_API_KEY'), 'model' => env('AI_TRACKING_OPENAI_MODEL', 'gpt-5-mini')],
+        'gemini' => ['key' => env('GEMINI_API_KEY'), 'model' => env('AI_TRACKING_GEMINI_MODEL', 'gemini-2.5-flash')],
+        'perplexity' => ['key' => env('PERPLEXITY_API_KEY'), 'model' => env('AI_TRACKING_PERPLEXITY_MODEL', 'sonar')],
+    ],
+
 ];

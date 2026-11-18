@@ -128,6 +128,8 @@
     </div>
 
     {{-- ── Upload Panel ──────────────────────────────────────────────────── --}}
+    @include('livewire.pages.client-dashboard.ai-tracking-settings')
+
     <div class="card p-5">
         <div class="flex items-start justify-between gap-4 flex-wrap">
             <div class="max-w-2xl">
