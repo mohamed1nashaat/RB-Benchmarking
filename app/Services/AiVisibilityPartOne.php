@@ -25,9 +25,14 @@ use Illuminate\Support\Collection;
  */
 class AiVisibilityPartOne
 {
-    public const ACCENT = '#D99A1E';
+    // Colours are CSS variables set in ai-report/av.blade.php, so they follow the app's dark and light themes.
+    public const ACCENT = 'var(--ac)';
 
-    public const SERIES = ['#3B6EA8', '#E07B53', '#5BA37A', '#9A6FC0', '#C25A7C'];
+    // Countries and AI models: brand red first, then warm grays.
+    public const SERIES = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
+
+    // Competitors: warm grays only, so brand red always means the client.
+    public const OTHERS = ['var(--o1)', 'var(--o2)', 'var(--o3)', 'var(--o4)'];
 
     public const LLM_LABELS = [
         'google_ai_overview' => 'Google AI Overviews', 'google_ai_mode' => 'Google AI Mode', 'gemini' => 'Gemini',
@@ -107,7 +112,7 @@ class AiVisibilityPartOne
         }
         foreach ($list as $i => &$b) {
             $b['key'] = 'b'.$i;
-            $b['color'] = $b['client'] ? self::ACCENT : self::SERIES[($i - 1) % count(self::SERIES)];
+            $b['color'] = $b['client'] ? self::ACCENT : self::OTHERS[($i - 1) % count(self::OTHERS)];
         }
 
         return $list;
