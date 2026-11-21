@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+use App\Models\Scopes\TenantScope;
 
+use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
 use App\Models\AdAccount;
@@ -34,10 +36,11 @@ class TikTokIntegrationController extends Controller
                 'user_id' => $user->id,
                 'tenant_id' => $tenant ? $tenant->id : $user->default_tenant_id,
                 'timestamp' => time(),
-                'nonce' => Str::random(32)
+                'nonce' => Str::random(32),
+                'redirect_uri' => config('services.tiktok.redirect_uri'),
             ];
 
-            $state = base64_encode(json_encode($stateData));
+            $state = OAuthStateHelper::generate($stateData);
 
             $authUrl = $this->tiktokAdsService->getAuthorizationUrl($state);
 
@@ -54,7 +57,7 @@ class TikTokIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('TikTok Ads OAuth redirect failed', [
                 'user_id' => $request->user()->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -64,7 +67,7 @@ class TikTokIntegrationController extends Controller
         }
     }
 
-    public function callback(Request $request): JsonResponse
+    public function callback(Request $request): \Illuminate\Http\RedirectResponse
     {
         try {
             $code = $request->query('code');
@@ -77,25 +80,27 @@ class TikTokIntegrationController extends Controller
                     'error_description' => $request->query('error_description')
                 ]);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'TikTok Ads authorization was cancelled or failed.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('TikTok Ads authorization was cancelled or failed.'));
             }
 
             if (!$code || !$state) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Missing authorization code or state parameter.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Missing authorization code or state parameter.'));
             }
 
             // Decode and validate state
             try {
-                $stateData = json_decode(base64_decode($state), true);
+                $stateData = OAuthStateHelper::validate($state);
 
-                if (!$stateData || !isset($stateData['user_id'], $stateData['tenant_id'], $stateData['timestamp'], $stateData['nonce'])) {
+                if (!$stateData || !isset($stateData['user_id'], $stateData['timestamp'], $stateData['nonce'])) {
                     throw new \Exception('Invalid state parameter structure');
+                }
+
+                // Default tenant_id to null if not present
+                $stateData['tenant_id'] = $stateData['tenant_id'] ?? null;
+
+                // Validate redirect URI
+                if (($stateData['redirect_uri'] ?? null) !== config('services.tiktok.redirect_uri')) {
+                    throw new \Exception('Invalid redirect URI in state');
                 }
 
                 // Check if state is not too old (5 minutes max)
@@ -105,24 +110,18 @@ class TikTokIntegrationController extends Controller
 
             } catch (\Exception $e) {
                 Log::error('Invalid TikTok Ads OAuth state', [
-                    'state' => $state,
-                    'error' => $e->getMessage()
+                    'state' => substr($state, 0, 50),
+                    'error' => 'An unexpected error occurred'
                 ]);
 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid or expired authorization state.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Invalid or expired authorization state.'));
             }
 
             // Exchange code for tokens
             $tokenData = $this->tiktokAdsService->exchangeCodeForTokens($code);
 
             if (!$tokenData || !isset($tokenData['access_token'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to exchange authorization code for access token.'
-                ], 400);
+                return redirect('/integrations?error=' . urlencode('Failed to exchange authorization code for access token.'));
             }
 
             // Exchange short-lived token for long-lived token if applicable
@@ -161,22 +160,12 @@ class TikTokIntegrationController extends Controller
             // Fetch and store ad accounts
             $this->syncAdAccounts($integration, $finalTokenData['access_token']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'TikTok Ads account connected successfully!',
-                'integration_id' => $integration->id
-            ]);
+            return redirect('/integrations?success=' . urlencode('TikTok Ads connected successfully!'));
 
         } catch (\Exception $e) {
-            Log::error('TikTok Ads OAuth callback failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('TikTok Ads OAuth callback failed', ['error' => 'An unexpected error occurred']);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to complete TikTok Ads integration. Please try again.'
-            ], 500);
+            return redirect('/integrations?error=' . urlencode('Failed to complete TikTok Ads integration. Please try again.'));
         }
     }
 
@@ -222,7 +211,7 @@ class TikTokIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('TikTok Ads disconnect failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -290,7 +279,7 @@ class TikTokIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('TikTok Ads status check failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -347,7 +336,7 @@ class TikTokIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('TikTok Ads accounts fetch failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -399,7 +388,7 @@ class TikTokIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('TikTok Ads accounts sync failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -421,17 +410,23 @@ class TikTokIntegrationController extends Controller
                 // Detect industry for this account
                 $industry = $this->industryDetectionService->detectIndustry($account['name'] ?? '');
 
-                AdAccount::updateOrCreate(
+                // Sync bypass: Locate existing account by external ID to preserve tenant assignment
+                $existingAccount = AdAccount::withoutGlobalScope(TenantScope::class)->where([
+                    'integration_id' => $integration->id,
+                    'external_account_id' => $account['id'],
+                ])->first();
+
+                AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                     [
                         'integration_id' => $integration->id,
                         'external_account_id' => $account['id'],
                     ],
                     [
-                        'tenant_id' => $integration->tenant_id,
+                        'tenant_id' => AdAccount::syncTenantId($integration->id, $account['id'], $integration->tenant_id),
                         'account_name' => $account['name'],
                         'currency' => $account['currency'] ?? 'USD',
                         'status' => $account['status'] ?? 'active',
-                        'industry' => $industry,
+                        'industry' => $existingAccount?->industry ?? $industry,
                         'account_config' => [
                             'time_zone' => $account['time_zone'] ?? null,
                             'company' => $account['company'] ?? null,
@@ -455,7 +450,7 @@ class TikTokIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('TikTok Ads accounts sync failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             throw $e;

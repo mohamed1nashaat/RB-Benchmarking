@@ -263,9 +263,13 @@ class DashboardExportService
     }
 
     /**
-     * Generate SVG sparkline from data points
+     * Generate SVG sparkline from data points.
+     *
+     * @security-safe Output is internally-generated SVG markup containing only
+     *                numeric coordinates and hardcoded colors. No user input
+     *                reaches the returned string. Safe for {!! !!} rendering.
      */
-    protected function generateSparkline(array $data, int $width = 60, int $height = 20, string $color = '#10b981'): string
+    protected function generateSparkline(array $data, int $width = 60, int $height = 20, string $color = '#787774'): string
     {
         if (empty($data) || count($data) < 2) {
             return '';
@@ -292,7 +296,7 @@ class DashboardExportService
         $secondHalf = array_slice($values, (int)($count / 2));
         $firstAvg = count($firstHalf) > 0 ? array_sum($firstHalf) / count($firstHalf) : 0;
         $secondAvg = count($secondHalf) > 0 ? array_sum($secondHalf) / count($secondHalf) : 0;
-        $trendColor = $secondAvg >= $firstAvg ? '#10b981' : '#ef4444';
+        $trendColor = $secondAvg >= $firstAvg ? '#787774' : '#ef4444';
 
         return '<svg width="' . $width . '" height="' . $height . '" viewBox="0 0 ' . $width . ' ' . $height . '" xmlns="http://www.w3.org/2000/svg">'
             . '<polyline fill="none" stroke="' . $trendColor . '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="' . $pointsStr . '"/>'

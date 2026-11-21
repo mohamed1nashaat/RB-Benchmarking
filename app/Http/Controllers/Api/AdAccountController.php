@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkUpdateAdAccountRequest;
+use App\Http\Requests\UpdateAdAccountRequest;
 use App\Models\AdAccount;
 use App\Services\CurrencyConversionService;
 use Illuminate\Http\Request;
@@ -50,9 +52,7 @@ class AdAccountController extends Controller
 
             $adAccounts = $query->orderBy('account_name')->get();
 
-            Log::info('Ad Accounts fetched successfully', [
-                'count' => $adAccounts->count(),
-            ]);
+            Log::info('Ad Accounts fetched successfully', ['count' => $adAccounts->count()]);
 
             // Log filter parameters for debugging
             Log::info('Ad Accounts filter params', [
@@ -144,14 +144,11 @@ class AdAccountController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching ad accounts', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching ad accounts', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch ad accounts',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -191,20 +188,16 @@ class AdAccountController extends Controller
                 'account_config' => $adAccount->account_config,
             ];
 
-            return response()->json([
-                'data' => $adAccountData,
-            ]);
+            return response()->json(['data' => $adAccountData]);
 
         } catch (\Exception $e) {
             Log::error('Error fetching ad account', [
                 'account_id' => $adAccount->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+                'error' => 'An unexpected error occurred',]);
 
             return response()->json([
                 'error' => 'Failed to fetch ad account',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -212,16 +205,9 @@ class AdAccountController extends Controller
     /**
      * Update an ad account (mainly for industry selection)
      */
-    public function update(Request $request, AdAccount $adAccount)
+    public function update(UpdateAdAccountRequest $request, AdAccount $adAccount)
     {
         try {
-            $request->validate([
-                'industry' => 'nullable|string|max:255',
-                'country' => 'nullable|string|max:255',
-                'category' => 'nullable|string|max:255',
-                'status' => 'nullable|in:active,inactive',
-                'tenant_id' => 'nullable|integer|exists:tenants,id',
-            ]);
 
             $updateData = [];
 
@@ -270,12 +256,12 @@ class AdAccountController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating ad account', [
                 'account_id' => $adAccount->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to update ad account',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -302,10 +288,7 @@ class AdAccountController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching industries for ad accounts', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching industries for ad accounts', ['error' => 'An unexpected error occurred']);
 
             // Fallback to hardcoded industries if database fails
             $industries = [
@@ -331,27 +314,16 @@ class AdAccountController extends Controller
                 'other' => 'Other',
             ];
 
-            return response()->json([
-                'industries' => $industries,
-            ]);
+            return response()->json(['industries' => $industries]);
         }
     }
 
     /**
      * Bulk update multiple ad accounts
      */
-    public function bulkUpdate(Request $request)
+    public function bulkUpdate(BulkUpdateAdAccountRequest $request)
     {
         try {
-            $request->validate([
-                'account_ids' => 'required|array',
-                'account_ids.*' => 'integer|exists:ad_accounts,id',
-                'industry' => 'nullable|string|max:255',
-                'country' => 'nullable|string|max:255',
-                'category' => 'nullable|string|max:255',
-                'status' => 'nullable|in:active,inactive',
-                'tenant_id' => 'nullable|integer|exists:tenants,id',
-            ]);
 
             $updateData = [];
 
@@ -376,13 +348,17 @@ class AdAccountController extends Controller
             }
 
             if (empty($updateData)) {
-                return response()->json([
-                    'error' => 'No update data provided',
-                ], 400);
+                return response()->json(['error' => 'No update data provided'], 400);
             }
 
-            $updatedCount = AdAccount::whereIn('id', $request->account_ids)
-                ->update($updateData);
+            $query = AdAccount::whereIn('id', $request->account_ids);
+
+            // Tenant-scope the update unless user is super admin
+            if (!auth()->user()->isSuperAdmin() && app()->bound('current_tenant_id')) {
+                $query->where('tenant_id', app('current_tenant_id'));
+            }
+
+            $updatedCount = $query->update($updateData);
 
             return response()->json([
                 'message' => "Updated {$updatedCount} ad accounts successfully",
@@ -392,13 +368,10 @@ class AdAccountController extends Controller
         } catch (\Exception $e) {
             Log::error('Error bulk updating ad accounts', [
                 'account_ids' => $request->account_ids ?? [],
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
-            return response()->json([
-                'error' => 'Failed to update ad accounts',
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['error' => 'Failed to update ad accounts'], 500);
         }
     }
 
@@ -438,12 +411,12 @@ class AdAccountController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating account verification', [
                 'account_id' => $adAccount->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to update verification status',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }

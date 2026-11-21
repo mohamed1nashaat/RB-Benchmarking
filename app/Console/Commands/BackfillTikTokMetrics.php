@@ -72,7 +72,7 @@ class BackfillTikTokMetrics extends Command
 
         foreach ($integrations as $integration) {
             $this->info("Processing Integration ID: {$integration->id}");
-            $this->info("Tenant: {$integration->tenant->name}");
+            $this->info("Tenant: " . ($integration->tenant?->name ?? 'No Tenant'));
 
             $config = $integration->app_config;
             if (is_string($config)) {
@@ -135,9 +135,7 @@ class BackfillTikTokMetrics extends Command
                     Log::error('TikTok backfill failed for account', [
                         'account_id' => $adAccount->id,
                         'integration_id' => $integration->id,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+                        'error' => $e->getMessage(),]);
                 }
 
                 $this->newLine();
@@ -253,17 +251,17 @@ class BackfillTikTokMetrics extends Command
                     continue;
                 }
 
-                $checksum = md5("{$campaign->tenant_id}:{$campaign->ad_account_id}:{$campaign->id}:tiktok:{$date}");
+                $checksum = md5("{$campaign->ad_account_id}:{$campaign->id}:tiktok:{$date}");
 
                 AdMetric::updateOrCreate(
                     [
-                        'tenant_id' => $campaign->tenant_id,
                         'ad_account_id' => $campaign->ad_account_id,
                         'ad_campaign_id' => $campaign->id,
                         'platform' => 'tiktok',
                         'date' => $date,
                     ],
                     [
+                        'tenant_id' => $campaign->tenant_id,
                         'spend' => floatval($metrics['spend'] ?? 0),
                         'impressions' => intval($metrics['impressions'] ?? 0),
                         'clicks' => intval($metrics['clicks'] ?? 0),

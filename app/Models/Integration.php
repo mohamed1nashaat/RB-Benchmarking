@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Integration extends Model
 {
+    use HasFactory, BelongsToTenant, SoftDeletes;
     protected $fillable = [
         'tenant_id',
         'user_id',
@@ -16,24 +20,12 @@ class Integration extends Model
         'app_config',
         'created_by',
         'status',
+        'last_sync_at',
     ];
 
     protected $casts = [
-        'app_config' => 'array',
+        'app_config' => 'encrypted:array',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check()) {
-                // Also scope by tenant if available
-                $tenantId = session('current_tenant_id') ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
-                if ($tenantId) {
-                    $builder->where('tenant_id', $tenantId);
-                }
-            }
-        });
-    }
 
     public function tenant(): BelongsTo
     {

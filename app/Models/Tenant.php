@@ -6,10 +6,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Cashier\Billable;
 
 class Tenant extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, Billable;
+
+    protected static function booted(): void
+    {
+        static::created(function (Tenant $tenant) {
+            app(\App\Services\RolePermissionService::class)
+                ->createSystemRolesForTenant($tenant);
+        });
+    }
+
     protected $fillable = [
         'name',
         'slug',
@@ -33,19 +44,27 @@ class Tenant extends Model
         'subscription_tier',
         'monthly_budget',
         'notes',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at',
+        'brand_color',
+        'report_footer_text',
     ];
 
     protected $casts = [
-        'settings' => 'array',
+        'settings'            => 'array',
         'contract_start_date' => 'date',
-        'contract_end_date' => 'date',
-        'monthly_budget' => 'decimal:2',
+        'contract_end_date'   => 'date',
+        'monthly_budget'      => 'decimal:2',
+        'trial_ends_at'       => 'datetime',
     ];
 
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'tenant_users')
-            ->withPivot('role', 'invited_at', 'joined_at')
+            ->using(TenantUser::class)
+            ->withPivot('id', 'role', 'tenant_role_id', 'invited_at', 'joined_at')
             ->withTimestamps();
     }
 
@@ -67,6 +86,21 @@ class Tenant extends Model
     public function adMetrics(): HasMany
     {
         return $this->hasMany(AdMetric::class);
+    }
+
+    /**
+     * Determine if this tenant is an e-commerce business.
+     */
+    public function isEcommerce(): bool
+    {
+        return in_array($this->industry, [
+            'e_commerce_retail',
+            'fmcg_cpg',
+            'fashion_luxury',
+            'hospitality_food_services',
+            'travel_destinations',
+            'automotive',
+        ], true);
     }
 
     public function dashboards(): HasMany

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
 use App\Models\AdAccount;
@@ -31,20 +32,25 @@ class GoogleAdsIntegrationController extends Controller
             $user = $request->user();
             $tenant = $request->current_tenant;
 
+            // Resolve tenant_id: prefer explicit current_tenant, then user default, then first tenant for super admins
+            $tenantId = $tenant?->id
+                ?? $user->default_tenant_id
+                ?? ($user->isSuperAdmin() ? \App\Models\Tenant::value('id') : null);
+
             $stateData = [
                 'user_id' => $user->id,
-                'tenant_id' => $tenant ? $tenant->id : $user->default_tenant_id,
+                'tenant_id' => $tenantId,
                 'timestamp' => time(),
                 'nonce' => Str::random(32)
             ];
 
-            $state = base64_encode(json_encode($stateData));
+            $state = OAuthStateHelper::generate($stateData);
 
             $authUrl = $this->googleAdsService->getAuthorizationUrl($state);
 
             Log::info('Google Ads OAuth redirect initiated', [
                 'user_id' => $user->id,
-                'tenant_id' => $tenant ? $tenant->id : $user->default_tenant_id,
+                'tenant_id' => $tenantId,
             ]);
 
             return response()->json([
@@ -55,7 +61,7 @@ class GoogleAdsIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Google Ads OAuth redirect failed', [
                 'user_id' => $request->user()->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -70,8 +76,8 @@ class GoogleAdsIntegrationController extends Controller
         try {
             // Check if Google Ads is configured first
             if (!$this->googleAdsService->isAvailable()) {
-                $developerToken = env('GOOGLE_ADS_DEVELOPER_TOKEN', '');
-                $apiKey = env('GOOGLE_ADS_API_KEY', '');
+                $developerToken = config('services.google_ads.developer_token', '');
+                $apiKey = config('services.google_ads.api_key', '');
 
                 $message = 'Google Ads integration requires configuration. Choose one option: ';
                 $message .= '1) Get Developer Token from https://ads.google.com/ → Tools & Settings → API Center, OR ';
@@ -92,7 +98,7 @@ class GoogleAdsIntegrationController extends Controller
             return $this->redirect($request);
         } catch (\Exception $e) {
             Log::error('Google Ads auth URL generation failed', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -125,21 +131,24 @@ class GoogleAdsIntegrationController extends Controller
 
             // Decode and validate state
             try {
-                $stateData = json_decode(base64_decode($state), true);
+                $stateData = OAuthStateHelper::validate($state);
 
-                if (!$stateData || !isset($stateData['user_id'], $stateData['tenant_id'], $stateData['timestamp'], $stateData['nonce'])) {
-                    throw new \Exception('Invalid state parameter structure');
+                $requiredKeys = ['user_id', 'tenant_id', 'timestamp', 'nonce'];
+                foreach ($requiredKeys as $key) {
+                    if (!array_key_exists($key, $stateData ?? [])) {
+                        throw new \Exception('Invalid state parameter structure');
+                    }
                 }
 
-                // Check if state is not too old (5 minutes max)
-                if (time() - $stateData['timestamp'] > 300) {
+                // Check if state is not too old (10 minutes max)
+                if (time() - $stateData['timestamp'] > 600) {
                     throw new \Exception('OAuth state has expired');
                 }
 
             } catch (\Exception $e) {
                 Log::error('Invalid Google Ads OAuth state', [
                     'state' => $state,
-                    'error' => $e->getMessage()
+                    'error' => 'An unexpected error occurred'
                 ]);
 
                 return redirect(config('app.url') . '/integrations?error=' . urlencode('Invalid or expired authorization state.'));
@@ -192,10 +201,7 @@ class GoogleAdsIntegrationController extends Controller
             return redirect(config('app.url') . '/integrations?success=google_ads_connected&accounts=' . $syncResult['synced_count']);
 
         } catch (\Exception $e) {
-            Log::error('Google Ads OAuth callback failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Google Ads OAuth callback failed', ['error' => 'An unexpected error occurred']);
 
             return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to complete Google Ads integration. Please try again.'));
         }
@@ -243,7 +249,7 @@ class GoogleAdsIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Google Ads disconnect failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -259,8 +265,8 @@ class GoogleAdsIntegrationController extends Controller
         try {
             // Check if Google Ads is configured
             if (!$this->googleAdsService->isAvailable()) {
-                $developerToken = env('GOOGLE_ADS_DEVELOPER_TOKEN', '');
-                $apiKey = env('GOOGLE_ADS_API_KEY', '');
+                $developerToken = config('services.google_ads.developer_token', '');
+                $apiKey = config('services.google_ads.api_key', '');
 
                 $message = 'Google Ads integration requires configuration. Choose one option: ';
                 $message .= '1) Get Developer Token from https://ads.google.com/ → Tools & Settings → API Center, OR ';
@@ -337,7 +343,7 @@ class GoogleAdsIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Google Ads status check failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -346,7 +352,7 @@ class GoogleAdsIntegrationController extends Controller
                 'configured' => false,
                 'accounts_count' => 0,
                 'campaigns_count' => 0,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
         }
     }
@@ -396,7 +402,7 @@ class GoogleAdsIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Google Ads accounts fetch failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -449,7 +455,7 @@ class GoogleAdsIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Google Ads accounts sync failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 
@@ -473,26 +479,40 @@ class GoogleAdsIntegrationController extends Controller
                 // Detect industry for this account
                 $industry = $this->industryDetectionService->detectIndustry($account['name'] ?? '');
 
-                AdAccount::updateOrCreate(
-                    [
+                $accountConfig = [
+                    'customer_id' => $account['customer_id'] ?? null,
+                    'time_zone' => $account['time_zone'] ?? null,
+                    'is_manager' => $account['is_manager'] ?? false,
+                    'is_test_account' => $account['is_test_account'] ?? false,
+                    'parent_manager_id' => $account['parent_manager_id'] ?? null,
+                ];
+
+                $existing = AdAccount::where('integration_id', $integration->id)
+                    ->where('external_account_id', $account['id'])
+                    ->first();
+
+                if ($existing) {
+                    // Update but preserve tenant_id assignment
+                    $existing->update([
+                        'account_name' => $account['name'],
+                        'currency' => $account['currency'] ?? 'USD',
+                        'status' => $account['status'] ?? 'active',
+                        'industry' => $existing->industry ?? $industry,
+                        'account_config' => $accountConfig,
+                    ]);
+                } else {
+                    // New account — leave unassigned (null tenant)
+                    AdAccount::create([
                         'integration_id' => $integration->id,
+                        'tenant_id' => null,
                         'external_account_id' => $account['id'],
-                    ],
-                    [
-                        'tenant_id' => $integration->tenant_id,
                         'account_name' => $account['name'],
                         'currency' => $account['currency'] ?? 'USD',
                         'status' => $account['status'] ?? 'active',
                         'industry' => $industry,
-                        'account_config' => [
-                            'customer_id' => $account['customer_id'] ?? null,
-                            'time_zone' => $account['time_zone'] ?? null,
-                            'is_manager' => $account['is_manager'] ?? false,
-                            'is_test_account' => $account['is_test_account'] ?? false,
-                            'parent_manager_id' => $account['parent_manager_id'] ?? null,
-                        ],
-                    ]
-                );
+                        'account_config' => $accountConfig,
+                    ]);
+                }
 
                 $syncedCount++;
             }
@@ -524,7 +544,7 @@ class GoogleAdsIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Google Ads accounts sync failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             throw $e;
@@ -568,7 +588,7 @@ class GoogleAdsIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Google Ads connection test failed', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tenant_id' => $request->current_tenant ? $request->current_tenant->id : null
             ]);
 

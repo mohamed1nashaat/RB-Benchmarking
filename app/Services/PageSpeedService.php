@@ -15,7 +15,7 @@ class PageSpeedService
 
     /**
      * Analyze a URL with PageSpeed Insights.
-     * Results are cached for 6 hours.
+     * Results are cached for 24 hours.
      */
     public function analyze(string $url, string $strategy = 'mobile'): ?array
     {
@@ -23,6 +23,10 @@ class PageSpeedService
 
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
+            // Serve cached error markers as-is (prevents hammering a quota-exceeded API)
+            if (isset($cached['_error'])) {
+                return $cached;
+            }
             // Don't serve cached empty results — treat as cache miss
             if ($this->hasMeaningfulData($cached)) {
                 return $cached;
@@ -32,7 +36,10 @@ class PageSpeedService
 
         $result = $this->fetchAnalysis($url, $strategy);
         if ($result !== null && $this->hasMeaningfulData($result)) {
-            Cache::put($cacheKey, $result, 6 * 3600);
+            Cache::put($cacheKey, $result, 24 * 3600);
+        } elseif ($result !== null && isset($result['_error'])) {
+            // Cache error results for 10 minutes to avoid hammering the API
+            Cache::put($cacheKey, $result, 600);
         }
         return $result;
     }
@@ -64,7 +71,18 @@ class PageSpeedService
                     'status' => $response->status(),
                     'body' => substr($response->body(), 0, 300),
                 ]);
-                return null;
+                // Return a typed error so the UI can show a specific message
+                if ($response->status() === 429) {
+                    return ['_error' => 'quota_exceeded'];
+                }
+                if ($response->status() === 403) {
+                    $reason = $response->json()['error']['errors'][0]['reason'] ?? null;
+                    if (in_array($reason, ['dailyLimitExceeded', 'rateLimitExceeded', 'userRateLimitExceeded'])) {
+                        return ['_error' => 'quota_exceeded'];
+                    }
+                    return ['_error' => 'api_forbidden'];
+                }
+                return ['_error' => 'api_error'];
             }
 
             $data = $response->json();
@@ -87,7 +105,7 @@ class PageSpeedService
                 'strategy' => $strategy,
                 'error' => $e->getMessage(),
             ]);
-            return null;
+            return ['_error' => 'api_error'];
         }
     }
 
@@ -118,6 +136,7 @@ class PageSpeedService
         return [
             'scores' => $scores,
             'core_web_vitals' => $coreWebVitals,
+            'audits' => $this->extractSeoAudits($audits),
         ];
     }
 
@@ -147,6 +166,34 @@ class PageSpeedService
         return 'poor';
     }
 
+    /**
+     * Extract only the curated SEO-relevant Lighthouse audits.
+     * Returns [audit_id => ['score' => float|null, 'title' => string]]
+     */
+    protected function extractSeoAudits(array $audits): array
+    {
+        $curatedIds = [
+            'is-crawlable', 'http-status-code', 'robots-txt',
+            'meta-description', 'document-title', 'canonical',
+            'hreflang', 'crawlable-anchors', 'structured-data',
+            'image-alt', 'link-text', 'heading-order',
+            'tap-targets', 'font-size',
+            'render-blocking-resources', 'total-byte-weight',
+        ];
+
+        $extracted = [];
+        foreach ($curatedIds as $id) {
+            if (isset($audits[$id])) {
+                $extracted[$id] = [
+                    'score' => $audits[$id]['score'] ?? null,
+                    'title' => $audits[$id]['title'] ?? $id,
+                ];
+            }
+        }
+
+        return $extracted;
+    }
+
     protected function hasMeaningfulData(array $result): bool
     {
         $scores = $result['scores'] ?? [];
@@ -154,27 +201,5 @@ class PageSpeedService
             || ($scores['seo'] ?? 0) > 0
             || ($scores['accessibility'] ?? 0) > 0
             || ($scores['best_practices'] ?? 0) > 0;
-    }
-
-    protected function emptyResult(): array
-    {
-        return [
-            'scores' => [
-                'performance' => 0,
-                'seo' => 0,
-                'accessibility' => 0,
-                'best_practices' => 0,
-            ],
-            'core_web_vitals' => [
-                'lcp' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'fid' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'cls' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'fcp' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'tbt' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'tti' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'ttfb' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-                'si' => ['value' => null, 'display' => '-', 'score' => 'unknown'],
-            ],
-        ];
     }
 }

@@ -56,9 +56,9 @@ class ImportGoogleAdsCsv extends Command
             return 1;
         }
 
-        $this->info("Using Integration ID: {$integration->id} (Tenant: {$integration->tenant->name})");
+        $this->info("Using Integration ID: {$integration->id} (Tenant: " . ($integration->tenant?->name ?? 'No Tenant') . ")");
 
-        // Get or create ad account
+        // Get or create ad account (from --customer-id option)
         $adAccount = null;
         if ($customerId) {
             $adAccount = $this->getOrCreateAdAccount($integration, $customerId, $isDryRun);
@@ -72,48 +72,103 @@ class ImportGoogleAdsCsv extends Command
         $this->info("Starting CSV import...");
         $this->newLine();
 
-        // Open and read CSV
-        $handle = fopen($filePath, 'r');
-        if (!$handle) {
-            $this->error("Could not open file: {$filePath}");
+        // Read file with UTF-16 auto-detection
+        $raw = file_get_contents($filePath);
+        if ($raw === false) {
+            $this->error("Could not read file: {$filePath}");
+            return 1;
+        }
+        $content = $this->convertToUtf8($raw);
+
+        // Split into lines and detect delimiter (tab vs comma)
+        $lines = explode("\n", $content);
+        $lines = array_values(array_filter($lines, fn($l) => trim($l) !== ''));
+
+        if (empty($lines)) {
+            $this->error("File is empty");
             return 1;
         }
 
-        // Read header row
-        $headers = fgetcsv($handle);
-        if (!$headers) {
-            $this->error("Could not read CSV headers");
-            fclose($handle);
-            return 1;
+        // Skip Google Ads export title/date-range header lines
+        // Google exports start with report name ("Campaign report", etc.) then date range ("All time", "Jan 1 - Mar 12, 2026", etc.)
+        // The real header row contains column names like "Campaign", "Day", "Clicks"
+        $headerIndex = $this->findHeaderRow($lines);
+        if ($headerIndex > 0) {
+            $this->info("Skipped {$headerIndex} Google Ads header line(s)");
         }
 
-        // Normalize headers (remove BOM, trim, lowercase)
+        // Detect delimiter from header row
+        $delimiter = $this->detectDelimiter($lines[$headerIndex]);
+
+        // Parse headers
+        $headers = str_getcsv($lines[$headerIndex], $delimiter);
         $headers = array_map(function($header) {
             return strtolower(trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $header)));
         }, $headers);
 
+        $this->info("Delimiter: " . ($delimiter === "\t" ? 'TAB' : 'COMMA'));
         $this->info("Detected columns: " . implode(', ', $headers));
         $this->newLine();
+
+        // Check for multi-account column (MCC exports)
+        $hasAccountColumn = $this->hasAccountColumn($headers);
+        if ($hasAccountColumn) {
+            $this->info("Multi-account CSV detected — will auto-match rows to accounts");
+        }
 
         // Detect CSV format
         $csvFormat = $this->detectCsvFormat($headers);
         $this->info("Detected format: {$csvFormat}");
         $this->newLine();
 
-        // Process rows
-        $progressBar = $this->output->createProgressBar();
+        // Process data rows
+        $dataLines = array_slice($lines, $headerIndex + 1);
+        $progressBar = $this->output->createProgressBar(count($dataLines));
         $progressBar->start();
 
-        while (($row = fgetcsv($handle)) !== false) {
+        // Cache for account lookups in multi-account mode
+        $accountCache = [];
+
+        foreach ($dataLines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                $progressBar->advance();
+                continue;
+            }
+
+            $fields = str_getcsv($line, $delimiter);
+
+            // Pad or trim fields to match header count
+            while (count($fields) < count($headers)) {
+                $fields[] = '';
+            }
+
+            $data = array_combine($headers, array_slice($fields, 0, count($headers)));
+            if (!$data) {
+                $progressBar->advance();
+                continue;
+            }
+
             $this->stats['rows_processed']++;
 
             try {
-                $data = array_combine($headers, $row);
+                // Multi-account: resolve account from row data
+                $rowAccount = $adAccount;
+                if ($hasAccountColumn && !$rowAccount) {
+                    $rowCustomerId = $this->extractCustomerIdFromRow($data);
+                    if ($rowCustomerId) {
+                        $normalizedId = str_replace('-', '', $rowCustomerId);
+                        if (!isset($accountCache[$normalizedId])) {
+                            $accountCache[$normalizedId] = $this->getOrCreateAdAccount($integration, $rowCustomerId, $isDryRun);
+                        }
+                        $rowAccount = $accountCache[$normalizedId];
+                    }
+                }
 
                 if ($csvFormat === 'campaign_performance') {
-                    $this->processCampaignPerformanceRow($data, $integration, $adAccount, $isDryRun);
+                    $this->processCampaignPerformanceRow($data, $integration, $rowAccount, $isDryRun);
                 } else {
-                    $this->processGenericRow($data, $integration, $adAccount, $isDryRun);
+                    $this->processGenericRow($data, $integration, $rowAccount, $isDryRun);
                 }
 
             } catch (\Exception $e) {
@@ -130,8 +185,6 @@ class ImportGoogleAdsCsv extends Command
 
         $progressBar->finish();
         $this->newLine(2);
-
-        fclose($handle);
 
         // Display summary
         $this->displaySummary($isDryRun);
@@ -153,6 +206,90 @@ class ImportGoogleAdsCsv extends Command
         return Integration::where('platform', 'google')
             ->where('status', 'active')
             ->first();
+    }
+
+    private function convertToUtf8(string $content): string
+    {
+        // UTF-16 LE BOM
+        if (str_starts_with($content, "\xFF\xFE")) {
+            return mb_convert_encoding(substr($content, 2), 'UTF-8', 'UTF-16LE');
+        }
+        // UTF-16 BE BOM
+        if (str_starts_with($content, "\xFE\xFF")) {
+            return mb_convert_encoding(substr($content, 2), 'UTF-8', 'UTF-16BE');
+        }
+        // UTF-16 without BOM (null bytes present)
+        if (str_contains(substr($content, 0, 100), "\x00")) {
+            return mb_convert_encoding($content, 'UTF-8', 'UTF-16');
+        }
+        // UTF-8 BOM
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            return substr($content, 3);
+        }
+        return $content;
+    }
+
+    private function detectDelimiter(string $headerLine): string
+    {
+        $tabCount = substr_count($headerLine, "\t");
+        $commaCount = substr_count($headerLine, ',');
+
+        return $tabCount > $commaCount ? "\t" : ',';
+    }
+
+    private function findHeaderRow(array $lines): int
+    {
+        // Google Ads exports prepend title + date-range lines before the actual column headers.
+        // The header row contains known column names like "campaign", "day", "clicks", "impr.", "cost".
+        $knownColumns = ['campaign', 'day', 'clicks', 'impr.', 'cost', 'impressions', 'date', 'spend'];
+
+        foreach ($lines as $i => $line) {
+            $lower = strtolower($line);
+            $matches = 0;
+            foreach ($knownColumns as $col) {
+                if (str_contains($lower, $col)) {
+                    $matches++;
+                }
+            }
+            // If at least 2 known column names found, treat as header
+            if ($matches >= 2) {
+                return $i;
+            }
+        }
+
+        return 0; // fallback: first line is header
+    }
+
+    private function hasAccountColumn(array $headers): bool
+    {
+        $accountColumns = [
+            'account external customer id',
+            'customer id',
+            'account id',
+            'client customer id',
+        ];
+        foreach ($accountColumns as $col) {
+            if (in_array($col, $headers)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function extractCustomerIdFromRow(array $data): ?string
+    {
+        $columns = [
+            'account external customer id',
+            'customer id',
+            'account id',
+            'client customer id',
+        ];
+        foreach ($columns as $col) {
+            if (isset($data[$col]) && !empty(trim($data[$col]))) {
+                return trim($data[$col]);
+            }
+        }
+        return null;
     }
 
     private function getOrCreateAdAccount(Integration $integration, string $customerId, bool $isDryRun): ?AdAccount
@@ -284,7 +421,7 @@ class ImportGoogleAdsCsv extends Command
         // Try to find existing campaign
         $campaign = AdCampaign::where('ad_account_id', $adAccount->id)
             ->where(function($query) use ($campaignName, $campaignId) {
-                $query->where('campaign_name', $campaignName);
+                $query->where('name', $campaignName);
                 if ($campaignId) {
                     $query->orWhere('external_campaign_id', $campaignId);
                 }
@@ -305,7 +442,7 @@ class ImportGoogleAdsCsv extends Command
         $campaign = AdCampaign::create([
             'ad_account_id' => $adAccount->id,
             'external_campaign_id' => $campaignId ?? 'csv_' . md5($campaignName),
-            'campaign_name' => $campaignName,
+            'name' => $campaignName,
             'status' => 'active',
             'objective' => null,
         ]);

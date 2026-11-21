@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Tenant;
+use App\Models\TenantRole;
 use App\Models\User;
 use App\Models\UserInvitation;
 use App\Notifications\TenantInvitationNotification;
@@ -11,11 +12,35 @@ use Illuminate\Support\Facades\Hash;
 
 class UserInvitationService
 {
+    private const ALLOWED_EMAIL_DOMAIN = 'redbananas.com';
+
+    /**
+     * Ensure the email domain is allowed for sign-up.
+     */
+    private function ensureAllowedEmailDomain(string $email): void
+    {
+        $domain = strtolower(substr(strrchr($email, '@'), 1));
+
+        if ($domain !== self::ALLOWED_EMAIL_DOMAIN) {
+            throw new \InvalidArgumentException(__('pages.users.email_domain_not_allowed', ['domain' => self::ALLOWED_EMAIL_DOMAIN]));
+        }
+    }
+
     /**
      * Create and send an invitation.
      */
-    public function invite(Tenant $tenant, string $email, string $role, User $inviter): UserInvitation
+    public function invite(Tenant $tenant, string $email, int $roleId, User $inviter): UserInvitation
     {
+        $this->ensureAllowedEmailDomain($email);
+
+        $role = TenantRole::where('id', $roleId)
+            ->where('tenant_id', $tenant->id)
+            ->first();
+
+        if (!$role) {
+            throw new \InvalidArgumentException('Selected role is not valid for this organization.');
+        }
+
         // Check if user already exists in this tenant
         $existingUser = User::where('email', $email)->first();
         if ($existingUser && $existingUser->hasAccessToTenant($tenant)) {
@@ -26,13 +51,14 @@ class UserInvitationService
         UserInvitation::forTenant($tenant->id)
             ->where('email', $email)
             ->pending()
-            ->update(['accepted_at' => now()]); // Mark as cancelled by setting accepted
+            ->update(['accepted_at' => now()]);
 
         // Create new invitation
         $invitation = UserInvitation::create([
             'tenant_id' => $tenant->id,
             'email' => $email,
-            'role' => $role,
+            'role' => $role->is_system ? $role->name : 'viewer',
+            'tenant_role_id' => $role->id,
             'token' => UserInvitation::generateToken(),
             'invited_by' => $inviter->id,
             'expires_at' => now()->addHours(48),
@@ -95,6 +121,8 @@ class UserInvitationService
             }
         }
 
+        $this->ensureAllowedEmailDomain($invitation->email);
+
         return DB::transaction(function () use ($invitation, $name, $password) {
             $existingUser = User::where('email', $invitation->email)->first();
 
@@ -119,7 +147,10 @@ class UserInvitationService
             // Add user to tenant if not already a member
             if (!$user->hasAccessToTenant($invitation->tenant)) {
                 $user->tenants()->attach($invitation->tenant_id, [
-                    'role' => $invitation->role,
+                    'role' => $invitation->tenant_role_id
+                        ? ($invitation->tenantRole?->is_system ? $invitation->tenantRole->name : 'viewer')
+                        : $invitation->role,
+                    'tenant_role_id' => $invitation->tenant_role_id,
                     'invited_at' => $invitation->created_at,
                     'joined_at' => now(),
                     'invited_by' => $invitation->invited_by,

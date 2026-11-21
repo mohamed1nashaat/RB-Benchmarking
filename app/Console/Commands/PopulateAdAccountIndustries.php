@@ -46,7 +46,7 @@ class PopulateAdAccountIndustries extends Command
         }
 
         // Build query
-        $query = AdAccount::withoutGlobalScope('tenant')
+        $query = AdAccount::query()
             ->with('integration');
 
         // Filter by specific account

@@ -16,6 +16,7 @@ class UserInvitation extends Model
         'tenant_id',
         'email',
         'role',
+        'tenant_role_id',
         'token',
         'invited_by',
         'expires_at',
@@ -88,6 +89,14 @@ class UserInvitation extends Model
     public function inviter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by');
+    }
+
+    /**
+     * Get the tenant role assigned to this invitation.
+     */
+    public function tenantRole(): BelongsTo
+    {
+        return $this->belongsTo(TenantRole::class);
     }
 
     /**

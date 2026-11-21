@@ -35,12 +35,12 @@ class GoogleAdsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error getting Google Ads OAuth URL', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'error' => 'Failed to generate authorization URL',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -80,10 +80,10 @@ class GoogleAdsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error handling Google Ads OAuth callback', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
-            return redirect('/integrations?google_ads_auth=error&message=' . urlencode('Authorization failed: ' . $e->getMessage()));
+            return redirect('/integrations?google_ads_auth=error&message=' . urlencode('Authorization failed'));
         }
     }
 
@@ -110,7 +110,7 @@ class GoogleAdsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error checking Google Ads auth status', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -131,13 +131,13 @@ class GoogleAdsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error testing Google Ads connection', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'success' => false,
                 'error' => 'Connection test failed',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -153,13 +153,13 @@ class GoogleAdsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error syncing Google Ads accounts', [
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
                 'success' => false,
                 'error' => 'Account sync failed',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }

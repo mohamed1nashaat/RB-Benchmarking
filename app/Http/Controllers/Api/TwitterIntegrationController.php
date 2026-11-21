@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
+use App\Models\AdAccount;
 use App\Models\Integration;
 use App\Services\TwitterAdsService;
 use App\Services\IndustryDetector;
@@ -35,13 +37,14 @@ class TwitterIntegrationController extends Controller
 
         // Generate state parameter with user and tenant info
         $stateData = [
-            'user_id' => $request->user()->id,
+            
+            'redirect_uri' => config('services.' . basename(app/Http/Controllers/Api/TwitterIntegrationController.php, 'IntegrationController.php') . '.redirect_uri'),'user_id' => $request->user()->id,
             'tenant_id' => $request->current_tenant ? $request->current_tenant->id : $request->user()->default_tenant_id,
             'timestamp' => time(),
             'nonce' => Str::random(32)
         ];
 
-        $state = base64_encode(json_encode($stateData));
+        $state = OAuthStateHelper::generate($stateData);
 
         try {
             $oauthUrl = $this->twitterService->getAuthorizationUrl($state);
@@ -54,7 +57,7 @@ class TwitterIntegrationController extends Controller
             Log::error('Twitter OAuth initiation failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to initiate X/Twitter OAuth',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -79,14 +82,18 @@ class TwitterIntegrationController extends Controller
         }
 
         try {
-            $stateData = json_decode(base64_decode($state), true);
+            $stateData = OAuthStateHelper::validate($state);
 
             if (!$stateData || !isset($stateData['user_id'], $stateData['tenant_id'])) {
                 throw new \Exception('Invalid state data');
             }
 
             // Check if state is not too old (1 hour max)
-            if (time() - $stateData['timestamp'] > 3600) {
+            if (($stateData['redirect_uri'] ?? null) !== config('services.' . strtolower(basename(app/Http/Controllers/Api/TwitterIntegrationController.php, 'IntegrationController.php')) . '.redirect_uri')) {
+                    throw new \Exception('Invalid redirect URI in state');
+                }
+
+                if (time() - $stateData['timestamp'] > 3600) {
                 throw new \Exception('State expired');
             }
 
@@ -125,7 +132,7 @@ class TwitterIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Twitter OAuth callback failed: ' . $e->getMessage());
-            return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to connect X/Twitter: ' . $e->getMessage()));
+            return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to connect X/Twitter'));
         }
     }
 
@@ -247,7 +254,7 @@ class TwitterIntegrationController extends Controller
             Log::error('Twitter sync failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to sync X/Twitter data',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -288,7 +295,7 @@ class TwitterIntegrationController extends Controller
             Log::error('Twitter disconnect failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to disconnect X/Twitter integration',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -330,7 +337,7 @@ class TwitterIntegrationController extends Controller
             Log::error('Twitter connection test failed: ' . $e->getMessage());
             return response()->json([
                 'connected' => false,
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ], 500);
         }
     }

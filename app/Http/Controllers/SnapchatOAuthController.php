@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Scopes\TenantScope;
 
 use App\Models\Integration;
 use App\Models\AdAccount;
@@ -48,9 +49,7 @@ class SnapchatOAuthController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to generate Snapchat OAuth URL', [
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'error' => 'An unexpected error occurred',]);
 
             return response()->json([
                 'success' => false,
@@ -116,12 +115,9 @@ class SnapchatOAuthController extends Controller
                 "Snapchat connected successfully! Found {$adAccounts->count()} ad accounts.");
 
         } catch (\Exception $e) {
-            Log::error('Snapchat OAuth callback exception', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Snapchat OAuth callback exception', ['error' => 'An unexpected error occurred']);
 
-            return redirect('/dashboard')->with('error', 'Connection failed: ' . $e->getMessage());
+            return redirect('/dashboard')->with('error', 'Connection failed. Please try again.');
         } finally {
             // Clear OAuth state from session
             session()->forget('snapchat_oauth_state');
@@ -173,7 +169,7 @@ class SnapchatOAuthController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to get Snapchat integration status', [
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -221,7 +217,7 @@ class SnapchatOAuthController extends Controller
 
             Log::error('Failed to disconnect Snapchat integration', [
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([
@@ -265,13 +261,13 @@ class SnapchatOAuthController extends Controller
 
             // Store ad accounts
             foreach ($adAccounts as $account) {
-                AdAccount::updateOrCreate(
+                AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                     [
                         'external_account_id' => $account['id'],
                         'integration_id' => $integration->id
                     ],
                     [
-                        'tenant_id' => auth()->user()->tenant_id,
+                        'tenant_id' => AdAccount::syncTenantId($integration->id, $account['id'], $integration->tenant_id),
                         'account_name' => $account['name'],
                         'currency' => $account['currency'],
                         'timezone' => $account['timezone'],
@@ -359,7 +355,7 @@ class SnapchatOAuthController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to refresh Snapchat token', [
                 'user_id' => Auth::id(),
-                'error' => $e->getMessage()
+                'error' => 'An unexpected error occurred'
             ]);
 
             return response()->json([

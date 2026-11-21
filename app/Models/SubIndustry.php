@@ -30,7 +30,7 @@ class SubIndustry extends Model
 
     public function adCampaigns(): HasMany
     {
-        return $this->hasMany(AdCampaign::class, 'sub_industry', 'name');
+        return $this->hasMany(AdCampaign::class);
     }
 
     public function scopeActive(Builder $query): Builder

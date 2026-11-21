@@ -97,9 +97,7 @@ class CheckAlerts extends Command
 
             Log::error('Failed to check alerts for tenant', [
                 'tenant_id' => $tenantId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+                'error' => $e->getMessage(),]);
 
             return [
                 'evaluated' => 0,

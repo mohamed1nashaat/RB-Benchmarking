@@ -34,7 +34,7 @@ class PopulateCampaignCategories extends Command
         }
 
         // Build query
-        $query = AdCampaign::withoutGlobalScope('tenant')
+        $query = AdCampaign::query()
             ->with('adAccount');
 
         // Filter by specific account

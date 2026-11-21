@@ -27,10 +27,11 @@ class BackfillFacebookMetrics extends Command
         $fullHistory = $this->option('full-history');
 
         // Parse date range
+        // Facebook Insights API limits to 37 months of historical data
+        $facebookMaxMonths = 37;
         if ($fullHistory) {
-            // Backfill all available historical data (20+ years)
-            $startDate = Carbon::now()->subYears(20)->format('Y-m-d');
-            $this->warn("Full history mode enabled - fetching 20+ years of data. This may take a while...");
+            $startDate = Carbon::now()->subMonths($facebookMaxMonths)->format('Y-m-d');
+            $this->warn("Full history mode enabled - fetching up to {$facebookMaxMonths} months of data (Facebook API limit). This may take a while...");
         } else {
             $startDate = $this->option('start-date')
                 ? Carbon::parse($this->option('start-date'))->format('Y-m-d')
@@ -70,7 +71,7 @@ class BackfillFacebookMetrics extends Command
 
         foreach ($integrations as $integration) {
             $this->info("Processing Integration ID: {$integration->id}");
-            $this->info("Tenant: {$integration->tenant->name}");
+            $this->info("Tenant: " . ($integration->tenant?->name ?? 'No Tenant'));
 
             $config = $integration->app_config;
             if (is_string($config)) {
@@ -132,9 +133,7 @@ class BackfillFacebookMetrics extends Command
                     Log::error('Facebook backfill failed for account', [
                         'account_id' => $adAccount->id,
                         'integration_id' => $integration->id,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
+                        'error' => $e->getMessage(),]);
                 }
 
                 $this->newLine();

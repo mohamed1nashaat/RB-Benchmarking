@@ -28,19 +28,35 @@ return new class extends Migration
             });
 
         // Step 2: Sync metrics funnel_stage from their parent campaign
+        // Use subquery syntax compatible with both MySQL and SQLite
         DB::statement("
-            UPDATE ad_metrics m
-            JOIN ad_campaigns c ON m.ad_campaign_id = c.id
-            SET m.funnel_stage = c.funnel_stage
-            WHERE m.funnel_stage IS NULL AND c.funnel_stage IS NOT NULL
+            UPDATE ad_metrics
+            SET funnel_stage = (
+                SELECT c.funnel_stage FROM ad_campaigns c
+                WHERE c.id = ad_metrics.ad_campaign_id
+            )
+            WHERE funnel_stage IS NULL
+              AND ad_campaign_id IS NOT NULL
+              AND EXISTS (
+                  SELECT 1 FROM ad_campaigns c
+                  WHERE c.id = ad_metrics.ad_campaign_id AND c.funnel_stage IS NOT NULL
+              )
         ");
 
         // Also fix metrics that had MOF from the old leads mapping
         DB::statement("
-            UPDATE ad_metrics m
-            JOIN ad_campaigns c ON m.ad_campaign_id = c.id
-            SET m.funnel_stage = c.funnel_stage
-            WHERE m.funnel_stage != c.funnel_stage AND c.funnel_stage IS NOT NULL
+            UPDATE ad_metrics
+            SET funnel_stage = (
+                SELECT c.funnel_stage FROM ad_campaigns c
+                WHERE c.id = ad_metrics.ad_campaign_id
+            )
+            WHERE ad_campaign_id IS NOT NULL
+              AND EXISTS (
+                  SELECT 1 FROM ad_campaigns c
+                  WHERE c.id = ad_metrics.ad_campaign_id
+                    AND c.funnel_stage IS NOT NULL
+                    AND c.funnel_stage != ad_metrics.funnel_stage
+              )
         ");
     }
 

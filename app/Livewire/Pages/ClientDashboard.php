@@ -1,0 +1,2512 @@
+<?php
+
+namespace App\Livewire\Pages;
+
+use App\Models\AdAccount;
+use App\Models\AdCampaign;
+use App\Models\AccountCategory;
+use App\Models\AiVisibilityMonth;
+use App\Models\AiVisibilitySnapshot;
+use App\Models\Competitor;
+use App\Models\CompetitorVisibility;
+use App\Models\Industry;
+use App\Models\Integration;
+use App\Models\SeoTechnicalIssue;
+use App\Models\Tenant;
+use App\Services\AiVisibilityParser;
+use App\Services\ClientDashboardService;
+use App\Services\ClientPerformanceReportService;
+use App\Services\CurrencyConversionService;
+use App\Services\SearchConsoleService;
+use App\Services\GA4AnalyticsService;
+use App\Services\PageSpeedService;
+use App\Services\SeoAuditService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+use Carbon\Carbon;
+
+class ClientDashboard extends Component
+{
+    use WithFileUploads;
+
+    public int $clientId;
+
+    // Tab
+    public int $activeTabIndex = 0;
+
+    // Filters
+    public int $selectedPeriod = 30;
+    public string $selectedPlatform = '';
+    public string $dateFrom = '';
+    public string $dateTo = '';
+
+    // Chart type selectors
+    public string $platformChartType = 'doughnut';
+    public string $trendChartType = 'line';
+    public string $campaignsChartType = 'bar';
+
+    // State
+    public bool $loading = true;
+    public bool $exporting = false;
+    public ?array $dashboardData = null;
+    public string $error = '';
+
+    // SEO state
+    public int $seoPeriod = 30;
+    public string $seoDateFrom = '';
+    public string $seoDateTo = '';
+    public bool $seoLoading = false;
+    public ?array $seoReportData = null;
+
+    // SEO Settings
+    public bool $seoSettingsOpen = true;
+    public bool $seoSaving = false;
+    public bool $seoSaved = false;
+    public array $seoSearchConsoleSites = [];
+    public array $seoGa4Properties = [];
+    public ?string $seoSearchConsoleSite = null;
+    public ?string $seoGa4PropertyId = null;
+    public ?string $seoGa4PropertyName = null;
+    public ?string $seoPagespeedUrl = null;
+    public bool $seoHasIntegration = false;
+    public bool $seoLoadingSites = false;
+    public bool $seoLoadingProperties = false;
+    private bool $seoSettingsLoaded = false;
+
+    // Comparison toggle
+    public bool $seoCompareEnabled = true;
+
+    // PageSpeed on-demand state
+    public bool $pagespeedLoading = false;
+
+    // Audit sub-tab
+    public array $auditIssues = [];
+    public bool $auditLoading = false;
+    public string $auditStatusFilter = 'all';
+    public string $auditSeverityFilter = 'all';
+    public ?int $editingIssueId = null;
+    public string $editingIssueStatus = '';
+    public string $editingIssueNotes = '';
+
+    // Inline editing state for Ad Accounts
+    public ?int $editingAccountId = null;
+    public string $editAccountIndustry = '';
+    public string $editAccountCategory = '';
+    public string $editAccountSubCategory = '';
+
+    public string $aiVisibilitySection = 'overview';
+    public bool $aiSettingsLoaded = false;
+
+    public function setAiVisibilitySection(string $section): void
+    {
+        // The report is one page; older links to its former tabs open the report.
+        $section = in_array($section, ['diagnostics', 'competitors', 'research', 'traffic', 'citations'], true) ? 'overview' : $section;
+        if (in_array($section, ['overview', 'settings'], true)) {
+            if ($section === 'settings' && !$this->aiSettingsLoaded) {
+                $this->loadGoogleListsForAiTab();
+                $this->aiSettingsLoaded = true;
+            }
+            if ($section === 'settings') {
+                $this->loadAiTracking();
+            }
+            $this->aiVisibilitySection = $section;
+        }
+    }
+
+    public string $semrushDomain = '';
+    public string $semrushMonth = '';
+    public string $semrushCountry = '';
+    public string $semrushPlatform = '';
+    public string $semrushSearch = '';
+    public int $semrushLimit = 25;
+    // Prompt table: sort order and brand-presence filter ('' = all, strong, mentioned, cited).
+    public string $semrushPromptSort = 'strongest';
+    public string $semrushPresence = '';
+
+    public function updatedSemrushDomain(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushMonth(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushCountry(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushPlatform(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushSearch(): void { $this->semrushLimit = 25; }
+    public function updatedSemrushPromptSort(): void { $this->semrushLimit = 25; }
+    public function setSemrushPresence(string $presence): void
+    {
+        $this->semrushPresence = in_array($presence, ['strong', 'mentioned', 'cited'], true) ? $presence : '';
+        $this->semrushLimit = 25;
+    }
+    public function resetSemrushFilters(): void
+    {
+        $this->reset('semrushDomain', 'semrushMonth', 'semrushCountry', 'semrushPlatform', 'semrushSearch', 'semrushLimit', 'semrushPromptSort', 'semrushPresence');
+    }
+
+    /** How strongly a prompt answer features the brand: named and cited, named only, or cited without being named. */
+    public static function promptStrength(array $prompt): string
+    {
+        $cats = explode(';', $prompt['categories'] ?? '');
+        $named = in_array('mentions_target', $cats, true);
+        $cited = in_array('cites_target', $cats, true);
+
+        return $named && $cited ? 'strong' : ($named ? 'mentioned' : ($cited ? 'cited' : 'none'));
+    }
+
+    /** Sorts prompt rows; ties fall back to the biggest topics first. */
+    public static function sortPrompts(\Illuminate\Support\Collection $prompts, string $sort): \Illuminate\Support\Collection
+    {
+        $tier = ['strong' => 3, 'mentioned' => 2, 'cited' => 1, 'none' => 0];
+        $rows = $prompts->map(fn ($p) => $p + [
+            '_tier' => $tier[$p['strength'] ?? self::promptStrength($p)],
+            '_volume' => (int) ($p['topic_volume'] ?? 0),
+            '_visibility' => (float) ($p['topic_visibility'] ?? 0),
+            '_brands' => (int) ($p['mentioned_brands_count'] ?? 0),
+        ]);
+        $order = match ($sort) {
+            'weakest' => [['_tier', 'asc'], ['_volume', 'desc']],
+            'volume_desc' => [['_volume', 'desc'], ['_tier', 'desc']],
+            'volume_asc' => [['_volume', 'asc'], ['_tier', 'desc']],
+            'visibility_desc' => [['_visibility', 'desc'], ['_volume', 'desc']],
+            'visibility_asc' => [['_visibility', 'asc'], ['_volume', 'desc']],
+            'brands_desc' => [['_brands', 'desc'], ['_volume', 'desc']],
+            'brands_asc' => [['_brands', 'asc'], ['_volume', 'desc']],
+            default => [['_tier', 'desc'], ['_volume', 'desc']],
+        };
+
+        return $rows->sortBy($order)->values()
+            ->map(fn ($p) => array_diff_key($p, array_flip(['_tier', '_volume', '_visibility', '_brands'])));
+    }
+
+    public function showMoreSemrush(): void { $this->semrushLimit = min(2000, $this->semrushLimit + 50); }
+
+    #[\Livewire\Attributes\Computed]
+    public function semrushData(): array
+    {
+        $query = \App\Models\SemrushReport::where('tenant_id', $this->clientId);
+        $months = (clone $query)->distinct()->orderByDesc('report_month')->pluck('report_month');
+        $month = $months->contains($this->semrushMonth) ? $this->semrushMonth : $months->first();
+        $reports = (clone $query)->where('report_month', $month)->orderBy('domain')->get();
+        $report = $reports->firstWhere('domain', $this->semrushDomain) ?? $reports->firstWhere('is_client', true) ?? $reports->first();
+        if (!$report) return [];
+        $allPrompts = collect($report->prompts);
+        $countries = collect($report->topics)->pluck('country')->merge($allPrompts->pluck('country'))->unique()->sort()->values();
+        $filter = function ($row, $text) {
+            return (!$this->semrushCountry || $row['country'] === $this->semrushCountry)
+                && (!$this->semrushSearch || mb_stripos($text, $this->semrushSearch) !== false);
+        };
+        $topics = collect($report->topics)->filter(fn ($r) => $filter($r, $r['name']))->sortByDesc('visibility')->values();
+        $prompts = $allPrompts->filter(fn ($r) => $filter($r, $r['prompt'].' '.$r['topic_name'].' '.$r['brief_response'])
+            && (!$this->semrushPlatform || $r['llm'] === $this->semrushPlatform))
+            ->map(fn ($r) => $r + ['strength' => self::promptStrength($r)])->values();
+        // Counts per strength for the filter buttons, before the presence filter narrows the table.
+        $strengthCounts = $prompts->countBy('strength');
+        $promptRows = self::sortPrompts(
+            $this->semrushPresence ? $prompts->where('strength', $this->semrushPresence) : $prompts,
+            $this->semrushPromptSort
+        );
+        $summary = $reports->map(fn ($r) => [
+            'domain' => $r->domain, 'topics' => $r->metrics['topics'] ?? count($r->topics), 'prompts' => $r->metrics['prompts'] ?? count($r->prompts),
+            'monthly_audience' => $r->metrics['monthly_audience'] ?? null, 'estimated_gemini_visits' => $r->metrics['estimated_gemini_visits'] ?? null,
+            'overall_score' => $r->metrics['overall_score'] ?? null, 'cited_pages' => $r->metrics['cited_pages'] ?? null, 'cited_sources' => $r->metrics['cited_sources'] ?? null,
+            'mentions' => $r->metrics['mentions'] ?? collect($r->prompts)->filter(fn ($p) => in_array('mentions_target', explode(';', $p['categories'])))->count(),
+            'citations' => $r->metrics['citations'] ?? collect($r->prompts)->filter(fn ($p) => in_array('cites_target', explode(';', $p['categories'])))->count(),
+        ]);
+        return compact('months', 'month', 'reports', 'report', 'countries', 'topics', 'prompts', 'promptRows', 'strengthCounts', 'summary');
+    }
+
+    // AI Visibility tab
+    public $aiVisibilityFile = null;
+    public bool $aiUploading = false;
+    public string $aiUploadError = '';
+    public string $aiUploadSuccess = '';
+    public ?array $aiMonths = null;
+    public ?array $aiSnapshot = null;
+    public bool $aiSyncing = false;
+    public string $aiSyncError = '';
+    public string $aiSyncSuccess = '';
+    public int $aiPeriodMonths = 12;
+    // AI Visibility report: selected month (YYYY-MM, '' = default) and the headline metric.
+    public string $aiReportMonth = '';
+    // Monthly upload: workbook + Semrush exports, checked before saving.
+    public $aiImportFiles = [];
+    public string $aiImportDate = '';
+    public string $aiImportDomain = '';
+    public ?array $aiImportReport = null;
+    public string $aiImportResult = '';
+    public string $aiImportError = '';
+    // Manual snapshot entry (Semrush + Clarity)
+    public bool $aiSnapshotFormOpen = false;
+    public string $aiSnapshotMonth = '';
+    public ?int $aiSnapshotSemrushScore = null;
+    public ?int $aiSnapshotSemrushTopics = null;
+    public ?int $aiSnapshotSemrushPrompts = null;
+    public ?int $aiSnapshotClarityCitations = null;
+    public string $aiSnapshotSaveSuccess = '';
+
+    // AI prompt tracking (ChatGPT, Gemini, Perplexity)
+    public string $aiTrackDomain = '';
+    public string $aiTrackAliases = '';
+    public array $aiTrackEngines = [];
+    public string $aiNewPrompt = '';
+    public string $aiNewPromptCountry = '';
+    public string $aiTrackSaved = '';
+
+    // Competitors
+    public ?array $competitors = null;
+    public bool $competitorFormOpen = false;
+    public string $competitorName = '';
+    public string $competitorWebsite = '';
+    public string $competitorIndustry = '';
+    public string $competitorNotes = '';
+    public string $competitorAliases = '';
+    public ?int $editingCompetitorId = null;
+    // Competitor visibility entry form
+    public bool $competitorVisFormOpen = false;
+    public ?int $competitorVisId = null;
+    public string $competitorVisMonth = '';
+    public ?int $competitorVisAiImpressions = null;
+    public ?int $competitorVisAiSessions = null;
+    public ?int $competitorVisSemrushScore = null;
+    public ?int $competitorVisSemrushTopics = null;
+    public ?int $competitorVisClarityCitations = null;
+    public string $competitorVisSaveSuccess = '';
+
+    public function mount(int $id)
+    {
+        $this->clientId = $id;
+        $this->fetchDashboard();
+
+        // Auto-select Reports tab when ?reports is in the URL
+        if (request()->has('reports') || request()->query('tab') === 'reports') {
+            $this->activeTabIndex = 2;
+        }
+
+        // Auto-select SEO tab when ?seo or ?tab=seo is in the URL
+        if (request()->has('seo') || request()->query('tab') === 'seo') {
+            $this->activeTabIndex = 1;
+            $this->loadSeoProperties();
+            $this->fetchSeoReport();
+
+            // Panel is open by default — pre-load sites & properties
+            if ($this->seoHasIntegration) {
+                $this->loadSearchConsoleSites();
+                $this->loadGa4Properties();
+            }
+        }
+
+        // Auto-select AI Visibility tab when ?ai-visibility is in the URL
+        if (request()->has('ai-visibility') || request()->query('tab') === 'ai-visibility') {
+            $this->activeTabIndex = 3;
+            $this->loadAiVisibilityData();
+        }
+    }
+
+    public function setActiveTab(int $index)
+    {
+        $this->activeTabIndex = $index;
+        if ($index === 1) {
+            $this->loadSeoProperties();
+            if ($this->seoReportData === null) {
+                $this->fetchSeoReport();
+            }
+            // Panel is open by default — pre-load sites & properties
+            if ($this->seoSettingsOpen && empty($this->seoSearchConsoleSites) && $this->seoHasIntegration) {
+                $this->loadSearchConsoleSites();
+                $this->loadGa4Properties();
+            }
+        }
+        if ($index === 3) {
+            if ($this->aiMonths === null) {
+                $this->loadAiVisibilityData();
+            }
+            if ($this->aiVisibilitySection === 'settings' && !$this->aiSettingsLoaded) {
+                $this->loadGoogleListsForAiTab();
+                $this->aiSettingsLoaded = true;
+            }
+        }
+    }
+
+    // ─── AI Visibility Tab ────────────────────────────────────────────────────
+
+    public function loadAiVisibilityData(): void
+    {
+        $this->aiMonths = AiVisibilityMonth::where('tenant_id', $this->clientId)
+            ->orderBy('month')
+            ->get()
+            ->map(fn($m) => $m->toArray())
+            ->toArray();
+
+        $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+            ->latest('report_month')
+            ->first();
+
+        // report_tables feeds the server-rendered report only; keep it out of the Livewire payload.
+        $this->aiSnapshot = $snapshot?->makeHidden('report_tables')->toArray();
+        $this->loadCompetitors();
+    }
+
+    public function uploadAiVisibility(): void
+    {
+        $this->validate([
+            'aiVisibilityFile' => 'required|file|mimes:xlsx|max:20480',
+        ]);
+
+        $this->aiUploading = true;
+        $this->aiUploadError = '';
+        $this->aiUploadSuccess = '';
+
+        try {
+            $parsed = (new AiVisibilityParser())->parse($this->aiVisibilityFile->getRealPath());
+            $reportMonth = DB::transaction(fn () => (new \App\Services\AiWorkbookImporter())
+                ->import($this->clientId, $parsed, $this->aiVisibilityFile->getClientOriginalName()));
+
+            $this->aiVisibilityFile = null;
+            $this->aiUploadSuccess = 'AI visibility data imported for ' . $reportMonth;
+            $this->loadAiVisibilityData();
+        } catch (\Exception $e) {
+            $this->aiUploadError = 'Import failed: ' . $e->getMessage();
+        } finally {
+            $this->aiUploading = false;
+        }
+    }
+
+    // ── Monthly upload (workbook + Semrush CSVs) ────────────────────────────
+
+    /** Client's own domain: last Semrush import, else the Search Console site. */
+    private function defaultAiImportDomain(): string
+    {
+        $domain = \App\Models\SemrushReport::where('tenant_id', $this->clientId)->where('is_client', true)
+            ->latest('report_month')->value('domain');
+        if (!$domain) {
+            $settings = Tenant::find($this->clientId)?->settings ?? [];
+            $domain = \App\Services\SemrushImporter::host($settings['seo']['search_console_site'] ?? '');
+        }
+        return (string) $domain;
+    }
+
+    private function aiImportFileList(): array
+    {
+        return collect($this->aiImportFiles)->filter()->values()
+            ->map(fn ($f) => ['path' => $f->getRealPath(), 'name' => $f->getClientOriginalName()])->all();
+    }
+
+    private function runAiImportCheck(): \App\Services\AiImportInspector
+    {
+        $inspector = new \App\Services\AiImportInspector();
+        $this->aiImportReport = $inspector->inspect($this->aiImportFileList(), $this->clientId, $this->aiImportDomain, $this->aiImportDate);
+        return $inspector;
+    }
+
+    public function updatedAiImportFiles(): void
+    {
+        $this->aiImportResult = '';
+        $this->aiImportError = '';
+        $this->validate(['aiImportFiles' => 'array|max:40', 'aiImportFiles.*' => 'file|max:20480|extensions:xlsx,csv']);
+        if ($this->aiImportDate === '') $this->aiImportDate = now()->toDateString();
+        if ($this->aiImportDomain === '') $this->aiImportDomain = $this->defaultAiImportDomain();
+        $this->runAiImportCheck();
+    }
+
+    public function updatedAiImportDate(): void
+    {
+        if ($this->aiImportFiles) $this->runAiImportCheck();
+    }
+
+    public function updatedAiImportDomain(): void
+    {
+        if ($this->aiImportFiles) $this->runAiImportCheck();
+    }
+
+    public function removeAiImportFile(int $index): void
+    {
+        $files = collect($this->aiImportFiles)->filter()->values()->all();
+        unset($files[$index]);
+        $this->aiImportFiles = array_values($files);
+        $this->aiImportFiles ? $this->runAiImportCheck() : $this->clearAiImport();
+    }
+
+    public function clearAiImport(): void
+    {
+        $this->reset('aiImportFiles', 'aiImportReport', 'aiImportError');
+    }
+
+    public function confirmAiImport(): void
+    {
+        $this->aiImportResult = '';
+        $this->aiImportError = '';
+        // Never trust the report shown in the browser: check the files again on the server.
+        $inspector = $this->runAiImportCheck();
+        if (!($this->aiImportReport['ok'] ?? false)) {
+            $this->aiImportError = 'Fix the problems marked below before importing.';
+            return;
+        }
+
+        try {
+            $done = DB::transaction(function () use ($inspector) {
+                $done = [];
+                $groups = [];
+                foreach ($inspector->payloads as $p) {
+                    if ($p['type'] === 'workbook') {
+                        $month = (new \App\Services\AiWorkbookImporter())->import($this->clientId, $p['parsed'], $p['name']);
+                        $done[] = 'workbook for ' . \Carbon\Carbon::parse($month . '-01')->format('F Y');
+                    } else {
+                        $groups[$p['domain']][$p['type']] = $p['rows'];
+                        $groups[$p['domain']]['source_files'][] = $p['name'];
+                    }
+                }
+                if ($groups) {
+                    (new \App\Services\SemrushImporter())->import($this->clientId, $this->aiImportDomain, $this->aiImportDate, $groups);
+                    $done[] = 'Semrush exports for ' . count($groups) . ' ' . (count($groups) === 1 ? 'brand' : 'brands');
+                }
+                return $done;
+            });
+        } catch (\Throwable $e) {
+            report($e);
+            $this->aiImportError = 'Nothing was saved: ' . $e->getMessage();
+            return;
+        }
+
+        $this->aiImportResult = 'Imported ' . implode(' and ', $done) . '.';
+        $this->reset('aiImportFiles', 'aiImportReport');
+        $this->aiMonths = null;
+        $this->loadAiVisibilityData();
+    }
+
+    /**
+     * Save GA4 property + Search Console site from the AI tab, then auto-sync live data.
+     */
+    public function saveAiGoogleSettings(): void
+    {
+        $this->aiSyncError   = '';
+        $this->aiSyncSuccess = '';
+
+        try {
+            $client   = Tenant::findOrFail($this->clientId);
+            $settings = $client->settings ?? [];
+
+            // Resolve GA4 property display name from loaded list
+            if ($this->seoGa4PropertyId) {
+                foreach ($this->seoGa4Properties as $prop) {
+                    if (($prop['property_id'] ?? '') === $this->seoGa4PropertyId) {
+                        $this->seoGa4PropertyName = $prop['display_name'] ?? null;
+                        break;
+                    }
+                }
+            }
+
+            $settings['seo'] = array_merge($settings['seo'] ?? [], [
+                'search_console_site' => $this->seoSearchConsoleSite,
+                'ga4_property_id'     => $this->seoGa4PropertyId,
+                'ga4_property_name'   => $this->seoGa4PropertyName,
+            ]);
+
+            $client->update(['settings' => $settings]);
+            $this->seoSaved = true;
+
+            // Auto-sync live data with the newly saved connection
+            $this->pullLiveAiVisibilityData();
+        } catch (\Throwable $e) {
+            $this->aiSyncError = 'Save failed: ' . $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('saveAiGoogleSettings failed', [
+                'tenant_id' => $this->clientId,
+                'error'     => $e->getMessage(),
+                'trace'     => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    public function pullLiveAiVisibilityData(): void
+    {
+        $this->aiSyncing     = true;
+        $this->aiSyncError   = '';
+        $this->aiSyncSuccess = '';
+        $this->aiUploadError = '';
+        $this->aiUploadSuccess = '';
+
+        try {
+            if (!$this->seoSettingsLoaded) {
+                $this->loadSeoProperties();
+            }
+
+            $integration = $this->findGoogleIntegration($this->clientId);
+
+            if (!$integration) {
+                $this->aiSyncError = 'No Google integration found. Connect Google Analytics in the SEO tab first.';
+                return;
+            }
+
+            $startDate = now()->subMonths(24)->startOfMonth()->format('Y-m-d');
+            $endDate   = now()->format('Y-m-d');
+
+            $ga4MonthData = [];
+            if ($this->seoGa4PropertyId) {
+                $ga4MonthData = app(GA4AnalyticsService::class)
+                    ->getAiTrafficByMonth($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+            }
+
+            $gscMonthData = [];
+            if ($this->seoSearchConsoleSite) {
+                $gscMonthData = app(SearchConsoleService::class)
+                    ->getAiImpressionsByMonth($integration, $this->seoSearchConsoleSite, $startDate, $endDate);
+            }
+
+            if (empty($ga4MonthData) && empty($gscMonthData)) {
+                $this->aiSyncError = 'No data returned. Configure GA4 Property ID and Search Console site in the SEO tab.';
+                return;
+            }
+
+            $months   = array_unique(array_merge(array_keys($ga4MonthData), array_keys($gscMonthData)));
+            $imported = 0;
+
+            foreach ($months as $month) {
+                $ga4 = $ga4MonthData[$month] ?? [];
+                $gsc = $gscMonthData[$month] ?? [];
+                $row = AiVisibilityMonth::firstOrNew(['tenant_id' => $this->clientId, 'month' => $month]);
+
+                // Write a field only when the API actually returned it. GA4 has no
+                // AI Assistant row for months without AI traffic, and Search Console
+                // never returns AI impressions, so imported values stay untouched.
+                if (!empty($ga4['total_sessions'])) {
+                    $row->total_sessions = $ga4['total_sessions'];
+                }
+                if (array_key_exists('ai_sessions', $ga4)) {
+                    $row->ai_sessions   = $ga4['ai_sessions'];
+                    $row->ai_key_events = $ga4['ai_key_events'];
+                    $row->ai_revenue    = round((float) $ga4['ai_revenue'], 2);
+                }
+                if (!empty($gsc['total_impressions'])) {
+                    $row->total_impressions = $gsc['total_impressions'];
+                    $row->gsc_clicks        = $gsc['gsc_clicks'];
+                    $row->gsc_ctr           = $gsc['gsc_clicks'] / $gsc['total_impressions'];
+                }
+                // Derived shares are fractions (0–1), the same as the workbook import.
+                if ($row->ai_sessions && $row->total_sessions) {
+                    $row->ai_session_share       = $row->ai_sessions / $row->total_sessions;
+                    $row->ai_key_event_rate      = $row->ai_key_events / $row->ai_sessions;
+                    $row->ai_revenue_per_session = $row->ai_revenue / $row->ai_sessions;
+                }
+                if ($row->ai_impressions && $row->total_impressions) {
+                    $row->ai_impression_share = $row->ai_impressions / $row->total_impressions;
+                }
+                if ($row->isDirty()) {
+                    $row->save();
+                    $imported++;
+                }
+            }
+
+            // Diagnostics tables (channel split, AI platforms, AI funnel, AI landing
+            // pages by month) go into the report's own table store, merged by month,
+            // so the imported Search Console / Clarity data is never replaced.
+            if ($this->seoGa4PropertyId) {
+                $tables = app(GA4AnalyticsService::class)
+                    ->getAiReportTables($integration, $this->seoGa4PropertyId, $startDate, $endDate);
+                if ($tables) {
+                    $snapshot = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+                        ->whereNotNull('report_tables')->latest('report_month')->first()
+                        ?? AiVisibilitySnapshot::firstOrNew(
+                            ['tenant_id' => $this->clientId, 'report_month' => now()->subMonth()->format('Y-m')],
+                            ['snapshot_date' => now()->toDateString(), 'filename' => 'live-sync-' . now()->format('Y-m-d')]
+                        );
+                    $merged = $snapshot->report_tables ?? [];
+                    foreach ($tables as $key => $byMonth) {
+                        $merged[$key] = array_replace($merged[$key] ?? [], $byMonth);
+                        ksort($merged[$key]);
+                    }
+                    $merged['live_sync'] = ['ga4_at' => now()->toIso8601String(), 'from' => $startDate, 'to' => $endDate];
+                    $snapshot->report_tables = $merged;
+                    $snapshot->save();
+                    $imported++;
+                }
+            }
+
+            if ($imported === 0) {
+                $this->aiSyncError = 'Google API returned no data. Your Google token may be expired — please reconnect under Integrations.';
+            } else {
+                $this->aiSyncSuccess = 'Synced GA4 and Search Console. AI impressions are not in the Search Console API, so they keep coming from the monthly export.';
+                $this->loadAiVisibilityData();
+            }
+        } catch (\Throwable $e) {
+            $this->aiSyncError = 'Sync failed: ' . $e->getMessage();
+            \Illuminate\Support\Facades\Log::error('AI Visibility live sync failed', [
+                'tenant_id' => $this->clientId,
+                'error'     => $e->getMessage(),
+            ]);
+        } finally {
+            $this->aiSyncing = false;
+        }
+    }
+
+    /**
+     * Load GA4 property list + Search Console sites for the AI tab (called via wire:init).
+     */
+    public function loadGoogleListsForAiTab(): void
+    {
+        $this->loadSeoProperties();
+        if ($this->seoHasIntegration) {
+            // Clear cached access token so a fresh one is fetched — handles post-reauth stale tokens
+            $integration = $this->findGoogleIntegration($this->clientId);
+            if ($integration) {
+                \Illuminate\Support\Facades\Cache::forget('google_token:' . $integration->id);
+            }
+            if (empty($this->seoSearchConsoleSites)) {
+                $this->loadSearchConsoleSites();
+            }
+            if (empty($this->seoGa4Properties)) {
+                $this->loadGa4Properties();
+            }
+        }
+    }
+
+    public function refreshGoogleLists(): void
+    {
+        // Clear cached access token so a fresh one is fetched after reauth
+        $integration = $this->findGoogleIntegration($this->clientId);
+        if ($integration) {
+            \Illuminate\Support\Facades\Cache::forget('google_token:' . $integration->id);
+        }
+        $this->seoSearchConsoleSites = [];
+        $this->seoGa4Properties = [];
+        $this->loadSearchConsoleSites();
+        $this->loadGa4Properties();
+    }
+
+    /**
+     * Open the manual snapshot entry form for Semrush / Clarity data.
+     */
+    public function openAiSnapshotForm(?string $month = null): void
+    {
+        $this->aiSnapshotMonth           = $month ?: now()->subMonth()->format('Y-m');
+        $this->aiSnapshotSemrushScore    = null;
+        $this->aiSnapshotSemrushTopics   = null;
+        $this->aiSnapshotSemrushPrompts  = null;
+        $this->aiSnapshotClarityCitations = null;
+        $this->aiSnapshotSaveSuccess     = '';
+
+        $existing = AiVisibilitySnapshot::where('tenant_id', $this->clientId)
+            ->where('report_month', $this->aiSnapshotMonth)
+            ->first();
+
+        if ($existing) {
+            $this->aiSnapshotSemrushScore    = $existing->semrush_score;
+            $this->aiSnapshotSemrushTopics   = $existing->semrush_topics_count;
+            $this->aiSnapshotSemrushPrompts  = $existing->semrush_prompts_count;
+            $this->aiSnapshotClarityCitations = $existing->clarity_citations;
+        }
+
+        $this->aiSnapshotFormOpen = true;
+    }
+
+    /**
+     * Save manual Semrush / Clarity data to the snapshot.
+     */
+    public function saveAiSnapshot(): void
+    {
+        $this->validate(['aiSnapshotMonth' => 'required|date_format:Y-m']);
+
+        AiVisibilitySnapshot::updateOrCreate(
+            ['tenant_id' => $this->clientId, 'report_month' => $this->aiSnapshotMonth],
+            [
+                'tenant_id'             => $this->clientId,
+                'report_month'          => $this->aiSnapshotMonth,
+                'snapshot_date'         => now()->toDateString(),
+                'semrush_score'         => $this->aiSnapshotSemrushScore,
+                'semrush_topics_count'  => $this->aiSnapshotSemrushTopics,
+                'semrush_prompts_count' => $this->aiSnapshotSemrushPrompts,
+                'clarity_citations'     => $this->aiSnapshotClarityCitations,
+            ]
+        );
+
+        $this->aiSnapshotSaveSuccess = 'Saved for ' . $this->aiSnapshotMonth;
+        $this->aiSnapshotFormOpen    = false;
+        $this->loadAiVisibilityData();
+    }
+
+    // ─── AI prompt tracking ───────────────────────────────────────────────────
+
+    private function aiTrackingProfile(): \App\Models\AiTrackingProfile
+    {
+        return \App\Models\AiTrackingProfile::firstOrCreate(
+            ['tenant_id' => $this->clientId],
+            ['domain' => \App\Models\SemrushReport::where('tenant_id', $this->clientId)->where('is_client', true)->latest('report_month')->value('domain'),
+                'engines' => array_keys(\App\Services\AiTracking\AiEngineClient::ENGINES)]
+        );
+    }
+
+    public function loadAiTracking(): void
+    {
+        $p = $this->aiTrackingProfile();
+        $this->aiTrackDomain = (string) $p->domain;
+        $this->aiTrackAliases = implode(', ', $p->aliases ?? []);
+        $this->aiTrackEngines = $p->engines ?? [];
+    }
+
+    public function saveAiTracking(): void
+    {
+        $this->validate(['aiTrackDomain' => 'nullable|string|max:255', 'aiTrackAliases' => 'nullable|string|max:1000']);
+        $domain = $this->aiTrackDomain ? \App\Services\AiTracking\AiEngineClient::domainOf(trim($this->aiTrackDomain)) : null;
+        $this->aiTrackingProfile()->update([
+            'domain' => $domain,
+            'aliases' => collect(explode(',', $this->aiTrackAliases))->map(fn ($a) => trim($a))->filter()->unique()->values()->all(),
+            'engines' => array_values(array_intersect(array_keys(\App\Services\AiTracking\AiEngineClient::ENGINES), $this->aiTrackEngines)),
+        ]);
+        $this->aiTrackDomain = (string) $domain;
+        $this->aiTrackSaved = 'Saved';
+    }
+
+    public function addAiPrompt(): void
+    {
+        $this->validate(['aiNewPrompt' => 'required|string|min:3|max:500', 'aiNewPromptCountry' => 'nullable|alpha|size:2']);
+        $this->aiTrackingProfile();
+        \App\Models\AiTrackedPrompt::firstOrCreate(
+            ['tenant_id' => $this->clientId, 'prompt_hash' => \App\Models\AiTrackedPrompt::hashOf($this->aiNewPrompt)],
+            ['prompt' => trim($this->aiNewPrompt), 'country' => $this->aiNewPromptCountry ? strtolower($this->aiNewPromptCountry) : null, 'source' => 'manual', 'active' => true]
+        )->update(['active' => true]);
+        $this->aiNewPrompt = '';
+    }
+
+    public function toggleAiPrompt(int $id): void
+    {
+        $p = \App\Models\AiTrackedPrompt::where('tenant_id', $this->clientId)->findOrFail($id);
+        $p->update(['active' => ! $p->active]);
+    }
+
+    public function deleteAiPrompt(int $id): void
+    {
+        \App\Models\AiTrackedPrompt::where('tenant_id', $this->clientId)->where('id', $id)->delete();
+    }
+
+    public function seedAiPrompts(): void
+    {
+        $added = app(\App\Services\AiTracking\PromptTracker::class)->seedFromSemrush($this->clientId, (int) config('services.ai_tracking.max_prompts', 50));
+        $this->aiTrackSaved = $added ? "Added {$added} prompts from Semrush" : 'No new Semrush prompts to add';
+    }
+
+    private function aiTrackingSettingsData(): array
+    {
+        $prompts = \App\Models\AiTrackedPrompt::where('tenant_id', $this->clientId)->orderByDesc('active')->orderByDesc('volume')->orderBy('id')->get();
+        $last = \App\Models\AiPromptRun::where('tenant_id', $this->clientId)->max('run_on');
+
+        return [
+            'prompts' => $prompts,
+            'limit' => (int) config('services.ai_tracking.max_prompts', 50),
+            'engines' => collect(\App\Services\AiTracking\AiEngineClient::ENGINES)->map(fn ($e, $k) => ['label' => $e['label'], 'simulated' => \App\Services\AiTracking\AiEngineClient::simulated($k), 'key' => \App\Services\AiTracking\AiEngineClient::configured($k), 'model' => \App\Services\AiTracking\AiEngineClient::model($k)])->all(),
+            'lastRun' => $last ? Carbon::parse($last)->format('j M Y') : null,
+        ];
+    }
+
+    // ─── Competitor Methods ───────────────────────────────────────────────────
+
+    public function loadCompetitors(): void
+    {
+        $this->competitors = Competitor::where('tenant_id', $this->clientId)
+            ->with(['latestVisibility', 'visibility'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn($c) => array_merge($c->toArray(), [
+                'latest_visibility' => $c->latestVisibility?->toArray(),
+                'visibility'        => $c->visibility->map(fn($v) => $v->toArray())->toArray(),
+            ]))
+            ->toArray();
+    }
+
+    public function openCompetitorForm(?int $id = null): void
+    {
+        $this->editingCompetitorId = $id;
+        if ($id) {
+            $comp = Competitor::find($id);
+            $this->competitorName     = $comp?->name ?? '';
+            $this->competitorWebsite  = $comp?->website ?? '';
+            $this->competitorIndustry = $comp?->industry ?? '';
+            $this->competitorNotes    = $comp?->notes ?? '';
+            $this->competitorAliases  = implode(', ', $comp?->aliases ?? []);
+        } else {
+            $this->competitorName = $this->competitorWebsite = $this->competitorIndustry = $this->competitorNotes = $this->competitorAliases = '';
+        }
+        $this->competitorFormOpen = true;
+    }
+
+    public function saveCompetitor(): void
+    {
+        $this->validate(['competitorName' => 'required|string|max:255', 'competitorAliases' => 'nullable|string|max:500']);
+        $aliases = collect(explode(',', $this->competitorAliases))->map(fn ($a) => trim($a))->filter()->unique()->values()->all();
+
+        if ($this->editingCompetitorId) {
+            Competitor::where('id', $this->editingCompetitorId)
+                ->where('tenant_id', $this->clientId)
+                ->update([
+                    'name'     => $this->competitorName,
+                    'website'  => $this->competitorWebsite ?: null,
+                    'aliases'  => $aliases ?: null,
+                    'industry' => $this->competitorIndustry ?: null,
+                    'notes'    => $this->competitorNotes ?: null,
+                ]);
+        } else {
+            Competitor::create([
+                'tenant_id' => $this->clientId,
+                'name'      => $this->competitorName,
+                'website'   => $this->competitorWebsite ?: null,
+                'aliases'   => $aliases ?: null,
+                'industry'  => $this->competitorIndustry ?: null,
+                'notes'     => $this->competitorNotes ?: null,
+            ]);
+        }
+        $this->competitorFormOpen = false;
+        $this->editingCompetitorId = null;
+        $this->loadCompetitors();
+    }
+
+    public function deleteCompetitor(int $id): void
+    {
+        Competitor::where('id', $id)->where('tenant_id', $this->clientId)->delete();
+        $this->loadCompetitors();
+    }
+
+    public function openCompetitorVisForm(int $competitorId, string $month = ''): void
+    {
+        $this->competitorVisId                = $competitorId;
+        $this->competitorVisMonth             = $month ?: now()->format('Y-m');
+        $this->competitorVisAiImpressions     = null;
+        $this->competitorVisAiSessions        = null;
+        $this->competitorVisSemrushScore      = null;
+        $this->competitorVisSemrushTopics     = null;
+        $this->competitorVisClarityCitations  = null;
+        $this->competitorVisSaveSuccess       = '';
+
+        // Pre-fill if entry exists for this month
+        $existing = CompetitorVisibility::where('competitor_id', $competitorId)
+            ->where('report_month', $this->competitorVisMonth)
+            ->first();
+        if ($existing) {
+            $this->competitorVisAiImpressions    = $existing->ai_impressions;
+            $this->competitorVisAiSessions       = $existing->ai_sessions;
+            $this->competitorVisSemrushScore     = $existing->semrush_score;
+            $this->competitorVisSemrushTopics    = $existing->semrush_topics_count;
+            $this->competitorVisClarityCitations = $existing->clarity_citations;
+        }
+
+        $this->competitorVisFormOpen = true;
+    }
+
+    public function saveCompetitorVisibility(): void
+    {
+        $this->validate([
+            'competitorVisId'    => 'required|integer',
+            'competitorVisMonth' => 'required|date_format:Y-m',
+        ]);
+
+        CompetitorVisibility::updateOrCreate(
+            ['competitor_id' => $this->competitorVisId, 'report_month' => $this->competitorVisMonth],
+            [
+                'ai_impressions'       => $this->competitorVisAiImpressions,
+                'ai_sessions'          => $this->competitorVisAiSessions,
+                'semrush_score'        => $this->competitorVisSemrushScore,
+                'semrush_topics_count' => $this->competitorVisSemrushTopics,
+                'clarity_citations'    => $this->competitorVisClarityCitations,
+            ]
+        );
+
+        $this->competitorVisSaveSuccess = 'Saved for ' . $this->competitorVisMonth;
+        $this->competitorVisFormOpen = false;
+        $this->loadCompetitors();
+    }
+
+    // ─── Report Designer Tab ──────────────────────────────────────────────────
+
+    public function getClientReportsProperty()
+    {
+        $adAccountIds = \App\Models\AdAccount::where('tenant_id', $this->clientId)
+            ->pluck('id');
+
+        return \App\Models\Report::where('tenant_id', auth()->user()->tenant_id)
+            ->where(function ($q) use ($adAccountIds) {
+                $q->whereIn('ad_account_id', $adAccountIds)
+                  ->orWhereNull('ad_account_id');
+            })
+            ->latest()
+            ->get();
+    }
+
+    public function createReportForClient(): void
+    {
+        $client = \App\Models\Tenant::find($this->clientId);
+        $name   = ($client?->name ?? 'Client') . ' — ' . now()->format('M Y');
+
+        $adAccountId = \App\Models\AdAccount::where('tenant_id', $this->clientId)
+            ->where('status', 'active')
+            ->value('id');
+
+        $report = \App\Models\Report::create([
+            'tenant_id'    => auth()->user()->tenant_id,
+            'ad_account_id'=> $adAccountId,
+            'name'         => $name,
+            'client_name'  => $client?->name,
+            'status'       => 'draft',
+            'period_start' => now()->subDays(30)->toDateString(),
+            'period_end'   => now()->toDateString(),
+            'created_by'   => auth()->id(),
+        ]);
+
+        $this->redirectRoute('report-designer', ['id' => $report->id]);
+    }
+
+    public function updatedSelectedPeriod()
+    {
+        $this->dateFrom = '';
+        $this->dateTo = '';
+        $this->fetchDashboard();
+    }
+
+    public function updatedSelectedPlatform()
+    {
+        $this->fetchDashboard();
+    }
+
+    public function updatedSeoPeriod()
+    {
+        // Preset selected — sync date fields to match
+        $this->seoDateFrom = now()->subDays($this->seoPeriod)->format('Y-m-d');
+        $this->seoDateTo = now()->format('Y-m-d');
+        $this->fetchSeoReport();
+    }
+
+    public function updatedSeoDateFrom()
+    {
+        if ($this->seoDateFrom && $this->seoDateTo) {
+            $this->syncSeoPeriodFromDates();
+            $this->fetchSeoReport();
+        }
+    }
+
+    public function updatedSeoDateTo()
+    {
+        if ($this->seoDateFrom && $this->seoDateTo) {
+            $this->syncSeoPeriodFromDates();
+            $this->fetchSeoReport();
+        }
+    }
+
+    public function updatedSeoCompareEnabled()
+    {
+        $this->fetchSeoReport();
+    }
+
+    /**
+     * Check if the current seoDateFrom/To match a preset, and update seoPeriod accordingly.
+     * Sets seoPeriod to 0 for custom ranges.
+     */
+    private function syncSeoPeriodFromDates(): void
+    {
+        $from = $this->seoDateFrom;
+        $to = $this->seoDateTo;
+        foreach ([7, 14, 30, 90, 180, 365] as $days) {
+            if ($from === now()->subDays($days)->format('Y-m-d') && $to === now()->format('Y-m-d')) {
+                $this->seoPeriod = $days;
+                return;
+            }
+        }
+        $this->seoPeriod = 0; // custom range
+    }
+
+    public function updatedDateFrom()
+    {
+        if ($this->dateFrom && $this->dateTo) {
+            $this->selectedPeriod = 0;
+            $this->fetchDashboard();
+        }
+    }
+
+    public function updatedDateTo()
+    {
+        if ($this->dateFrom && $this->dateTo) {
+            $this->selectedPeriod = 0;
+            $this->fetchDashboard();
+        }
+    }
+
+    public function resetFilters()
+    {
+        $this->selectedPeriod = 30;
+        $this->selectedPlatform = '';
+        $this->dateFrom = '';
+        $this->dateTo = '';
+        $this->fetchDashboard();
+    }
+
+    public function fetchDashboard()
+    {
+        $this->loading = true;
+        $this->error = '';
+
+        try {
+            $client = Tenant::findOrFail($this->clientId);
+            $service = app(ClientPerformanceReportService::class);
+            $legacyService = app(ClientDashboardService::class);
+
+            $filters = [];
+            if ($this->selectedPeriod > 0) {
+                $filters['period'] = $this->selectedPeriod;
+            }
+            if ($this->selectedPlatform) {
+                $filters['platform'] = $this->selectedPlatform;
+            }
+            if ($this->dateFrom) {
+                $filters['from'] = $this->dateFrom;
+            }
+            if ($this->dateTo) {
+                $filters['to'] = $this->dateTo;
+            }
+
+            // New PDF-matching data
+            $summaryMetrics = $service->getSummaryMetrics($client, $filters);
+            $platformBreakdown = $service->getPlatformBreakdown($client, $filters);
+            $teadsDaily = $service->getTeadsDailyTable($client, $filters);
+
+            if ($client->isEcommerce()) {
+                $funnelData = $service->getEcommerceFunnelData($client, $filters);
+                $revenueVsRoas = $service->getRevenueVsRoasTrend($client, $filters);
+                $conversionsVsCpa = $service->getConversionsVsCpaTrend($client, $filters);
+                $leadVsCpl = [];
+                $leadVsSpent = [];
+            } else {
+                $funnelData = $service->getFunnelData($client, $filters);
+                $leadVsCpl = $service->getLeadVsCplTrend($client, $filters);
+                $leadVsSpent = $service->getLeadVsSpentTrend($client, $filters);
+                $revenueVsRoas = [];
+                $conversionsVsCpa = [];
+            }
+
+            // Top ads per platform
+            $topAds = [];
+            foreach (['facebook', 'snapchat', 'google', 'tiktok', 'linkedin'] as $platform) {
+                $ads = $service->getTopAdsByPlatform($client, $platform, 6, $filters);
+                if (!empty($ads)) {
+                    $topAds[$platform] = $ads;
+                }
+            }
+
+            // Legacy data for fallback / SEO tab / exports
+            $legacyMetrics = $legacyService->getClientStatistics($client, $filters);
+            $adAccounts = $legacyService->getAdAccountsWithStatus($client, $filters);
+            $topCampaigns = $legacyService->getTopCampaigns($client, 20, $filters);
+            $trends = $legacyService->getPerformanceTrends($client, $filters);
+            $sparklines = $this->generateSparklines($trends);
+            $trendsAnalysis = $this->analyzeTrends($trends);
+            $executiveSummary = $this->generateExecutiveSummary($legacyMetrics, $platformBreakdown, $topCampaigns);
+
+            $this->dashboardData = [
+                'client' => [
+                    'name' => $client->name,
+                    'industry' => $client->industry,
+                    'website' => $client->website,
+                    'subscription_tier' => ucfirst($client->subscription_tier ?? 'Standard'),
+                ],
+                'summary_metrics' => $summaryMetrics,
+                'funnel_data' => $funnelData,
+                'lead_vs_cpl' => $leadVsCpl,
+                'lead_vs_spent' => $leadVsSpent,
+                'revenue_vs_roas' => $revenueVsRoas,
+                'conversions_vs_cpa' => $conversionsVsCpa,
+                'platform_breakdown' => $platformBreakdown,
+                'top_ads' => $topAds,
+                'teads_daily' => $teadsDaily,
+                'is_ecommerce' => $client->isEcommerce(),
+                // Legacy structures preserved for export and SEO tab compatibility
+                'metrics' => $legacyMetrics,
+                'trends' => $trends,
+                'ad_accounts' => $adAccounts,
+                'top_campaigns' => $topCampaigns,
+                'executive_summary' => $executiveSummary,
+                'sparklines' => $sparklines,
+                'trends_direction' => $trendsAnalysis['direction'],
+                'trends_percent' => $trendsAnalysis['percent'],
+            ];
+        } catch (\Exception $e) {
+            $this->error = $e->getMessage();
+        } finally {
+            $this->loading = false;
+        }
+    }
+
+    public function fetchSeoReport()
+    {
+        $this->seoLoading = true;
+
+        try {
+            $client = Tenant::findOrFail($this->clientId);
+
+            $settings = $client->settings ?? [];
+            $seo = $settings['seo'] ?? [];
+
+            // Compute date range from custom dates or seoPeriod fallback
+            if ($this->seoDateFrom && $this->seoDateTo) {
+                $startDate = $this->seoDateFrom;
+                $endDate = $this->seoDateTo;
+            } else {
+                $endDate = now()->format('Y-m-d');
+                $startDate = now()->subDays($this->seoPeriod)->format('Y-m-d');
+                $this->seoDateFrom = $startDate;
+                $this->seoDateTo = $endDate;
+            }
+
+            // Find Google integration (tenant-specific, or fall back to user's)
+            $integration = $this->findGoogleIntegration($client->id);
+
+            // Preserve existing PageSpeed data across period changes
+            // If no in-memory data, try loading from cache (auto-show on page refresh)
+            $existingMobile = $this->seoReportData['pagespeed_mobile'] ?? null;
+            $existingDesktop = $this->seoReportData['pagespeed_desktop'] ?? null;
+
+            if ($existingMobile === null && $existingDesktop === null) {
+                $pageSpeedUrl = $seo['pagespeed_url'] ?? ($client->website ?? null);
+                if ($pageSpeedUrl) {
+                    $cachedMobile = Cache::get('pagespeed:' . md5($pageSpeedUrl . ':mobile'));
+                    $cachedDesktop = Cache::get('pagespeed:' . md5($pageSpeedUrl . ':desktop'));
+                    if ($cachedMobile && !isset($cachedMobile['_error'])) {
+                        $existingMobile = $cachedMobile;
+                    }
+                    if ($cachedDesktop && !isset($cachedDesktop['_error'])) {
+                        $existingDesktop = $cachedDesktop;
+                    }
+                }
+            }
+
+            $existingPagespeed = [
+                'pagespeed_mobile' => $existingMobile,
+                'pagespeed_desktop' => $existingDesktop,
+            ];
+
+            $report = [];
+
+            // Search Console
+            $scSite = $seo['search_console_site'] ?? null;
+            if ($scSite && $integration) {
+                try {
+                    $searchConsole = app(SearchConsoleService::class);
+                    $queries = $searchConsole->getSearchAnalytics($integration, $scSite, $startDate, $endDate, 'query', 25);
+                    $pages = $searchConsole->getSearchAnalytics($integration, $scSite, $startDate, $endDate, 'page', 25);
+                    $timeseries = $searchConsole->getTimeSeries($integration, $scSite, $startDate, $endDate);
+
+                    $totalClicks = array_sum(array_column($timeseries, 'clicks'));
+                    $totalImpressions = array_sum(array_column($timeseries, 'impressions'));
+                    $avgCtr = $totalImpressions > 0 ? round(($totalClicks / $totalImpressions) * 100, 2) : 0;
+                    $avgPosition = count($timeseries) > 0
+                        ? round(array_sum(array_column($timeseries, 'position')) / count($timeseries), 1)
+                        : 0;
+
+                    $report['search_console'] = [
+                        'summary' => [
+                            'total_clicks' => $totalClicks,
+                            'total_impressions' => $totalImpressions,
+                            'avg_ctr' => $avgCtr,
+                            'avg_position' => $avgPosition,
+                        ],
+                        'timeseries' => $timeseries,
+                        'queries' => $queries,
+                        'pages' => $pages,
+                    ];
+                } catch (\Exception $e) {
+                    $report['search_console'] = null;
+                }
+            }
+
+            // Search Console Coverage (sitemaps)
+            if ($scSite && $integration && is_array($report['search_console'] ?? null)) {
+                try {
+                    $searchConsole = $searchConsole ?? app(SearchConsoleService::class);
+                    $report['search_console']['coverage'] = $searchConsole->getSitemapsCoverage($integration, $scSite);
+                } catch (\Exception $e) {
+                    // Coverage fetch failed — skip silently, other SC data is intact
+                }
+
+                // Auto-detect issues from Search Console coverage
+                if (!empty($report['search_console']['coverage'])) {
+                    app(SeoAuditService::class)->processSearchConsoleIssues(
+                        $this->clientId,
+                        $scSite,
+                        $report['search_console']['coverage']
+                    );
+                }
+            }
+
+            // GA4
+            $ga4PropertyId = $seo['ga4_property_id'] ?? null;
+            if ($ga4PropertyId && $integration) {
+                try {
+                    $ga4 = app(GA4AnalyticsService::class);
+                    $report['ga4'] = $ga4->getReport($integration, $ga4PropertyId, $startDate, $endDate);
+                } catch (\Exception $e) {
+                    $report['ga4'] = null;
+                }
+            }
+
+            // Restore existing PageSpeed data (on-demand only)
+            $report = array_merge($report, $existingPagespeed);
+
+            // Auto-detect issues from cached/existing PageSpeed data
+            $psUrl = $seo['pagespeed_url'] ?? ($client->website ?? null);
+            $psMobile = $report['pagespeed_mobile'] ?? [];
+            $psDesktop = $report['pagespeed_desktop'] ?? [];
+            if ($psUrl && (!empty($psMobile['audits']) || !empty($psDesktop['audits']))) {
+                app(SeoAuditService::class)->processPageSpeedAudits(
+                    $this->clientId, $psUrl, $psMobile, $psDesktop
+                );
+            }
+
+            // ── Period Comparison (Feature 10) ──────────────────────────
+            if ($this->seoCompareEnabled) {
+                $periodDays = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate));
+                $prevEnd = \Carbon\Carbon::parse($startDate)->subDay()->format('Y-m-d');
+                $prevStart = \Carbon\Carbon::parse($startDate)->subDays($periodDays)->format('Y-m-d');
+                $comparison = [];
+
+                // Previous SC summary via timeseries
+                if ($scSite && $integration) {
+                    try {
+                        $searchConsole = $searchConsole ?? app(SearchConsoleService::class);
+                        $prevScTs = $searchConsole->getTimeSeries($integration, $scSite, $prevStart, $prevEnd);
+                        $prevClicks = array_sum(array_column($prevScTs, 'clicks'));
+                        $prevImpressions = array_sum(array_column($prevScTs, 'impressions'));
+                        $prevAvgCtr = $prevImpressions > 0 ? round(($prevClicks / $prevImpressions) * 100, 2) : 0;
+                        $prevAvgPos = count($prevScTs) > 0 ? round(array_sum(array_column($prevScTs, 'position')) / count($prevScTs), 1) : 0;
+
+                        $curClicks = $report['search_console']['summary']['total_clicks'] ?? 0;
+                        $curImpressions = $report['search_console']['summary']['total_impressions'] ?? 0;
+                        $curCtr = $report['search_console']['summary']['avg_ctr'] ?? 0;
+                        $curPos = $report['search_console']['summary']['avg_position'] ?? 0;
+
+                        $comparison['total_clicks'] = $this->computeDelta($curClicks, $prevClicks);
+                        $comparison['total_impressions'] = $this->computeDelta($curImpressions, $prevImpressions);
+                        $comparison['avg_ctr'] = $this->computeDelta($curCtr, $prevAvgCtr);
+                        $comparison['avg_position'] = $this->computeDelta($curPos, $prevAvgPos, true); // inverted
+
+                        // Previous period SC queries & pages for table comparison
+                        $prevQueries = $searchConsole->getSearchAnalytics($integration, $scSite, $prevStart, $prevEnd, 'query', 25);
+                        $prevPages = $searchConsole->getSearchAnalytics($integration, $scSite, $prevStart, $prevEnd, 'page', 25);
+                        $comparison['sc_queries'] = collect($prevQueries)->keyBy('key')->toArray();
+                        $comparison['sc_pages'] = collect($prevPages)->keyBy('key')->toArray();
+                    } catch (\Exception $e) {
+                        // skip comparison for SC
+                    }
+                }
+
+                // Previous GA4 summary
+                if ($ga4PropertyId && $integration) {
+                    try {
+                        $ga4 = $ga4 ?? app(GA4AnalyticsService::class);
+                        $prevGa4 = $ga4->getSummaryOnly($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $curGa4 = $report['ga4']['summary'] ?? [];
+
+                        foreach (['sessions', 'active_users', 'page_views', 'total_users', 'new_users', 'conversions', 'total_revenue'] as $key) {
+                            if (isset($curGa4[$key]) && isset($prevGa4[$key])) {
+                                $comparison[$key] = $this->computeDelta($curGa4[$key], $prevGa4[$key]);
+                            }
+                        }
+                        // Inverted metrics (lower is better)
+                        if (isset($curGa4['bounce_rate']) && isset($prevGa4['bounce_rate'])) {
+                            $comparison['bounce_rate'] = $this->computeDelta($curGa4['bounce_rate'], $prevGa4['bounce_rate'], true);
+                        }
+                        if (isset($curGa4['engagement_rate']) && isset($prevGa4['engagement_rate'])) {
+                            $comparison['engagement_rate'] = $this->computeDelta($curGa4['engagement_rate'], $prevGa4['engagement_rate']);
+                        }
+
+                        // Previous period GA4 per-row data for table comparisons
+                        $prevGa4Pages = $ga4->getTopPages($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $comparison['ga4_pages'] = collect($prevGa4Pages)->keyBy('page_path')->toArray();
+
+                        $prevTrafficSources = $ga4->getTrafficSources($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $comparison['ga4_traffic_sources'] = collect($prevTrafficSources)->keyBy('channel')->toArray();
+
+                        $prevDevices = $ga4->getDevices($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $comparison['ga4_devices'] = collect($prevDevices)->keyBy('device')->toArray();
+
+                        $prevGeo = $ga4->getGeo($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $comparison['ga4_geo'] = collect($prevGeo)->keyBy('country')->toArray();
+
+                        $prevBrowsers = $ga4->getBrowsers($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $comparison['ga4_browsers'] = collect($prevBrowsers)->keyBy('browser')->toArray();
+
+                        $prevEcomPages = $ga4->getTopEcommercePages($integration, $ga4PropertyId, $prevStart, $prevEnd);
+                        $comparison['ga4_ecom_pages'] = collect($prevEcomPages)->keyBy('name')->toArray();
+
+                        $prevTopProducts = $ga4->getTopProducts($integration, $ga4PropertyId, $prevStart, $prevEnd, 5, false);
+                        $comparison['ga4_top_products'] = collect($prevTopProducts)->keyBy('name')->toArray();
+
+                        $prevLeastProducts = $ga4->getTopProducts($integration, $ga4PropertyId, $prevStart, $prevEnd, 5, true);
+                        $comparison['ga4_least_products'] = collect($prevLeastProducts)->keyBy('name')->toArray();
+                    } catch (\Exception $e) {
+                        // skip comparison for GA4
+                    }
+                }
+
+                $report['comparison'] = $comparison;
+            }
+
+            // ── Sparkline Arrays (Feature 11) ───────────────────────────
+            $sparklines = [];
+            $ga4Ts = $report['ga4']['timeseries'] ?? [];
+            $scTs = $report['search_console']['timeseries'] ?? [];
+
+            if (!empty($ga4Ts)) {
+                $sparklines['sessions'] = array_column($ga4Ts, 'sessions');
+                $sparklines['active_users'] = array_column($ga4Ts, 'users');
+                $sparklines['bounce_rate'] = array_column($ga4Ts, 'bounce_rate');
+            }
+            if (!empty($scTs)) {
+                $sparklines['total_clicks'] = array_column($scTs, 'clicks');
+                $sparklines['total_impressions'] = array_column($scTs, 'impressions');
+            }
+            $report['sparklines'] = $sparklines;
+
+            $this->seoReportData = $report;
+            $this->fetchAuditIssues();
+
+            // Auto-trigger PageSpeed refresh when no issues exist and audit data is stale/missing
+            $psAutoUrl = $seo['pagespeed_url'] ?? ($client->website ?? null);
+            $hasFreshAudits = !empty($report['pagespeed_mobile']['audits'] ?? []) ||
+                              !empty($report['pagespeed_desktop']['audits'] ?? []);
+            if (empty($this->auditIssues) && $psAutoUrl && !$hasFreshAudits) {
+                $this->js('$wire.runPageSpeed()');
+            }
+        } catch (\Exception $e) {
+            $this->seoReportData = ['error' => $e->getMessage()];
+        } finally {
+            $this->seoLoading = false;
+        }
+    }
+
+    /**
+     * Find a Google integration for the given tenant, falling back to
+     * any active Google integration owned by the current user.
+     */
+    protected function findGoogleIntegration(int $tenantId): ?Integration
+    {
+        return Integration::query()
+            ->where('platform', 'google')
+            ->where('status', 'active')
+            ->where(function ($q) use ($tenantId) {
+                $q->where('tenant_id', $tenantId)
+                  ->orWhere('user_id', auth()->id());
+            })
+            ->orderByRaw('tenant_id = ? DESC', [$tenantId]) // prefer tenant-specific
+            ->first();
+    }
+
+    public function loadSeoProperties()
+    {
+        if ($this->seoSettingsLoaded) {
+            return;
+        }
+
+        $client = Tenant::find($this->clientId);
+        if (!$client) {
+            return;
+        }
+
+        $settings = $client->settings ?? [];
+        $seo = $settings['seo'] ?? [];
+
+        $this->seoSearchConsoleSite = $seo['search_console_site'] ?? null;
+        $this->seoGa4PropertyId = $seo['ga4_property_id'] ?? null;
+        $this->seoGa4PropertyName = $seo['ga4_property_name'] ?? null;
+        $this->seoPagespeedUrl = $seo['pagespeed_url'] ?? ($client->website ?? null);
+
+        $this->seoHasIntegration = (bool) $this->findGoogleIntegration($client->id);
+        $this->seoSettingsLoaded = true;
+    }
+
+    public function toggleSeoSettings()
+    {
+        $this->seoSettingsOpen = !$this->seoSettingsOpen;
+        $this->seoSaved = false;
+
+        if ($this->seoSettingsOpen && empty($this->seoSearchConsoleSites) && $this->seoHasIntegration) {
+            $this->loadSearchConsoleSites();
+            $this->loadGa4Properties();
+        }
+    }
+
+    public function loadSearchConsoleSites()
+    {
+        $this->seoLoadingSites = true;
+
+        try {
+            $integration = $this->findGoogleIntegration($this->clientId);
+
+            if ($integration) {
+                $searchConsole = app(SearchConsoleService::class);
+                $this->seoSearchConsoleSites = $searchConsole->listSites($integration);
+            }
+        } catch (\Exception $e) {
+            // Silently fail — user will see empty dropdown
+        } finally {
+            $this->seoLoadingSites = false;
+        }
+    }
+
+    public function loadGa4Properties()
+    {
+        $this->seoLoadingProperties = true;
+
+        try {
+            $integration = $this->findGoogleIntegration($this->clientId);
+
+            if ($integration) {
+                $ga4 = app(GA4AnalyticsService::class);
+                $this->seoGa4Properties = $ga4->listProperties($integration);
+            }
+        } catch (\Exception $e) {
+            // Silently fail — user will see empty dropdown
+        } finally {
+            $this->seoLoadingProperties = false;
+        }
+    }
+
+    public function saveSeoProperties()
+    {
+        $this->seoSaving = true;
+        $this->seoSaved = false;
+
+        try {
+            $client = Tenant::findOrFail($this->clientId);
+            $settings = $client->settings ?? [];
+
+            // If user selected a GA4 property, find its display name
+            if ($this->seoGa4PropertyId) {
+                foreach ($this->seoGa4Properties as $prop) {
+                    if (($prop['property_id'] ?? '') === $this->seoGa4PropertyId) {
+                        $this->seoGa4PropertyName = $prop['display_name'] ?? null;
+                        break;
+                    }
+                }
+            }
+
+            $settings['seo'] = [
+                'search_console_site' => $this->seoSearchConsoleSite,
+                'ga4_property_id' => $this->seoGa4PropertyId,
+                'ga4_property_name' => $this->seoGa4PropertyName,
+                'pagespeed_url' => $this->seoPagespeedUrl,
+            ];
+
+            $client->update(['settings' => $settings]);
+            $this->seoSaved = true;
+
+            // Refresh SEO report with new settings
+            $this->seoReportData = null;
+            $this->fetchSeoReport();
+        } catch (\Exception $e) {
+            $this->seoSaved = false;
+        } finally {
+            $this->seoSaving = false;
+        }
+    }
+
+    // ── PageSpeed On-Demand ─────────────────────────────────────
+
+    public function runPageSpeed(): void
+    {
+        $this->pagespeedLoading = true;
+        try {
+            $client = Tenant::findOrFail($this->clientId);
+            $settings = $client->settings ?? [];
+            $pageSpeedUrl = $settings['seo']['pagespeed_url'] ?? ($client->website ?? null);
+            if ($pageSpeedUrl) {
+                $pagespeed = app(PageSpeedService::class);
+
+                // Save existing good data so we can restore on failure
+                $existingMobile = $this->seoReportData['pagespeed_mobile'] ?? null;
+                $existingDesktop = $this->seoReportData['pagespeed_desktop'] ?? null;
+                $hadGoodMobile = $existingMobile && !isset($existingMobile['_error']);
+                $hadGoodDesktop = $existingDesktop && !isset($existingDesktop['_error']);
+
+                // Clear cache to force fresh fetch
+                $mobileCacheKey = 'pagespeed:' . md5($pageSpeedUrl . ':mobile');
+                $desktopCacheKey = 'pagespeed:' . md5($pageSpeedUrl . ':desktop');
+                Cache::forget($mobileCacheKey);
+                Cache::forget($desktopCacheKey);
+
+                $mobile = $pagespeed->analyze($pageSpeedUrl, 'mobile');
+                $desktop = $pagespeed->analyze($pageSpeedUrl, 'desktop');
+
+                // If fresh fetch failed but we had good data, keep the old results
+                $mobileFailed = $mobile === null || isset($mobile['_error']);
+                $desktopFailed = $desktop === null || isset($desktop['_error']);
+
+                if ($mobileFailed && $hadGoodMobile) {
+                    $this->seoReportData['pagespeed_mobile'] = $existingMobile;
+                    // Restore good data in cache
+                    Cache::put($mobileCacheKey, $existingMobile, 24 * 3600);
+                } else {
+                    $this->seoReportData['pagespeed_mobile'] = $mobile;
+                }
+
+                if ($desktopFailed && $hadGoodDesktop) {
+                    $this->seoReportData['pagespeed_desktop'] = $existingDesktop;
+                    Cache::put($desktopCacheKey, $existingDesktop, 24 * 3600);
+                } else {
+                    $this->seoReportData['pagespeed_desktop'] = $desktop;
+                }
+
+                // Notify user if quota was exceeded but old data was preserved
+                if (($mobileFailed || $desktopFailed) && ($hadGoodMobile || $hadGoodDesktop)) {
+                    $this->dispatch('notify', type: 'warning', message: __('client_dashboard.seo.pagespeed_quota_exceeded') . ' ' . __('client_dashboard.seo.pagespeed_showing_cached'));
+                }
+
+                // Auto-detect SEO issues from Lighthouse audits
+                app(SeoAuditService::class)->processPageSpeedAudits(
+                    $this->clientId,
+                    $pageSpeedUrl,
+                    $this->seoReportData['pagespeed_mobile'] ?? [],
+                    $this->seoReportData['pagespeed_desktop'] ?? []
+                );
+                $this->fetchAuditIssues();
+            }
+        } catch (\Exception $e) {
+            // silent
+        } finally {
+            $this->pagespeedLoading = false;
+        }
+    }
+
+    // ── Audit Sub-Tab ─────────────────────────────────────────
+
+    public function fetchAuditIssues(): void
+    {
+        $this->auditLoading = true;
+
+        try {
+            $query = SeoTechnicalIssue::where('tenant_id', $this->clientId);
+
+            if ($this->auditStatusFilter !== 'all') {
+                $query->where('current_status', $this->auditStatusFilter);
+            }
+            if ($this->auditSeverityFilter !== 'all') {
+                $query->where('severity', $this->auditSeverityFilter);
+            }
+
+            $this->auditIssues = $query
+                ->orderByRaw("FIELD(severity, 'critical', 'high', 'medium', 'low')")
+                ->orderByDesc('date_found')
+                ->get()
+                ->toArray();
+        } catch (\Exception $e) {
+            $this->auditIssues = [];
+        } finally {
+            $this->auditLoading = false;
+        }
+    }
+
+    public function startEditIssue(int $issueId): void
+    {
+        $issue = SeoTechnicalIssue::find($issueId);
+        if ($issue && $issue->tenant_id === $this->clientId) {
+            $this->editingIssueId = $issue->id;
+            $this->editingIssueStatus = $issue->current_status;
+            $this->editingIssueNotes = $issue->notes ?? '';
+        }
+    }
+
+    public function saveIssueUpdate(): void
+    {
+        $issue = SeoTechnicalIssue::find($this->editingIssueId);
+        if (!$issue || $issue->tenant_id !== $this->clientId) {
+            return;
+        }
+
+        $issue->current_status = $this->editingIssueStatus;
+        $issue->notes = $this->editingIssueNotes;
+
+        if ($this->editingIssueStatus === 'resolved' && !$issue->date_fixed) {
+            $issue->date_fixed = now();
+        }
+
+        $issue->save();
+        $this->cancelEditIssue();
+        $this->fetchAuditIssues();
+        $this->dispatch('notify', type: 'success', message: __('client_dashboard.seo.issue_updated'));
+    }
+
+    public function cancelEditIssue(): void
+    {
+        $this->editingIssueId = null;
+        $this->editingIssueStatus = '';
+        $this->editingIssueNotes = '';
+    }
+
+    public function updatedAuditStatusFilter(): void
+    {
+        $this->fetchAuditIssues();
+    }
+
+    public function updatedAuditSeverityFilter(): void
+    {
+        $this->fetchAuditIssues();
+    }
+
+    public function exportDashboard(string $format)
+    {
+        $this->exporting = true;
+
+        $this->dispatch('export-dashboard', [
+            'format' => $format,
+            'clientId' => $this->clientId,
+            'period' => $this->selectedPeriod,
+            'platform' => $this->selectedPlatform,
+        ]);
+
+        $this->exporting = false;
+    }
+
+    public function getPlatformChartConfigProperty(): array
+    {
+        if (!$this->dashboardData || empty($this->dashboardData['platform_breakdown'])) {
+            return ['type' => $this->platformChartType, 'data' => ['labels' => [], 'datasets' => [['data' => []]]], 'options' => ['responsive' => true, 'maintainAspectRatio' => false]];
+        }
+
+        $colors = ['rgba(239, 68, 68,0.8)', 'rgba(107, 107, 102, 0.85)', 'rgba(17, 17, 17, 0.85)', 'rgba(63, 63, 60, 0.85)', 'rgba(168, 168, 164, 0.9)', 'rgba(107, 107, 102,0.8)'];
+
+        return [
+            'type' => $this->platformChartType,
+            'data' => [
+                'labels' => array_map(fn($p) => ucfirst($p['platform']), $this->dashboardData['platform_breakdown']),
+                'datasets' => [[
+                    'data' => array_map(fn($p) => $p['spend'], $this->dashboardData['platform_breakdown']),
+                    'backgroundColor' => array_slice($colors, 0, count($this->dashboardData['platform_breakdown'])),
+                ]],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['position' => 'bottom']],
+            ],
+        ];
+    }
+
+    public function getTrendChartConfigProperty(): array
+    {
+        if (!$this->dashboardData || empty($this->dashboardData['trends']['spend'])) {
+            return ['type' => $this->trendChartType, 'data' => ['labels' => [], 'datasets' => []], 'options' => ['responsive' => true, 'maintainAspectRatio' => false]];
+        }
+
+        $trends = $this->dashboardData['trends'];
+        $labels = array_map(fn($t) => $t['date'], $trends['spend']);
+
+        return [
+            'type' => $this->trendChartType,
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    ['label' => 'Spend (SAR)', 'data' => array_map(fn($t) => $t['value'], $trends['spend']), 'borderColor' => 'rgb(239, 68, 68)', 'backgroundColor' => 'rgba(239, 68, 68,0.1)', 'tension' => 0.3, 'fill' => true, 'yAxisID' => 'y'],
+                    ['label' => 'Clicks', 'data' => array_map(fn($t) => $t['value'], $trends['clicks']), 'borderColor' => 'rgb(107, 107, 102)', 'backgroundColor' => 'rgba(107, 107, 102,0.1)', 'tension' => 0.3, 'yAxisID' => 'y1'],
+                    ['label' => 'Conversions', 'data' => array_map(fn($t) => $t['value'], $trends['conversions']), 'borderColor' => 'rgb(212, 212, 210)', 'backgroundColor' => 'rgba(212, 212, 210,0.1)', 'tension' => 0.3, 'yAxisID' => 'y1'],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => ['mode' => 'index', 'intersect' => false],
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left'],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false]],
+                ],
+            ],
+        ];
+    }
+
+    public function getCampaignsChartConfigProperty(): array
+    {
+        if (!$this->dashboardData || empty($this->dashboardData['top_campaigns'])) {
+            return ['type' => 'bar', 'data' => ['labels' => [], 'datasets' => []], 'options' => ['responsive' => true, 'maintainAspectRatio' => false]];
+        }
+
+        $campaigns = array_slice($this->dashboardData['top_campaigns'], 0, 10);
+
+        return [
+            'type' => $this->campaignsChartType,
+            'data' => [
+                'labels' => array_map(fn($c) => substr($c['name'], 0, 30), $campaigns),
+                'datasets' => [
+                    ['label' => 'Spend (SAR)', 'data' => array_map(fn($c) => $c['spend'], $campaigns), 'backgroundColor' => 'rgba(239, 68, 68,0.7)'],
+                    ['label' => 'Conversions', 'data' => array_map(fn($c) => $c['conversions'], $campaigns), 'backgroundColor' => 'rgba(120, 119, 116,0.7)'],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['position' => 'top']],
+            ],
+        ];
+    }
+
+    public function getScTrendChartConfigProperty(): array
+    {
+        $timeseries = $this->seoReportData['search_console']['timeseries'] ?? [];
+        if (empty($timeseries)) {
+            return ['type' => 'line', 'data' => ['labels' => [], 'datasets' => []], 'options' => ['responsive' => true, 'maintainAspectRatio' => false]];
+        }
+
+        return [
+            'type' => 'line',
+            'data' => [
+                'labels' => array_map(fn($t) => $t['date'], $timeseries),
+                'datasets' => [
+                    [
+                        'label' => __('client_dashboard.seo.clicks'),
+                        'data' => array_column($timeseries, 'clicks'),
+                        'borderColor' => 'rgb(239, 68, 68)',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.1)',
+                        'tension' => 0.3,
+                        'fill' => true,
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => __('client_dashboard.seo.impressions'),
+                        'data' => array_column($timeseries, 'impressions'),
+                        'borderColor' => 'rgb(107, 107, 102)',
+                        'backgroundColor' => 'rgba(107, 107, 102,0.1)',
+                        'tension' => 0.3,
+                        'yAxisID' => 'y1',
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => ['mode' => 'index', 'intersect' => false],
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left', 'title' => ['display' => true, 'text' => __('client_dashboard.seo.clicks')]],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false], 'title' => ['display' => true, 'text' => __('client_dashboard.seo.impressions')]],
+                ],
+            ],
+        ];
+    }
+
+    public function getGa4TrendChartConfigProperty(): array
+    {
+        $timeseries = $this->seoReportData['ga4']['timeseries'] ?? [];
+        if (empty($timeseries)) {
+            return ['type' => 'line', 'data' => ['labels' => [], 'datasets' => []], 'options' => ['responsive' => true, 'maintainAspectRatio' => false]];
+        }
+
+        return [
+            'type' => 'line',
+            'data' => [
+                'labels' => array_map(fn($t) => $t['date'], $timeseries),
+                'datasets' => [
+                    [
+                        'label' => __('client_dashboard.seo.sessions'),
+                        'data' => array_column($timeseries, 'sessions'),
+                        'borderColor' => 'rgb(239, 68, 68)',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.1)',
+                        'tension' => 0.3,
+                        'fill' => true,
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => __('client_dashboard.seo.users'),
+                        'data' => array_column($timeseries, 'users'),
+                        'borderColor' => 'rgba(120, 119, 116, 0.1)',
+                        'backgroundColor' => 'rgba(120, 119, 116,0.1)',
+                        'tension' => 0.3,
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => __('client_dashboard.seo.bounce_rate'),
+                        'data' => array_column($timeseries, 'bounce_rate'),
+                        'borderColor' => 'rgb(212, 212, 210)',
+                        'backgroundColor' => 'rgba(212, 212, 210,0.1)',
+                        'tension' => 0.3,
+                        'yAxisID' => 'y1',
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => ['mode' => 'index', 'intersect' => false],
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left'],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false], 'title' => ['display' => true, 'text' => __('client_dashboard.seo.bounce_rate') . ' (%)'], 'ticks' => ['callback' => '']],
+                ],
+            ],
+        ];
+    }
+
+    public function getPeriodLabelProperty(): string
+    {
+        if ($this->dateFrom && $this->dateTo) {
+            return "{$this->dateFrom} to {$this->dateTo}";
+        }
+        if (!$this->selectedPeriod || $this->selectedPeriod === 0) {
+            return 'All Time';
+        }
+        return "Last {$this->selectedPeriod} Days";
+    }
+
+    private function computeDelta(float $current, float $previous, bool $inverted = false): array
+    {
+        if ($previous == 0) {
+            $pct = $current > 0 ? 100.0 : 0.0;
+        } else {
+            $pct = round((($current - $previous) / abs($previous)) * 100, 1);
+        }
+        $direction = $inverted ? ($pct <= 0 ? 'positive' : 'negative') : ($pct >= 0 ? 'positive' : 'negative');
+        return ['value' => $pct, 'direction' => $direction];
+    }
+
+    private function formatNumber($num): string
+    {
+        if ($num >= 1000000000) return number_format($num / 1000000000, 1) . 'B';
+        if ($num >= 1000000) return number_format($num / 1000000, 1) . 'M';
+        if ($num >= 1000) return number_format($num / 1000, 1) . 'K';
+        return number_format($num);
+    }
+
+    /**
+     * Generate SVG sparkline from data points.
+     *
+     * @security-safe Output is internally-generated SVG markup containing only
+     *                numeric coordinates and hardcoded colors. No user input
+     *                reaches the returned string. Safe for {!! !!} rendering.
+     */
+    protected function generateSparkline(array $data, int $width = 80, int $height = 24): string
+    {
+        if (empty($data) || count($data) < 2) {
+            return '';
+        }
+
+        $values = array_values($data);
+        $count = count($values);
+        $max = max($values) ?: 1;
+        $min = min($values);
+        $range = $max - $min ?: 1;
+
+        $points = [];
+        for ($i = 0; $i < $count; $i++) {
+            $x = ($i / ($count - 1)) * $width;
+            $y = $height - (($values[$i] - $min) / $range) * ($height - 4) - 2;
+            $points[] = round($x, 1) . ',' . round($y, 1);
+        }
+
+        $firstHalf = array_slice($values, 0, (int)($count / 2));
+        $secondHalf = array_slice($values, (int)($count / 2));
+        $firstAvg = count($firstHalf) > 0 ? array_sum($firstHalf) / count($firstHalf) : 0;
+        $secondAvg = count($secondHalf) > 0 ? array_sum($secondHalf) / count($secondHalf) : 0;
+        $trendColor = $secondAvg >= $firstAvg ? '#787774' : '#ef4444';
+
+        return '<svg width="' . $width . '" height="' . $height . '" viewBox="0 0 ' . $width . ' ' . $height . '" xmlns="http://www.w3.org/2000/svg">'
+            . '<polyline fill="none" stroke="' . $trendColor . '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="' . implode(' ', $points) . '"/>'
+            . '</svg>';
+    }
+
+    /**
+     * Generate sparklines for all key metrics
+     */
+    protected function generateSparklines(array $trends): array
+    {
+        $sparklines = [
+            'spend' => '',
+            'impressions' => '',
+            'clicks' => '',
+            'conversions' => '',
+        ];
+
+        if (empty($trends)) {
+            return $sparklines;
+        }
+
+        $spendData = [];
+        $impressionsData = [];
+        $clicksData = [];
+        $conversionsData = [];
+
+        foreach ($trends as $day) {
+            $spendData[] = $day['spend'] ?? 0;
+            $impressionsData[] = $day['impressions'] ?? 0;
+            $clicksData[] = $day['clicks'] ?? 0;
+            $conversionsData[] = $day['conversions'] ?? 0;
+        }
+
+        $sparklines['spend'] = $this->generateSparkline($spendData);
+        $sparklines['impressions'] = $this->generateSparkline($impressionsData);
+        $sparklines['clicks'] = $this->generateSparkline($clicksData);
+        $sparklines['conversions'] = $this->generateSparkline($conversionsData);
+
+        return $sparklines;
+    }
+
+    /**
+     * Analyze trends to determine direction and percentage change
+     */
+    protected function analyzeTrends(array $trends): array
+    {
+        $direction = [
+            'spend' => 'flat',
+            'impressions' => 'flat',
+            'clicks' => 'flat',
+            'conversions' => 'flat',
+            'ctr' => 'flat',
+            'cvr' => 'flat',
+            'cpc' => 'flat',
+            'roas' => 'flat',
+        ];
+
+        $percent = [
+            'spend' => 0,
+            'impressions' => 0,
+            'clicks' => 0,
+            'conversions' => 0,
+            'ctr' => 0,
+            'cvr' => 0,
+            'cpc' => 0,
+            'roas' => 0,
+        ];
+
+        if (empty($trends) || count($trends) < 2) {
+            return ['direction' => $direction, 'percent' => $percent];
+        }
+
+        $count = count($trends);
+        $midpoint = (int)($count / 2);
+
+        $firstHalf = array_slice($trends, 0, $midpoint);
+        $secondHalf = array_slice($trends, $midpoint);
+
+        $metrics = ['spend', 'impressions', 'clicks', 'conversions'];
+
+        foreach ($metrics as $metric) {
+            $firstSum = array_sum(array_column($firstHalf, $metric));
+            $secondSum = array_sum(array_column($secondHalf, $metric));
+
+            if ($firstSum > 0) {
+                $change = (($secondSum - $firstSum) / $firstSum) * 100;
+                $percent[$metric] = round($change, 1);
+                $direction[$metric] = $change > 2 ? 'up' : ($change < -2 ? 'down' : 'flat');
+            }
+        }
+
+        $firstImpressions = array_sum(array_column($firstHalf, 'impressions'));
+        $secondImpressions = array_sum(array_column($secondHalf, 'impressions'));
+        $firstClicks = array_sum(array_column($firstHalf, 'clicks'));
+        $secondClicks = array_sum(array_column($secondHalf, 'clicks'));
+
+        $firstCtr = $firstImpressions > 0 ? ($firstClicks / $firstImpressions) * 100 : 0;
+        $secondCtr = $secondImpressions > 0 ? ($secondClicks / $secondImpressions) * 100 : 0;
+        if ($firstCtr > 0) {
+            $ctrChange = (($secondCtr - $firstCtr) / $firstCtr) * 100;
+            $percent['ctr'] = round($ctrChange, 1);
+            $direction['ctr'] = $ctrChange > 2 ? 'up' : ($ctrChange < -2 ? 'down' : 'flat');
+        }
+
+        return ['direction' => $direction, 'percent' => $percent];
+    }
+
+    /**
+     * Generate executive summary with auto-generated insights
+     */
+    protected function generateExecutiveSummary(array $stats, array $platforms, array $campaigns): array
+    {
+        $insights = [];
+        $health = 'healthy';
+        $healthScore = 100;
+
+        $roas = $stats['roas'] ?? 0;
+        if ($roas >= 3) {
+            $insights[] = [
+                'type' => 'success',
+                'icon' => '★',
+                'text' => 'Excellent ROAS of ' . number_format($roas, 2) . 'x - campaigns are highly profitable.',
+            ];
+        } elseif ($roas >= 2) {
+            $insights[] = [
+                'type' => 'success',
+                'icon' => '✓',
+                'text' => 'Strong ROAS of ' . number_format($roas, 2) . 'x indicates healthy return on ad spend.',
+            ];
+        } elseif ($roas >= 1) {
+            $insights[] = [
+                'type' => 'warning',
+                'icon' => '!',
+                'text' => 'ROAS of ' . number_format($roas, 2) . 'x is breaking even. Consider optimizing underperforming campaigns.',
+            ];
+            $healthScore -= 20;
+        } else {
+            $insights[] = [
+                'type' => 'danger',
+                'icon' => '✗',
+                'text' => 'ROAS of ' . number_format($roas, 2) . 'x indicates negative returns. Immediate optimization needed.',
+            ];
+            $healthScore -= 40;
+        }
+
+        if (!empty($platforms)) {
+            $topPlatform = $platforms[0];
+            $platformSpend = $topPlatform['spend'] ?? 0;
+            $totalSpend = ($stats['total_spend'] ?? 0) > 0 ? $stats['total_spend'] : 1;
+            $platformPct = ($platformSpend / $totalSpend) * 100;
+
+            $insights[] = [
+                'type' => 'info',
+                'icon' => '◆',
+                'text' => ucfirst($topPlatform['platform']) . ' leads with ' . number_format($platformPct, 0) . '% of total spend (' . number_format($platformSpend, 0) . ' SAR).',
+            ];
+        }
+
+        if (!empty($campaigns)) {
+            $bestCampaign = null;
+            $bestRoas = 0;
+            foreach ($campaigns as $campaign) {
+                if (($campaign['roas'] ?? 0) > $bestRoas && ($campaign['spend'] ?? 0) > 100) {
+                    $bestRoas = $campaign['roas'];
+                    $bestCampaign = $campaign;
+                }
+            }
+
+            if ($bestCampaign && $bestRoas >= 2) {
+                $insights[] = [
+                    'type' => 'success',
+                    'icon' => '▲',
+                    'text' => 'Top performer: "' . \Illuminate\Support\Str::limit($bestCampaign['name'], 30) . '" with ' . number_format($bestRoas, 1) . 'x ROAS.',
+                ];
+            }
+        }
+
+        $ctr = $stats['ctr'] ?? 0;
+        if ($ctr >= 2) {
+            $insights[] = [
+                'type' => 'success',
+                'icon' => '●',
+                'text' => 'CTR of ' . number_format($ctr, 2) . '% is above industry average, showing strong ad relevance.',
+            ];
+        } elseif ($ctr >= 1) {
+            $insights[] = [
+                'type' => 'info',
+                'icon' => '○',
+                'text' => 'CTR of ' . number_format($ctr, 2) . '% is within normal range.',
+            ];
+        } else {
+            $insights[] = [
+                'type' => 'warning',
+                'icon' => '!',
+                'text' => 'CTR of ' . number_format($ctr, 2) . '% is below average. Review ad creative and targeting.',
+            ];
+            $healthScore -= 15;
+        }
+
+        $conversions = $stats['total_conversions'] ?? 0;
+        $cvr = $stats['cvr'] ?? 0;
+        if ($conversions > 0) {
+            if ($cvr >= 3) {
+                $insights[] = [
+                    'type' => 'success',
+                    'icon' => '✓',
+                    'text' => 'Strong conversion rate of ' . number_format($cvr, 2) . '% with ' . number_format($conversions) . ' total conversions.',
+                ];
+            } elseif ($cvr < 1 && $conversions < 10) {
+                $insights[] = [
+                    'type' => 'warning',
+                    'icon' => '!',
+                    'text' => 'Low conversion volume (' . number_format($conversions) . '). Consider expanding reach or improving landing pages.',
+                ];
+                $healthScore -= 10;
+            }
+        }
+
+        if ($healthScore >= 80) {
+            $health = 'healthy';
+        } elseif ($healthScore >= 50) {
+            $health = 'needs_attention';
+        } else {
+            $health = 'critical';
+        }
+
+        return [
+            'insights' => array_slice($insights, 0, 5),
+            'health' => $health,
+            'health_score' => $healthScore,
+        ];
+    }
+
+    public function getFunnelChartConfigProperty(): array
+    {
+        $stages = $this->dashboardData['funnel_data']['stages'] ?? [];
+        $labels = array_map(fn($s) => $s['name'], $stages);
+        $values = array_map(fn($s) => $s['value'], $stages);
+
+        return [
+            'type' => 'bar',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [[
+                    'label' => 'Volume',
+                    'data' => $values,
+                    'backgroundColor' => ['#EF4444', '#6B6B66', '#EF4444', '#787774'],
+                    'borderRadius' => 6,
+                ]],
+            ],
+            'options' => [
+                'indexAxis' => 'y',
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['display' => false]],
+                'scales' => [
+                    'x' => ['display' => false],
+                    'y' => ['grid' => ['display' => false], 'ticks' => ['font' => ['size' => 11], 'color' => '#3F3F3C']],
+                ],
+            ],
+        ];
+    }
+
+    public function getLeadVsCplChartConfigProperty(): array
+    {
+        $data = $this->dashboardData['lead_vs_cpl'] ?? [];
+        $labels = array_map(fn($d) => \Carbon\Carbon::parse($d['date'])->format('M d'), $data);
+        $leads = array_map(fn($d) => $d['leads'], $data);
+        $cpl = array_map(fn($d) => $d['cpl'], $data);
+
+        return [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Leads',
+                        'data' => $leads,
+                        'borderColor' => '#787774',
+                        'backgroundColor' => 'rgba(120, 119, 116,0.1)',
+                        'tension' => 0.3,
+                        'fill' => true,
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => 'CPL (SAR)',
+                        'data' => $cpl,
+                        'borderColor' => '#EF4444',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.05)',
+                        'tension' => 0.3,
+                        'fill' => false,
+                        'yAxisID' => 'y1',
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => ['mode' => 'index', 'intersect' => false],
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left'],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false]],
+                ],
+            ],
+        ];
+    }
+
+    public function getLeadVsSpentChartConfigProperty(): array
+    {
+        $data = $this->dashboardData['lead_vs_spent'] ?? [];
+        $labels = array_map(fn($d) => $d['period'], $data);
+        $leads = array_map(fn($d) => $d['leads'], $data);
+        $spend = array_map(fn($d) => $d['spend'], $data);
+
+        return [
+            'type' => 'bar',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Leads',
+                        'data' => $leads,
+                        'backgroundColor' => '#787774',
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => 'Spend (SAR)',
+                        'data' => $spend,
+                        'backgroundColor' => '#EF4444',
+                        'yAxisID' => 'y1',
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left'],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false]],
+                ],
+            ],
+        ];
+    }
+
+    public function getRevenueVsRoasChartConfigProperty(): array
+    {
+        $data = $this->dashboardData['revenue_vs_roas'] ?? [];
+        $labels = array_map(fn($d) => \Carbon\Carbon::parse($d['date'])->format('M d'), $data);
+        $revenue = array_map(fn($d) => $d['revenue'], $data);
+        $roas = array_map(fn($d) => $d['roas'], $data);
+
+        return [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Revenue (SAR)',
+                        'data' => $revenue,
+                        'borderColor' => '#787774',
+                        'backgroundColor' => 'rgba(120, 119, 116,0.1)',
+                        'tension' => 0.3,
+                        'fill' => true,
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => 'ROAS',
+                        'data' => $roas,
+                        'borderColor' => '#EF4444',
+                        'backgroundColor' => 'rgba(239, 68, 68,0.05)',
+                        'tension' => 0.3,
+                        'fill' => false,
+                        'yAxisID' => 'y1',
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => ['mode' => 'index', 'intersect' => false],
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left'],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false]],
+                ],
+            ],
+        ];
+    }
+
+    public function getConversionsVsCpaChartConfigProperty(): array
+    {
+        $data = $this->dashboardData['conversions_vs_cpa'] ?? [];
+        $labels = array_map(fn($d) => $d['period'], $data);
+        $conversions = array_map(fn($d) => $d['conversions'], $data);
+        $cpa = array_map(fn($d) => $d['cpa'], $data);
+
+        return [
+            'type' => 'bar',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Conversions',
+                        'data' => $conversions,
+                        'backgroundColor' => '#787774',
+                        'yAxisID' => 'y',
+                    ],
+                    [
+                        'label' => 'CPA (SAR)',
+                        'data' => $cpa,
+                        'backgroundColor' => '#EF4444',
+                        'yAxisID' => 'y1',
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'scales' => [
+                    'y' => ['type' => 'linear', 'display' => true, 'position' => 'left'],
+                    'y1' => ['type' => 'linear', 'display' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false]],
+                ],
+            ],
+        ];
+    }
+
+    public function getEcommerceFunnelChartConfigProperty(): array
+    {
+        $stages = $this->dashboardData['funnel_data']['stages'] ?? [];
+        $labels = array_map(fn($s) => $s['name'], $stages);
+        $values = array_map(fn($s) => $s['value'], $stages);
+
+        return [
+            'type' => 'bar',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [[
+                    'label' => 'Volume',
+                    'data' => $values,
+                    'backgroundColor' => ['#EF4444', '#6B6B66', '#EF4444', '#787774'],
+                    'borderRadius' => 6,
+                ]],
+            ],
+            'options' => [
+                'indexAxis' => 'y',
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['display' => false]],
+                'scales' => [
+                    'x' => ['display' => false],
+                    'y' => ['grid' => ['display' => false], 'ticks' => ['font' => ['size' => 11], 'color' => '#3F3F3C']],
+                ],
+            ],
+        ];
+    }
+
+    /* ================================================================
+       Inline Editing for Ad Accounts & Campaigns
+       ================================================================ */
+
+    public function startEditAccount(int $accountId): void
+    {
+        $accounts = $this->dashboardData['ad_accounts'] ?? [];
+        $account = collect($accounts)->firstWhere('id', $accountId);
+
+        if (!$account) {
+            return;
+        }
+
+        $this->editingAccountId = $accountId;
+        $this->editAccountIndustry = $account['industry'] ?? '';
+        $this->editAccountCategory = $account['category'] ?? '';
+        $this->editAccountSubCategory = $account['sub_industry'] ?? '';
+    }
+
+    public function cancelAccountEdit(): void
+    {
+        $this->editingAccountId = null;
+        $this->editAccountIndustry = '';
+        $this->editAccountCategory = '';
+        $this->editAccountSubCategory = '';
+    }
+
+    public function saveAccountEdit(): void
+    {
+        $account = AdAccount::find($this->editingAccountId);
+        if (!$account) {
+            $this->cancelAccountEdit();
+            return;
+        }
+
+        $update = [];
+        if ($this->editAccountIndustry !== '') {
+            $update['industry'] = $this->editAccountIndustry ?: null;
+        }
+        if ($this->editAccountCategory !== '') {
+            $update['category'] = $this->editAccountCategory ?: null;
+        }
+        if ($this->editAccountSubCategory !== '') {
+            $update['sub_industry'] = $this->editAccountSubCategory ?: null;
+        }
+
+        $industryChanged  = isset($update['industry'])  && $update['industry']  !== $account->industry;
+        $categoryChanged  = isset($update['category'])  && $update['category']  !== $account->category;
+        $subCategoryChanged = isset($update['sub_industry']) && $update['sub_industry'] !== $account->sub_industry;
+
+        // Cascade: clear dependent fields only if they weren't explicitly changed
+        if ($industryChanged && !$categoryChanged) {
+            $update['category'] = null;
+        }
+        if (($industryChanged || $categoryChanged) && !$subCategoryChanged) {
+            $update['sub_industry'] = null;
+        }
+
+        if (!empty($update)) {
+            $account->update($update);
+        }
+
+        $this->cancelAccountEdit();
+        $this->fetchDashboard();
+    }
+
+    public function updatedEditAccountIndustry(): void
+    {
+        $this->editAccountCategory = '';
+        $this->editAccountSubCategory = '';
+    }
+
+    public function updatedEditAccountCategory(): void
+    {
+        $this->editAccountSubCategory = '';
+    }
+
+    public function updateCampaign(int $campaignId, string $field, $value): void
+    {
+        $campaign = AdCampaign::find($campaignId);
+        if (!$campaign) {
+            return;
+        }
+
+        $allowedFields = ['objective', 'sub_industry', 'funnel_stage'];
+        if (!in_array($field, $allowedFields)) {
+            return;
+        }
+
+        $campaign->update([$field => $value ?: null]);
+        $this->fetchDashboard();
+    }
+
+    public function render()
+    {
+        $industries = Industry::active()->ordered()->pluck('display_name', 'name')->toArray();
+
+        $categories = [];
+        $subCategories = [];
+        if ($this->editingAccountId) {
+            $industry = Industry::where('name', $this->editAccountIndustry)->first();
+            if ($industry) {
+                $categories = $industry->accountCategories()
+                    ->where('is_active', true)
+                    ->ordered()
+                    ->pluck('display_name')
+                    ->toArray();
+            }
+            if ($this->editAccountCategory) {
+                $categoryModel = AccountCategory::where('display_name', $this->editAccountCategory)->first();
+                $subCategories = $categoryModel
+                    ? $categoryModel->subCategories->mapWithKeys(fn($sub) => [$sub->name => $sub->display_name])->all()
+                    : [];
+            }
+        }
+
+        // Campaign sub-categories come from each account's category sub-categories
+        $campaignCategories = [];
+        $accounts = $this->dashboardData['ad_accounts'] ?? [];
+        foreach ($accounts as $account) {
+            $categoryName = $account['category'] ?? null;
+            if ($categoryName) {
+                $categoryModel = AccountCategory::where('display_name', $categoryName)->first();
+                if ($categoryModel) {
+                    foreach ($categoryModel->subCategories as $sub) {
+                        $campaignCategories[$sub->display_name] = $sub->display_name;
+                    }
+                }
+            }
+        }
+        ksort($campaignCategories);
+
+        // AI Visibility lazy-load
+        if ($this->activeTabIndex === 3 && $this->aiMonths === null) {
+            $this->loadAiVisibilityData();
+        }
+
+        return view('livewire.pages.client-dashboard', [
+            'platformChartConfig' => $this->getPlatformChartConfigProperty(),
+            'trendChartConfig' => $this->getTrendChartConfigProperty(),
+            'campaignsChartConfig' => $this->getCampaignsChartConfigProperty(),
+            'periodLabel' => $this->getPeriodLabelProperty(),
+            'scTrendChartConfig' => $this->getScTrendChartConfigProperty(),
+            'ga4TrendChartConfig' => $this->getGa4TrendChartConfigProperty(),
+            'funnelChartConfig' => $this->getFunnelChartConfigProperty(),
+            'leadVsCplChartConfig' => $this->getLeadVsCplChartConfigProperty(),
+            'leadVsSpentChartConfig' => $this->getLeadVsSpentChartConfigProperty(),
+            'revenueVsRoasChartConfig' => $this->getRevenueVsRoasChartConfigProperty(),
+            'conversionsVsCpaChartConfig' => $this->getConversionsVsCpaChartConfigProperty(),
+            'ecommerceFunnelChartConfig' => $this->getEcommerceFunnelChartConfigProperty(),
+            'industries' => $industries,
+            'categories' => $categories,
+            'subCategories' => $subCategories,
+            'campaignCategories' => $campaignCategories,
+            'aiPartOne' => $this->activeTabIndex === 3 && $this->aiVisibilitySection !== 'settings'
+                ? \App\Services\AiVisibilityPartOne::forTenant($this->clientId, $this->dashboardData['client']['name'] ?? 'the brand', $this->aiReportMonth ?: null) : null,
+            'aiTracking' => $this->activeTabIndex === 3 && $this->aiVisibilitySection === 'settings'
+                ? $this->aiTrackingSettingsData() : null,
+        ])->layout('layouts.app');
+    }
+}

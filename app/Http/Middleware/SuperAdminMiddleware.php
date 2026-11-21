@@ -16,14 +16,20 @@ class SuperAdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check()) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated'], 401);
+            }
+            return redirect()->route('login');
         }
 
         $user = auth()->user();
 
         // Check if user is super admin
         if (!$user->isSuperAdmin()) {
-            return response()->json(['message' => 'Access denied. Super admin privileges required.'], 403);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Access denied. Super admin privileges required.'], 403);
+            }
+            abort(403, 'Access denied. Super admin privileges required.');
         }
 
         return $next($request);

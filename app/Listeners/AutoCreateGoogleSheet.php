@@ -98,9 +98,7 @@ class AutoCreateGoogleSheet implements ShouldQueue
             Log::error('Failed to auto-create Google Sheet', [
                 'campaign_id' => $campaign->id,
                 'campaign_name' => $campaign->name,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                'error' => $e->getMessage(),]);
 
             // Optionally, you could retry this later or notify administrators
             $this->fail($e);

@@ -65,10 +65,8 @@ class ReportGenerationService
                 'files' => $files,
             ];
         } catch (\Exception $e) {
-            Log::error('Report generation failed', [
+            \App\Helpers\SecureLogger::exception('error', 'Report generation failed', $e, [
                 'scheduled_report_id' => $scheduledReport->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             if (isset($history)) {

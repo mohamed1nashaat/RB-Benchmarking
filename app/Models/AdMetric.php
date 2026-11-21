@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class AdMetric extends Model
 {
+    use HasFactory, BelongsToTenant;
     protected $fillable = [
         'tenant_id',
         'date',
@@ -22,14 +25,25 @@ class AdMetric extends Model
         'impressions',
         'reach',
         'clicks',
+        'link_clicks',
+        'swipes',
         'video_views',
         'conversions',
         'revenue',
         'purchases',
         'leads',
+        'instant_leads',
+        'native_leads',
+        'blended_leads',
+        'sign_ups',
+        'website_leads',
+        'on_facebook_leads',
         'calls',
         'sessions',
         'atc',
+        'app_installs',
+        'page_views',
+        'cost_per_result',
         'checksum',
     ];
 
@@ -40,47 +54,24 @@ class AdMetric extends Model
         'impressions' => 'integer',
         'reach' => 'integer',
         'clicks' => 'integer',
+        'link_clicks' => 'integer',
+        'swipes' => 'integer',
         'video_views' => 'integer',
         'conversions' => 'integer',
         'purchases' => 'integer',
         'leads' => 'integer',
+        'instant_leads' => 'integer',
+        'native_leads' => 'integer',
+        'blended_leads' => 'integer',
+        'sign_ups' => 'integer',
+        'website_leads' => 'integer',
+        'on_facebook_leads' => 'integer',
         'calls' => 'integer',
         'sessions' => 'integer',
         'atc' => 'integer',
+        'app_installs' => 'integer',
         'has_pixel_data' => 'boolean',
     ];
-
-    protected static function booted()
-    {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check()) {
-                $user = auth()->user();
-
-                // Robust super admin detection
-                $isSuperAdmin = (app()->bound('is_super_admin') && app('is_super_admin'))
-                               || $user->id === 1
-                               || $user->email === 'technical@redbananas.com';
-
-                if ($isSuperAdmin) {
-                    // Super admins can optionally filter to specific tenant
-                    $tenantId = session('current_tenant_id')
-                               ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
-                    if ($tenantId) {
-                        $builder->where('tenant_id', $tenantId);
-                    }
-                    // Otherwise show all data without filtering
-                    return;
-                }
-
-                // Regular users see only their tenant's data
-                $tenantId = session('current_tenant_id')
-                           ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
-                if ($tenantId) {
-                    $builder->where('tenant_id', $tenantId);
-                }
-            }
-        });
-    }
 
     public function tenant(): BelongsTo
     {

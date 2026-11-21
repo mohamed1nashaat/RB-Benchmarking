@@ -62,14 +62,11 @@ class AlertController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching alerts', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching alerts', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch alerts',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -80,18 +77,16 @@ class AlertController extends Controller
     public function show(Alert $alert): JsonResponse
     {
         try {
-            return response()->json([
-                'data' => $alert,
-            ]);
+            return response()->json(['data' => $alert]);
         } catch (\Exception $e) {
             Log::error('Error fetching alert', [
                 'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch alert',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -155,14 +150,11 @@ class AlertController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            Log::error('Error creating alert', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error creating alert', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to create alert',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -214,12 +206,12 @@ class AlertController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating alert', [
                 'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to update alert',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -237,19 +229,17 @@ class AlertController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            return response()->json([
-                'message' => 'Alert deleted successfully',
-            ]);
+            return response()->json(['message' => 'Alert deleted successfully']);
 
         } catch (\Exception $e) {
             Log::error('Error deleting alert', [
                 'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to delete alert',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -282,12 +272,12 @@ class AlertController extends Controller
         } catch (\Exception $e) {
             Log::error('Error toggling alert', [
                 'alert_id' => $alert->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to toggle alert',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -316,13 +306,11 @@ class AlertController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error evaluating alerts', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error evaluating alerts', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to evaluate alerts',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }

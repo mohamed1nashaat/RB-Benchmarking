@@ -79,7 +79,7 @@ class DetectAnomalies extends Command
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $this->error("Error detecting anomalies: {$e->getMessage()}");
-            $this->error($e->getTraceAsString());
+            // Stack trace omitted for security (enable APP_DEBUG for details)
             return Command::FAILURE;
         }
     }

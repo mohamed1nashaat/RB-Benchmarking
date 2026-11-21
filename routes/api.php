@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\SuperAdminUserController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SeoReportController;
+use App\Http\Controllers\Api\LiveSpendController;
 use App\Http\Middleware\TenantMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Http\Request;
@@ -36,7 +37,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public authentication routes
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::middleware('throttle:5,1')->post('/auth/login', [AuthController::class, 'login']);
+
+// OAuth callback rate limiting to prevent brute force / enumeration
+Route::middleware('throttle:10,1')->group(function () {
 
 // Facebook OAuth callback (public)
 Route::get('/facebook/callback', [FacebookIntegrationController::class, 'handleCallback']);
@@ -56,118 +60,10 @@ Route::get('/linkedin/oauth/callback', [LinkedInIntegrationController::class, 'c
 // Twitter/X Ads OAuth callback (public)
 Route::get('/twitter/oauth/callback', [TwitterIntegrationController::class, 'callback']);
 
+});
+
 // Legacy Snapchat OAuth callbacks (public) - for backward compatibility
 Route::get('/oauth/snapchat/callback', [App\Http\Controllers\SnapchatOAuthController::class, 'callback']);
-
-// Sync progress endpoint (public - log file name acts as token)
-Route::get('/sync-progress/{logFile}', function ($logFile) {
-    // Security: Only allow alphanumeric, dashes, and dots in filename
-    // Allow both sync-metrics-*.log and platform-sync-*.log files
-    if (!preg_match('/^(sync-metrics|platform-sync)-[\w\-\.]+\.log$/', $logFile)) {
-        return response()->json(['error' => 'Invalid log file'], 400);
-    }
-
-    $logPath = storage_path('logs/' . $logFile);
-
-    if (!file_exists($logPath)) {
-        return response()->json([
-            'error' => 'Log file not found',
-            'complete' => false,
-            'percent' => 0,
-        ], 404);
-    }
-
-    $content = file_get_contents($logPath);
-
-    // Check if sync is complete
-    $complete = str_contains($content, '=== All Time Sync Complete ===') ||
-                str_contains($content, 'Sync completed successfully') ||
-                str_contains($content, '=== Sync Complete ===') ||
-                str_contains($content, '=== Platform Sync Complete ===');
-
-    // Parse current period being processed (find last "=== Processing" line)
-    $currentPeriod = null;
-    $totalPeriods = 24; // Default fallback
-    $periodsProcessed = 0;
-
-    // Try to get total months from log (Snapchat outputs "Syncing X months of data")
-    if (preg_match('/Syncing (\d+(?:\.\d+)?) months of data/', $content, $totalMatch)) {
-        $totalPeriods = (int) ceil((float) $totalMatch[1]);
-    }
-
-    if (preg_match_all('/=== Processing (Q\d \d{4}|[A-Za-z]+ \d{4})/', $content, $matches)) {
-        $currentPeriod = end($matches[1]);
-        $periodsProcessed = count($matches[1]);
-    }
-
-    // Platform sync format: "Completed account X/Y"
-    if (preg_match_all('/Completed account (\d+)\/(\d+)/', $content, $platformMatches)) {
-        $lastMatch = end($platformMatches[1]);
-        $totalAccounts = end($platformMatches[2]);
-        $periodsProcessed = (int) $lastMatch;
-        $totalPeriods = (int) $totalAccounts;
-        // Get current account being synced
-        if (preg_match('/=== Syncing account \d+\/\d+: (.+) ===/', $content, $currentMatch)) {
-            $currentPeriod = $currentMatch[1];
-        }
-    }
-
-    // Parse created/updated totals from completion message
-    $created = 0;
-    $updated = 0;
-
-    // Handle different output formats
-    if (preg_match('/Total Created: (\d+)/', $content, $m)) {
-        $created = (int) $m[1];
-    }
-    if (preg_match('/Total Updated: (\d+)/', $content, $m)) {
-        $updated = (int) $m[1];
-    }
-    // Snapchat format: "Total metrics synced: X"
-    if (preg_match('/Total metrics synced: (\d+)/', $content, $m)) {
-        $created = (int) $m[1];
-    }
-    // Snapchat format: "Batch upserted X metrics"
-    if (preg_match_all('/Batch upserted (\d+) metrics/', $content, $batchMatches)) {
-        $created = array_sum(array_map('intval', $batchMatches[1]));
-    }
-
-    // If not complete, sum from individual lines (Google/LinkedIn format)
-    if (!$complete && $created == 0) {
-        if (preg_match_all('/✓[^:]*: \+(\d+), ~(\d+)/', $content, $resultMatches)) {
-            $created = array_sum(array_map('intval', $resultMatches[1]));
-            $updated = array_sum(array_map('intval', $resultMatches[2]));
-        }
-    }
-
-    // Calculate progress percentage
-    // Cap at 99% instead of 95% - Snapchat outputs all month markers before API call,
-    // then API takes 2-3 minutes, so 99% indicates "processing API data"
-    $calculatedPercent = round(($periodsProcessed / max(1, $totalPeriods)) * 100);
-    $percent = $complete ? 100 : min(99, $calculatedPercent);
-
-    // Get last meaningful line for display
-    $lines = explode("\n", trim($content));
-    $lastLine = '';
-    for ($i = count($lines) - 1; $i >= 0; $i--) {
-        $line = trim($lines[$i]);
-        if (str_starts_with($line, '===') || str_starts_with($line, '✓') || str_starts_with($line, '✗')) {
-            $lastLine = $line;
-            break;
-        }
-    }
-
-    return response()->json([
-        'percent' => $percent,
-        'currentMonth' => $currentPeriod,
-        'totalMonths' => $totalPeriods,
-        'monthsProcessed' => $periodsProcessed,
-        'created' => $created,
-        'updated' => $updated,
-        'complete' => $complete,
-        'lastLine' => $lastLine,
-    ]);
-});
 
 // Demo/Public benchmarks endpoints (no auth required for testing)
 Route::prefix('demo')->group(function () {
@@ -496,22 +392,6 @@ Route::prefix('demo')->group(function () {
     });
 });
 
-// Debug route to test what frontend is sending
-Route::get('/debug/request', function (Request $request) {
-    return response()->json([
-        'headers' => $request->headers->all(),
-        'bearer_token' => $request->bearerToken(),
-        'auth_header' => $request->header('Authorization'),
-        'tenant_header' => $request->header('X-Tenant-ID'),
-        'all_headers_debug' => [
-            'authorization' => $request->header('Authorization'),
-            'accept' => $request->header('Accept'),
-            'content_type' => $request->header('Content-Type'),
-            'x_tenant_id' => $request->header('X-Tenant-ID'),
-        ]
-    ]);
-});
-
 // Public invitation routes (no authentication required)
 Route::prefix('invitations')->group(function () {
     Route::get('/{token}/verify', [InvitationController::class, 'verify']);
@@ -519,7 +399,7 @@ Route::prefix('invitations')->group(function () {
 });
 
 // Protected routes requiring authentication
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Auth routes
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
@@ -655,6 +535,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('/{adAccount}/verify', [AdAccountController::class, 'verifyData']);
 
             // Aggregated metrics for manager accounts (MCC)
+            Route::post('/live-spend-batch', [LiveSpendController::class, 'batch']);
+
             Route::get('/{adAccount}/aggregated-metrics', function (\App\Models\AdAccount $adAccount, \Illuminate\Http\Request $request) {
                 $config = $adAccount->account_config;
                 if (is_string($config)) {

@@ -25,7 +25,7 @@ class BulkUpdateAdAccountIndustry extends Command
         'real_estate' => [
             'industry' => 'real_estate',
             'category' => 'Residential Projects',
-            'patterns' => ['diyar', 'alfursan', 'dar al arkan', 'dar alarkan', 'aziz', 'sedra', 'qetaf', 'rawabi', 'modon', 'rafal', 'sumou', 'roshn', 'neom', 'amakin', 'eskan', 'alargan', 'real estate', 'realestate', 'bin seadan', 'bin saadan', 'bin saedan', 'burj assila', 'hajar', 'tamakkon', 'rua al', 'ruaa', 'qudra', 'atharna'],
+            'patterns' => ['diyar', 'alfursan', 'dar al arkan', 'dar alarkan', 'aziz', 'sedra', 'qetaf', 'rawabi', 'modon', 'rafal', 'sumou', 'roshn', 'neom', 'amakin', 'eskan', 'alargan', 'real estate', 'realestate', 'bin seadan', 'bin saadan', 'bin saedan', 'burj assila', 'hajar', 'tamakkon', 'rua al', 'ruaa', 'qudra', 'atharna', 'alrashed', 'al-rashed'],
         ],
         // Retail / E-commerce
         'retail' => [
@@ -67,7 +67,7 @@ class BulkUpdateAdAccountIndustry extends Command
         'food_beverage' => [
             'industry' => 'food_beverage',
             'category' => 'Restaurants & Cafes',
-            'patterns' => ['ribs', 'ribsyard', 'almaddah', 'barn', 'barns', 'coffee', 'kal coffee', 'kal '],
+            'patterns' => ['ribs', 'ribsyard', 'almaddah', 'barn', 'barns', 'coffee', 'kal coffee', 'kal ', 'kal'],
         ],
         // Finance & Insurance
         'finance' => [
@@ -79,7 +79,7 @@ class BulkUpdateAdAccountIndustry extends Command
         'fintech' => [
             'industry' => 'finance',
             'category' => 'Fintech',
-            'patterns' => ['monshaat'],
+            'patterns' => ['monshaat', 'kadipay'],
         ],
         // Health & Medicine
         'health_medicine' => [
@@ -111,6 +111,12 @@ class BulkUpdateAdAccountIndustry extends Command
             'category' => 'HR & Recruitment',
             'patterns' => ['hrc'],
         ],
+        // Telecommunications
+        'telecom' => [
+            'industry' => 'technology',
+            'category' => 'Telecommunications',
+            'patterns' => ['telecom'],
+        ],
         // Professional Services / Marketing
         'professional_services' => [
             'industry' => 'professional_services',
@@ -136,7 +142,7 @@ class BulkUpdateAdAccountIndustry extends Command
             $this->info('NULL ONLY MODE - Only updating accounts with null industry');
         }
 
-        $query = AdAccount::withoutGlobalScopes();
+        $query = AdAccount::query();
         if ($nullOnly) {
             $query->whereNull('industry');
         }
@@ -235,7 +241,7 @@ class BulkUpdateAdAccountIndustry extends Command
 
     protected function listAccounts(): int
     {
-        $accounts = AdAccount::withoutGlobalScopes()
+        $accounts = AdAccount::query()
             ->orderBy('industry')
             ->orderBy('category')
             ->orderBy('account_name')

@@ -68,7 +68,7 @@
         .cover-title {
             font-size: 24pt;
             font-weight: 300;
-            color: #F93549;
+            color: #EF4444;
             letter-spacing: 3px;
             text-transform: uppercase;
             margin-bottom: 40px;
@@ -90,12 +90,12 @@
             left: 0;
             right: 0;
             height: 8px;
-            background: linear-gradient(90deg, #F93549 0%, #F5EA61 50%, #FCA0C9 100%);
+            background: linear-gradient(90deg, #EF4444 0%, #F5EA61 50%, #FCA0C9 100%);
         }
 
         /* ========== FIXED HEADER (Pages 2-5) ========== */
         .pdf-header {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            background: linear-gradient(135deg, #1f2937 0%, #3F3F3C 100%);
             color: #fff;
             padding: 12px 15mm;
             margin: -15mm -12mm 15px -12mm;
@@ -120,7 +120,7 @@
             font-size: 8pt;
             text-transform: uppercase;
             letter-spacing: 2px;
-            color: #F93549;
+            color: #EF4444;
             font-weight: 600;
         }
 
@@ -142,7 +142,7 @@
             left: 0;
             right: 0;
             padding: 8px 12mm;
-            border-top: 2px solid #F93549;
+            border-top: 2px solid #EF4444;
             font-size: 7pt;
             color: #6b7280;
             display: table;
@@ -168,13 +168,13 @@
             color: #1f2937;
             margin-bottom: 15px;
             padding-left: 12px;
-            border-left: 4px solid #F93549;
+            border-left: 4px solid #EF4444;
         }
 
         .section-subtitle {
             font-size: 10pt;
             font-weight: 600;
-            color: #374151;
+            color: #3F3F3C;
             margin-bottom: 10px;
             margin-top: 15px;
         }
@@ -220,7 +220,7 @@
 
         .insight-item.success {
             background: #ecfdf5;
-            border-left: 3px solid #10b981;
+            border-left: 3px solid #787774;
         }
 
         .insight-item.warning {
@@ -235,7 +235,7 @@
 
         .insight-item.info {
             background: #eff6ff;
-            border-left: 3px solid #3b82f6;
+            border-left: 3px solid #EF4444;
         }
 
         .insight-icon {
@@ -248,7 +248,7 @@
         .insight-text {
             display: table-cell;
             font-size: 9pt;
-            color: #374151;
+            color: #3F3F3C;
             vertical-align: middle;
         }
 
@@ -301,7 +301,7 @@
         }
 
         .trend-up {
-            color: #10b981;
+            color: #787774;
         }
 
         .trend-down {
@@ -383,7 +383,7 @@
         }
 
         table.data th {
-            background: linear-gradient(135deg, #F93549 0%, #e53e3e 100%);
+            background: linear-gradient(135deg, #EF4444 0%, #e53e3e 100%);
             padding: 8px 8px;
             text-align: left;
             font-weight: 600;
@@ -396,7 +396,7 @@
         table.data td {
             padding: 7px 8px;
             border-bottom: 1px solid #f3f4f6;
-            color: #374151;
+            color: #3F3F3C;
         }
 
         table.data tr:nth-child(even) td {
@@ -442,7 +442,7 @@
             display: table-cell;
             font-size: 9pt;
             font-weight: 500;
-            color: #374151;
+            color: #3F3F3C;
         }
 
         .progress-value {
@@ -465,11 +465,11 @@
             border-radius: 5px;
         }
 
-        .progress-fill.rb-red { background: linear-gradient(90deg, #F93549, #ff6b7a); }
+        .progress-fill.rb-red { background: linear-gradient(90deg, #EF4444, #ff6b7a); }
         .progress-fill.rb-yellow { background: linear-gradient(90deg, #F5EA61, #f7ef8a); }
         .progress-fill.rb-pink { background: linear-gradient(90deg, #FCA0C9, #fdc4dd); }
-        .progress-fill.blue { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-        .progress-fill.green { background: linear-gradient(90deg, #10b981, #34d399); }
+        .progress-fill.blue { background: linear-gradient(90deg, #EF4444, #60a5fa); }
+        .progress-fill.green { background: linear-gradient(90deg, #787774, #34d399); }
 
         /* ========== BADGES ========== */
         .badge {
@@ -525,7 +525,7 @@
         }
 
         .card-header {
-            background: linear-gradient(135deg, #F93549 0%, #e53e3e 100%);
+            background: linear-gradient(135deg, #EF4444 0%, #e53e3e 100%);
             padding: 10px 14px;
             font-size: 9pt;
             font-weight: 600;
@@ -556,9 +556,9 @@
         <div class="cover-content">
             <div class="cover-logo">
                 <svg width="200" height="53" viewBox="0 0 251 67" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13.0888 7.93752V1.33887H0V41.0636H13.133V34.1175C13.133 31.8626 13.4718 29.6122 14.2378 27.4945C16.7971 20.3758 23.3393 15.1447 31.1677 14.4831V1.36985C24.4042 1.70841 18.1697 4.1049 13.0865 7.93752" fill="#F93549"/>
+                    <path d="M13.0888 7.93752V1.33887H0V41.0636H13.133V34.1175C13.133 31.8626 13.4718 29.6122 14.2378 27.4945C16.7971 20.3758 23.3393 15.1447 31.1677 14.4831V1.36985C24.4042 1.70841 18.1697 4.1049 13.0865 7.93752" fill="#EF4444"/>
                     <path d="M54.197 9.24072L44.8985 18.539C49.5765 22.1504 52.5963 27.8063 52.5963 34.1638C52.5963 34.2744 52.5919 34.3851 52.5853 34.4957H65.6785C65.6785 34.3851 65.6829 34.2744 65.6829 34.1638C65.6829 24.2061 61.2218 15.2707 54.1948 9.24072" fill="#F5EA61"/>
-                    <path d="M32.8392 53.9176H32.8503V66.9998C50.8451 66.9888 65.4969 52.4394 65.6785 34.4956H52.5897C52.4082 45.2322 43.6211 53.9132 32.8392 53.9198" fill="#F93549"/>
+                    <path d="M32.8392 53.9176H32.8503V66.9998C50.8451 66.9888 65.4969 52.4394 65.6785 34.4956H52.5897C52.4082 45.2322 43.6211 53.9132 32.8392 53.9198" fill="#EF4444"/>
                     <path d="M32.8392 53.9177C26.4941 53.9133 20.8464 50.9061 17.2266 46.2437L7.91479 55.5021C13.9367 62.5301 22.8699 66.9956 32.8348 67H32.8503V53.9177H32.8392Z" fill="#FCA0C9"/>
                     <path d="M93.7312 11.5221C94.2161 10.2364 95.0131 9.26722 96.1289 8.62107C97.2447 7.97493 98.4867 7.65186 99.8594 7.65186V13.4539C98.2742 13.268 96.8551 13.5911 95.6042 14.4231C94.3577 15.2551 93.7312 16.6381 93.7312 18.5699V28.2002H88.5329V8.0568H93.7312V11.5221Z" fill="#ffffff"/>
                     <path d="M106.506 20.2673C107.203 22.79 109.1 24.0513 112.189 24.0513C114.177 24.0513 115.682 23.3808 116.701 22.0376L120.896 24.454C118.908 27.3307 115.979 28.7624 112.109 28.7624C108.777 28.7624 106.103 27.7578 104.088 25.7463C102.073 23.7282 101.064 21.1901 101.064 18.1275C101.064 15.065 102.058 12.5623 104.046 10.5353C106.034 8.50836 108.584 7.49268 111.704 7.49268C114.662 7.49268 117.099 8.51722 119.019 10.5552C120.943 12.5977 121.901 15.1203 121.901 18.1275C121.901 18.798 121.835 19.515 121.7 20.2673H106.508H106.506ZM106.426 16.2356H116.703C116.411 14.8636 115.8 13.8435 114.87 13.173C113.94 12.5025 112.886 12.164 111.706 12.164C110.307 12.164 109.151 12.5224 108.239 13.2328C107.325 13.9431 106.72 14.9433 106.428 16.2356" fill="#ffffff"/>
@@ -574,7 +574,7 @@
             </div>
 
             <div class="cover-client-name">{{ $client->name }}</div>
-            <div class="cover-title">Performance Report</div>
+            <div class="cover-title">{{ __("Performance Report") }}</div>
 
             <div class="cover-meta"><strong>{{ $period['start'] }}</strong> - <strong>{{ $period['end'] }}</strong></div>
             <div class="cover-meta">{{ $period['days'] }} Days Analysis</div>
@@ -589,7 +589,7 @@
     <div class="content-wrapper">
         <div class="pdf-header">
             <div class="pdf-header-left">
-                <div class="pdf-header-brand">RB Benchmarks</div>
+                <div class="pdf-header-brand">{{ __("RB Benchmarks") }}</div>
                 <div class="pdf-header-client">{{ $client->name }}</div>
             </div>
             <div class="pdf-header-right">
@@ -597,7 +597,7 @@
             </div>
         </div>
 
-        <div class="section-title">Executive Summary</div>
+        <div class="section-title">{{ __("Executive Summary") }}</div>
 
         {{-- Health Badge --}}
         <div class="text-center mb-4">
@@ -624,10 +624,10 @@
         </div>
 
         {{-- Hero Metrics with Sparklines --}}
-        <div class="section-subtitle">Key Performance Indicators</div>
+        <div class="section-subtitle">{{ __("Key Performance Indicators") }}</div>
         <div class="hero-metrics">
             <div class="hero-metric">
-                <div class="hero-metric-label">Total Spend (SAR)</div>
+                <div class="hero-metric-label">{{ __("Total Spend (SAR)") }}</div>
                 <div class="hero-metric-value">{{ number_format($statistics['total_spend'], 0) }}</div>
                 <div class="hero-metric-sparkline">{!! $sparklines['spend'] ?? '' !!}</div>
                 @if(isset($trends_direction['spend']))
@@ -641,7 +641,7 @@
                 <div class="hero-metric-label">ROAS</div>
                 <div class="hero-metric-value" style="color: {{ $statistics['roas'] >= 2 ? '#059669' : ($statistics['roas'] >= 1 ? '#f59e0b' : '#dc2626') }}">{{ number_format($statistics['roas'], 2) }}x</div>
                 <div class="hero-metric-sparkline"></div>
-                <div class="hero-metric-trend" style="color: #6b7280;">Return on Ad Spend</div>
+                <div class="hero-metric-trend" style="color: #6b7280;">{{ __("Return on Ad Spend") }}</div>
             </div>
             <div class="hero-metric">
                 <div class="hero-metric-label">Conversions</div>
@@ -669,13 +669,13 @@
 
         {{-- Period Summary --}}
         <div class="card" style="margin-top: 15px;">
-            <div class="card-header">Period Summary</div>
+            <div class="card-header">{{ __("Period Summary") }}</div>
             <div class="card-body">
                 <table class="data">
                     <tr>
-                        <td><strong>Analysis Period</strong></td>
+                        <td><strong>{{ __("Analysis Period") }}</strong></td>
                         <td class="text-right">{{ $period['days'] }} days</td>
-                        <td><strong>Ad Accounts</strong></td>
+                        <td><strong>{{ __("Ad Accounts") }}</strong></td>
                         <td class="text-right">{{ $ad_accounts_count }}</td>
                     </tr>
                     <tr>
@@ -695,7 +695,7 @@
     <div class="content-wrapper">
         <div class="pdf-header">
             <div class="pdf-header-left">
-                <div class="pdf-header-brand">RB Benchmarks</div>
+                <div class="pdf-header-brand">{{ __("RB Benchmarks") }}</div>
                 <div class="pdf-header-client">{{ $client->name }}</div>
             </div>
             <div class="pdf-header-right">
@@ -703,14 +703,14 @@
             </div>
         </div>
 
-        <div class="section-title">Detailed Metrics</div>
+        <div class="section-title">{{ __("Detailed Metrics") }}</div>
 
         {{-- 8-Metric Strip --}}
         <div class="metrics-strip">
             <div class="metric-box">
                 <div class="metric-icon red">$</div>
                 <div class="metric-value">{{ number_format($statistics['total_spend'], 0) }}</div>
-                <div class="metric-label">Spend (SAR)</div>
+                <div class="metric-label">{{ __("Spend (SAR)") }}</div>
                 @if(isset($trends_direction['spend']))
                 <div class="metric-trend trend-{{ $trends_direction['spend'] }}">
                     @if($trends_direction['spend'] === 'up') &#9650; @elseif($trends_direction['spend'] === 'down') &#9660; @else - @endif
@@ -765,7 +765,7 @@
             <div class="metric-box">
                 <div class="metric-icon orange">$</div>
                 <div class="metric-value">{{ number_format($statistics['cpc'], 2) }}</div>
-                <div class="metric-label">CPC (SAR)</div>
+                <div class="metric-label">{{ __("CPC (SAR)") }}</div>
             </div>
             <div class="metric-box">
                 <div class="metric-icon {{ $statistics['roas'] >= 2 ? 'green' : ($statistics['roas'] >= 1 ? 'orange' : 'red') }}">x</div>
@@ -775,12 +775,12 @@
         </div>
 
         {{-- Platform Analysis --}}
-        <div class="section-title" style="margin-top: 20px;">Platform Analysis</div>
+        <div class="section-title" style="margin-top: 20px;">{{ __("Platform Analysis") }}</div>
 
         @if(count($platform_breakdown) > 0)
         <div class="two-col">
             <div class="col">
-                <div class="section-subtitle">Spend Distribution</div>
+                <div class="section-subtitle">{{ __("Spend Distribution") }}</div>
                 @php
                     $colors = ['rb-red', 'rb-yellow', 'rb-pink', 'blue', 'green'];
                 @endphp
@@ -803,7 +803,7 @@
                 @endforeach
             </div>
             <div class="col">
-                <div class="section-subtitle">Platform Comparison</div>
+                <div class="section-subtitle">{{ __("Platform Comparison") }}</div>
                 <table class="data">
                     <thead>
                         <tr>
@@ -841,7 +841,7 @@
             </div>
         </div>
         @else
-        <p style="color: #9ca3af; text-align: center; padding: 30px;">No platform data available for this period.</p>
+        <p style="color: #9ca3af; text-align: center; padding: 30px;">{{ __("No platform data available for this period.") }}</p>
         @endif
     </div>
 
@@ -851,7 +851,7 @@
     <div class="content-wrapper">
         <div class="pdf-header">
             <div class="pdf-header-left">
-                <div class="pdf-header-brand">RB Benchmarks</div>
+                <div class="pdf-header-brand">{{ __("RB Benchmarks") }}</div>
                 <div class="pdf-header-client">{{ $client->name }}</div>
             </div>
             <div class="pdf-header-right">
@@ -859,7 +859,7 @@
             </div>
         </div>
 
-        <div class="section-title">Campaign Performance</div>
+        <div class="section-title">{{ __("Campaign Performance") }}</div>
 
         @if(isset($top_campaigns) && count($top_campaigns) > 0)
         <table class="data">
@@ -945,7 +945,7 @@
         </p>
         @endif
         @else
-        <p style="color: #9ca3af; text-align: center; padding: 30px;">No campaign data available for this period.</p>
+        <p style="color: #9ca3af; text-align: center; padding: 30px;">{{ __("No campaign data available for this period.") }}</p>
         @endif
     </div>
 
@@ -955,7 +955,7 @@
     <div class="content-wrapper">
         <div class="pdf-header">
             <div class="pdf-header-left">
-                <div class="pdf-header-brand">RB Benchmarks</div>
+                <div class="pdf-header-brand">{{ __("RB Benchmarks") }}</div>
                 <div class="pdf-header-client">{{ $client->name }}</div>
             </div>
             <div class="pdf-header-right">
@@ -963,17 +963,17 @@
             </div>
         </div>
 
-        <div class="section-title">Connected Ad Accounts</div>
+        <div class="section-title">{{ __("Connected Ad Accounts") }}</div>
 
         @if($ad_accounts_count > 0)
         <table class="data">
             <thead>
                 <tr>
-                    <th style="width: 30%;">Account Name</th>
+                    <th style="width: 30%;">{{ __("Account Name") }}</th>
                     <th>Platform</th>
                     <th>Industry</th>
                     <th>Status</th>
-                    <th style="width: 18%;">Account ID</th>
+                    <th style="width: 18%;">{{ __("Account ID") }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -1004,22 +1004,22 @@
         <div style="margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
             <div style="display: table; width: 100%;">
                 <div style="display: table-cell; width: 50%;">
-                    <div style="font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Total Accounts</div>
+                    <div style="font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">{{ __("Total Accounts") }}</div>
                     <div style="font-size: 18pt; font-weight: 700; color: #111827;">{{ $ad_accounts_count }}</div>
                 </div>
                 <div style="display: table-cell; width: 50%; text-align: right;">
-                    <div style="font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Active Accounts</div>
-                    <div style="font-size: 18pt; font-weight: 700; color: #10b981;">{{ $ad_accounts->where('status', 'active')->count() }}</div>
+                    <div style="font-size: 8pt; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">{{ __("Active Accounts") }}</div>
+                    <div style="font-size: 18pt; font-weight: 700; color: #787774;">{{ $ad_accounts->where('status', 'active')->count() }}</div>
                 </div>
             </div>
         </div>
         @else
-        <p style="color: #9ca3af; text-align: center; padding: 30px;">No ad accounts connected.</p>
+        <p style="color: #9ca3af; text-align: center; padding: 30px;">{{ __("No ad accounts connected.") }}</p>
         @endif
 
         {{-- Report Metadata --}}
         <div style="margin-top: 30px; padding: 15px; background: #1f2937; border-radius: 8px; color: #fff;">
-            <div style="font-size: 10pt; font-weight: 600; margin-bottom: 10px; color: #F93549;">Report Information</div>
+            <div style="font-size: 10pt; font-weight: 600; margin-bottom: 10px; color: #EF4444;">{{ __("Report Information") }}</div>
             <div style="display: table; width: 100%; font-size: 8pt;">
                 <div style="display: table-cell; width: 50%;">
                     <div style="color: #9ca3af;">Generated</div>
@@ -1027,7 +1027,7 @@
                 </div>
                 <div style="display: table-cell; width: 50%; text-align: right;">
                     <div style="color: #9ca3af;">Platform</div>
-                    <div style="color: #fff; font-weight: 500;">RB Benchmarks</div>
+                    <div style="color: #fff; font-weight: 500;">{{ __("RB Benchmarks") }}</div>
                 </div>
             </div>
         </div>
@@ -1036,7 +1036,7 @@
     {{-- Footer with page numbers --}}
     <div class="pdf-footer">
         <div class="pdf-footer-left">
-            <strong style="color: #F93549;">RB Benchmarks</strong> &bull; Performance Analytics Platform
+            <strong style="color: #EF4444;">{{ __("RB Benchmarks") }}</strong> &bull; Performance Analytics Platform
         </div>
         <div class="pdf-footer-right">
             Generated: {{ $generated_at }}

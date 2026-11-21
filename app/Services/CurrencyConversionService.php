@@ -89,14 +89,18 @@ class CurrencyConversionService
             $data = $response->json();
             $usdRates = $data['rates'] ?? [];
 
+            if (empty($usdRates) || !isset($usdRates['SAR']) || $usdRates['SAR'] == 0) {
+                throw new \Exception('Invalid or missing SAR rate from API');
+            }
+
             // Convert USD-based rates to SAR-based rates
-            $sarToUsd = 1 / ($usdRates['SAR'] ?? 3.75);
+            $sarToUsd = 1 / $usdRates['SAR'];
             $sarRates = [];
 
             foreach ($usdRates as $currency => $rate) {
                 if ($currency === 'SAR') {
                     $sarRates[$currency] = 1.0;
-                } else {
+                } elseif ($rate != 0) {
                     // Convert: Currency -> USD -> SAR
                     $sarRates[$currency] = (1 / $rate) * (1 / $sarToUsd);
                 }

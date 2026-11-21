@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Dashboard;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Policies\DashboardPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use App\Services\GoogleSheetsService;
 use App\Services\ConversionPixelService;
@@ -59,6 +64,34 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::policy(Dashboard::class, DashboardPolicy::class);
+
+        $this->defineTenantPermissionGates();
+    }
+
+    /**
+     * Define tenant-aware permission gates for web routes.
+     */
+    private function defineTenantPermissionGates(): void
+    {
+        $permissionNames = [
+            'view_users',
+            'invite_users',
+            'manage_users',
+            'manage_roles',
+        ];
+
+        foreach ($permissionNames as $permission) {
+            Gate::define($permission, function (User $user) use ($permission) {
+                if ($user->isSuperAdmin()) {
+                    return true;
+                }
+
+                $tenantId = session('current_tenant_id');
+                $tenant = $tenantId ? Tenant::find($tenantId) : null;
+
+                return $tenant && $user->hasPermissionForTenant($tenant, $permission);
+            });
+        }
     }
 }

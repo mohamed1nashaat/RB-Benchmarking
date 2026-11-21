@@ -7,6 +7,8 @@ use App\Models\AdAccount;
 use App\Models\AdCampaign;
 use App\Models\AdMetric;
 use App\Services\SnapchatAdsService;
+use App\Services\SyncMonitoringService;
+use App\Traits\TracksSyncProgress;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -14,29 +16,19 @@ use Carbon\Carbon;
 
 class SyncSnapchatMetrics extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'snapchat:sync-metrics {--days=7 : Number of days to sync} {--start-date= : Start date (Y-m-d)} {--end-date= : End date (Y-m-d)} {--all : Sync all available historical data} {--account-id= : Specific ad account ID to sync}';
+    use TracksSyncProgress;
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
+    protected $signature = 'snapchat:sync-metrics {--days=7 : Number of days to sync} {--start-date= : Start date (Y-m-d)} {--end-date= : End date (Y-m-d)} {--all : Sync all available historical data} {--account-id= : Specific ad account ID to sync} {--integration-id= : Specific integration ID to sync}';
     protected $description = 'Sync Snapchat ad metrics for all connected accounts';
 
     private SnapchatAdsService $snapchatAdsService;
+    private SyncMonitoringService $monitoringService;
 
-    /**
-     * Create a new command instance.
-     */
-    public function __construct(SnapchatAdsService $snapchatAdsService)
+    public function __construct(SnapchatAdsService $snapchatAdsService, SyncMonitoringService $monitoringService)
     {
         parent::__construct();
         $this->snapchatAdsService = $snapchatAdsService;
+        $this->monitoringService = $monitoringService;
     }
 
     /**
@@ -52,6 +44,7 @@ class SyncSnapchatMetrics extends Command
             $endDateOption = $this->option('end-date');
             $allTime = $this->option('all');
             $accountId = $this->option('account-id');
+            $integrationId = $this->option('integration-id');
 
             // Use explicit dates if provided, otherwise use days
             $endDate = Carbon::now()->format('Y-m-d');
@@ -71,21 +64,30 @@ class SyncSnapchatMetrics extends Command
                 $this->info("Syncing metrics from {$startDate} to {$endDate}");
             }
 
-            // Get active Snapchat integration
-            $integration = Integration::where('platform', 'snapchat')
-                ->where('status', 'active')
-                ->first();
+            // Get active Snapchat integration (filter by ID if provided)
+            $query = Integration::where('platform', 'snapchat')
+                ->where('status', 'active');
+
+            if ($integrationId) {
+                $query->where('id', $integrationId);
+            }
+
+            $integration = $query->first();
 
             if (!$integration) {
                 $this->error('No active Snapchat integration found');
                 return Command::FAILURE;
             }
 
+            $this->initSyncProgress($integration->id);
+
             // Auto-refresh token if needed before syncing
-            $accessToken = $this->ensureValidToken($integration);
+            $accessToken = $this->snapchatAdsService->ensureValidToken($integration);
 
             if (!$accessToken) {
-                $this->error('No valid access token available for Snapchat integration');
+                $integration->update(['status' => 'needs_reauth']);
+                $this->error('No valid access token available for Snapchat integration — marked as needs_reauth');
+                $this->failSyncProgress('No valid access token available');
                 return Command::FAILURE;
             }
 
@@ -96,13 +98,16 @@ class SyncSnapchatMetrics extends Command
                 $this->info("Filtering to specific account ID: {$accountId}");
             }
             $adAccounts = $query->get();
-            $this->info("Found {$adAccounts->count()} ad accounts");
+            $this->reportStep("Found {$adAccounts->count()} ad accounts");
 
             $totalMetricsSynced = 0;
             $totalErrors = 0;
+            $accountIndex = 0;
+            $accountTotal = $adAccounts->count();
 
             foreach ($adAccounts as $adAccount) {
-                $this->info("Syncing metrics for ad account: {$adAccount->account_name}");
+                $accountIndex++;
+                $this->reportCurrentStep("Syncing account {$accountIndex}/{$accountTotal}: {$adAccount->account_name}");
 
                 try {
                     // For all-time sync, dynamically detect earliest campaign start date
@@ -116,9 +121,12 @@ class SyncSnapchatMetrics extends Command
                     $totalMetricsSynced += $result['synced'];
                     $totalErrors += $result['errors'];
 
-                    $this->info("  ✓ Synced {$result['synced']} metrics, {$result['errors']} errors");
+                    // Update last metrics sync timestamp
+                    $adAccount->update(['last_metrics_sync_at' => now()]);
+
+                    $this->reportStep("Account {$adAccount->account_name}: {$result['synced']} metrics synced", 'success');
                 } catch (\Exception $e) {
-                    $this->error("  ✗ Error syncing account {$adAccount->external_account_id}: {$e->getMessage()}");
+                    $this->error("  Error syncing account {$adAccount->external_account_id}: {$e->getMessage()}");
                     $totalErrors++;
                 }
             }
@@ -127,14 +135,23 @@ class SyncSnapchatMetrics extends Command
             $this->info("Total metrics synced: {$totalMetricsSynced}");
             $this->info("Total errors: {$totalErrors}");
 
+            $stats = [
+                'accounts_processed' => $adAccounts->count(),
+                'metrics_synced' => $totalMetricsSynced,
+                'errors' => $totalErrors,
+            ];
+
+            $this->monitoringService->recordSuccess('snapchat', $integration->id, $stats);
+            $integration->update(['last_sync_at' => now()]);
+            $this->completeSyncProgress($stats);
+
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
             $this->error("Sync failed: {$e->getMessage()}");
-            Log::error('Snapchat metrics sync failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Snapchat metrics sync failed', ['error' => $e->getMessage()]);
+            $this->monitoringService->recordFailure('snapchat', $integration->id ?? 0, $e->getMessage());
+            $this->failSyncProgress($e->getMessage());
             return Command::FAILURE;
         }
     }
@@ -166,7 +183,7 @@ class SyncSnapchatMetrics extends Command
         // Get account timezone (required for Snapchat API)
         $timezone = $adAccount->account_config['time_zone'] ?? $this->fetchAccountTimezone($adAccount, $accessToken);
 
-        // Output progress markers for date range (for sync-progress API to parse)
+        // Output progress markers for date range (for SyncProgressService cache tracking)
         $progressStart = Carbon::parse($startDate);
         $progressEnd = Carbon::parse($endDate);
         $totalMonths = (int) $progressStart->diffInMonths($progressEnd) + 1;
@@ -202,6 +219,11 @@ class SyncSnapchatMetrics extends Command
 
                 if (!$campaign) {
                     $this->warn("    Campaign {$stat['campaign_id']} not found in database, skipping");
+                    Log::warning('Snapchat campaign not found in database during metrics sync', [
+                        'external_campaign_id' => $stat['campaign_id'],
+                        'ad_account_id' => $adAccount->id,
+                        'ad_account_name' => $adAccount->account_name,
+                    ]);
                     $errors++;
                     continue;
                 }
@@ -211,6 +233,10 @@ class SyncSnapchatMetrics extends Command
 
                 // Generate checksum for deduplication
                 $checksum = $this->generateChecksum($adAccount->id, $campaign->id, $metricDate);
+
+                $signUps = $stat['sign_ups'] ?? 0;
+                $swipes = $stat['swipes'] ?? 0;
+                $purchases = $stat['purchases'] ?? 0;
 
                 $metricsToUpsert[] = [
                     'checksum' => $checksum,
@@ -225,15 +251,20 @@ class SyncSnapchatMetrics extends Command
                     'has_pixel_data' => $campaign->has_pixel_data ?? false,
                     'spend' => $stat['spend'] ?? 0,
                     'impressions' => $stat['impressions'] ?? 0,
-                    'clicks' => $stat['swipes'] ?? 0,
+                    'clicks' => $swipes,
+                    'link_clicks' => $swipes,
+                    'swipes' => $swipes,
                     'video_views' => $stat['video_views'] ?? 0,
-                    'conversions' => 0,
-                    'leads' => 0,
-                    'revenue' => 0,
-                    'purchases' => 0,
+                    'conversions' => $purchases + $signUps,
+                    'leads' => $signUps,
+                    'native_leads' => $signUps,
+                    'blended_leads' => $signUps,
+                    'sign_ups' => $signUps,
+                    'revenue' => $stat['purchase_value'] ?? 0,
+                    'purchases' => $purchases,
                     'calls' => 0,
-                    'sessions' => $stat['swipes'] ?? 0,
-                    'atc' => 0,
+                    'sessions' => 0,
+                    'atc' => $stat['add_to_cart'] ?? 0,
                     'reach' => 0,
                     'created_at' => $now,
                     'updated_at' => $now,
@@ -250,8 +281,9 @@ class SyncSnapchatMetrics extends Command
                         [ // Columns to update on conflict
                             'tenant_id', 'date', 'platform', 'ad_account_id', 'ad_campaign_id',
                             'objective', 'funnel_stage', 'user_journey', 'has_pixel_data',
-                            'spend', 'impressions', 'clicks', 'video_views', 'conversions',
-                            'leads', 'revenue', 'purchases', 'calls', 'sessions', 'atc', 'reach',
+                            'spend', 'impressions', 'clicks', 'link_clicks', 'swipes', 'video_views', 'conversions',
+                            'leads', 'native_leads', 'blended_leads', 'sign_ups',
+                            'revenue', 'purchases', 'calls', 'sessions', 'atc', 'reach',
                             'updated_at'
                         ]
                     );
@@ -278,74 +310,6 @@ class SyncSnapchatMetrics extends Command
     private function generateChecksum(int $accountId, int $campaignId, string $date): string
     {
         return hash('sha256', "snapchat_{$accountId}_{$campaignId}_{$date}");
-    }
-
-    /**
-     * Ensure we have a valid access token, refreshing if needed
-     */
-    private function ensureValidToken(Integration $integration): ?string
-    {
-        $config = $integration->app_config;
-        $accessToken = $config['access_token'] ?? null;
-        $refreshToken = $config['refresh_token'] ?? null;
-        $expiresAt = $config['expires_at'] ?? $config['token_expires_at'] ?? null;
-
-        if (!$accessToken) {
-            $this->warn('No access token found');
-            return null;
-        }
-
-        // Check if token is expired or expiring soon (less than 10 minutes)
-        $needsRefresh = false;
-        if ($expiresAt) {
-            $expiresTimestamp = is_numeric($expiresAt) ? $expiresAt : strtotime($expiresAt);
-            $minutesUntilExpiry = ($expiresTimestamp - time()) / 60;
-
-            if ($minutesUntilExpiry < 10) {
-                $needsRefresh = true;
-                $this->info("Token expires in {$minutesUntilExpiry} minutes, refreshing...");
-            }
-        }
-
-        if ($needsRefresh && $refreshToken) {
-            $this->info('Refreshing Snapchat access token...');
-
-            $tokenResponse = $this->snapchatAdsService->refreshAccessToken($refreshToken);
-
-            if (isset($tokenResponse['access_token'])) {
-                // Update the integration with new tokens
-                $config['access_token'] = $tokenResponse['access_token'];
-
-                if (isset($tokenResponse['refresh_token'])) {
-                    $config['refresh_token'] = $tokenResponse['refresh_token'];
-                }
-
-                $expiresIn = $tokenResponse['expires_in'] ?? 3600;
-                $config['expires_at'] = time() + $expiresIn;
-                $config['token_expires_at'] = time() + $expiresIn;
-                $config['last_refreshed_at'] = now()->toISOString();
-
-                $integration->update(['app_config' => $config]);
-
-                $this->info('Token refreshed successfully');
-                Log::info('Snapchat token auto-refreshed during sync', [
-                    'integration_id' => $integration->id,
-                    'expires_in' => $expiresIn
-                ]);
-
-                return $tokenResponse['access_token'];
-            } else {
-                $this->error('Token refresh failed: ' . ($tokenResponse['message'] ?? 'Unknown error'));
-                Log::error('Snapchat token refresh failed during sync', [
-                    'integration_id' => $integration->id,
-                    'error' => $tokenResponse
-                ]);
-                // Try with existing token anyway
-                return $accessToken;
-            }
-        }
-
-        return $accessToken;
     }
 
     /**

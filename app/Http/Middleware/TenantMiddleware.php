@@ -23,7 +23,7 @@ class TenantMiddleware
         $user = auth()->user();
 
         // Check if user is super admin
-        $isSuperAdmin = $user->id === 1 || $user->email === 'technical@redbananas.com';
+        $isSuperAdmin = $user->isSuperAdmin();
 
         // Set super admin flag for global scopes to use
         app()->instance('is_super_admin', $isSuperAdmin);

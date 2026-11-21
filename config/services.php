@@ -46,6 +46,7 @@ return [
         'client_id' => env('GOOGLE_ADS_CLIENT_ID'),
         'client_secret' => env('GOOGLE_ADS_CLIENT_SECRET'),
         'developer_token' => env('GOOGLE_ADS_DEVELOPER_TOKEN'),
+        'api_key' => env('GOOGLE_ADS_API_KEY'),
     ],
 
     'tiktok' => [
@@ -65,8 +66,31 @@ return [
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),
     ],
 
+    'twitter' => [
+        'client_id' => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
+    ],
+
     'pagespeed' => [
         'api_key' => env('PAGESPEED_API_KEY'),
+    ],
+
+    'ollama' => [
+        'host'        => env('OLLAMA_HOST', 'http://localhost:11434'),
+        'model'       => env('OLLAMA_MODEL', 'llama3.1:70b'),
+        'embed_model' => env('OLLAMA_EMBED_MODEL', 'nomic-embed-text'),
+        'api_key'     => env('OLLAMA_API_KEY'),
+    ],
+
+    // AI prompt tracking: each engine runs only when its key is set.
+    'ai_tracking' => [
+        'max_prompts' => (int) env('AI_TRACKING_MAX_PROMPTS', 50),
+        'sentiment' => env('AI_TRACKING_SENTIMENT', 'ollama'),
+        'openai' => ['key' => env('OPENAI_API_KEY'), 'model' => env('AI_TRACKING_OPENAI_MODEL', 'gpt-5-mini')],
+        'gemini' => ['key' => env('GEMINI_API_KEY'), 'model' => env('AI_TRACKING_GEMINI_MODEL', 'gemini-2.5-flash')],
+        'perplexity' => ['key' => env('PERPLEXITY_API_KEY'), 'model' => env('AI_TRACKING_PERPLEXITY_MODEL', 'sonar')],
+        // Simulated: an open model on Ollama Cloud, reported apart from the real assistants.
+        'ollama' => ['key' => env('AI_TRACKING_OLLAMA_KEY', env('OLLAMA_API_KEY')), 'host' => env('AI_TRACKING_OLLAMA_HOST', 'https://ollama.com'), 'model' => env('AI_TRACKING_OLLAMA_MODEL', 'gpt-oss:120b')],
     ],
 
 ];

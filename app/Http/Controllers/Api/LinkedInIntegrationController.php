@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
 use App\Services\LinkedInAdsService;
@@ -35,13 +36,13 @@ class LinkedInIntegrationController extends Controller
 
         // Generate state parameter with user and tenant info
         $stateData = [
-            'user_id' => $request->user()->id,
+            'user_id'   => $request->user()->id,
             'tenant_id' => $request->current_tenant ? $request->current_tenant->id : $request->user()->default_tenant_id,
             'timestamp' => time(),
-            'nonce' => Str::random(32)
+            'nonce'     => Str::random(32),
         ];
 
-        $state = base64_encode(json_encode($stateData));
+        $state = OAuthStateHelper::generate($stateData);
 
         try {
             $oauthUrl = $this->linkedinService->getAuthorizationUrl($state);
@@ -54,7 +55,7 @@ class LinkedInIntegrationController extends Controller
             Log::error('LinkedIn OAuth initiation failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to initiate LinkedIn OAuth',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -115,18 +116,26 @@ class LinkedInIntegrationController extends Controller
         }
 
         try {
-            $stateData = json_decode(base64_decode($state), true);
+            // Fix base64 characters that may be corrupted in URL transit (+ decoded as space)
+            $fixedState = str_replace(' ', '+', $state);
+            $stateData = OAuthStateHelper::validate($state);
 
-            if (!$stateData || !isset($stateData['user_id'], $stateData['tenant_id'])) {
+            if (!$stateData || !isset($stateData['user_id'])) {
                 throw new \Exception('Invalid state data');
             }
 
-            // Check if state is not too old (1 hour max)
+            // Default tenant_id to null if not present
+            $stateData['tenant_id'] = $stateData['tenant_id'] ?? null;
+
             if (time() - $stateData['timestamp'] > 3600) {
                 throw new \Exception('State expired');
             }
 
         } catch (\Exception $e) {
+            Log::error('LinkedIn OAuth state validation failed', [
+                'error' => 'An unexpected error occurred',
+                'state_raw' => $state,
+            ]);
             return redirect(config('app.url') . '/integrations?error=' . urlencode('Invalid state parameter'));
         }
 
@@ -171,7 +180,9 @@ class LinkedInIntegrationController extends Controller
                     'app_config' => [
                         'access_token' => $tokenData['access_token'],
                         'refresh_token' => $tokenData['refresh_token'] ?? null,
-                        'expires_in' => $tokenData['expires_in'] ?? 3600,
+                        'expires_in' => $tokenData['expires_in'] ?? 5184000,
+                        'expires_at' => time() + ($tokenData['expires_in'] ?? 5184000),
+                        'token_expires_at' => time() + ($tokenData['expires_in'] ?? 5184000),
                         'scope' => $tokenData['scope'] ?? '',
                         'connected_at' => now(),
                     ],
@@ -201,12 +212,10 @@ class LinkedInIntegrationController extends Controller
 
         } catch (\Exception $e) {
             Log::error('LinkedIn OAuth callback failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'user_id' => $stateData['user_id'] ?? null,
+                'error' => 'An unexpected error occurred','user_id' => $stateData['user_id'] ?? null,
                 'tenant_id' => $stateData['tenant_id'] ?? null
             ]);
-            return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to connect LinkedIn: ' . $e->getMessage()));
+            return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to connect LinkedIn'));
         }
     }
 
@@ -279,12 +288,12 @@ class LinkedInIntegrationController extends Controller
             } catch (\Exception $e) {
                 Log::error('LinkedIn verification failed in status check', [
                     'integration_id' => $integration->id,
-                    'error' => $e->getMessage()
+                    'error' => 'An unexpected error occurred'
                 ]);
                 $verification = [
                     'success' => false,
                     'error' => 'exception',
-                    'message' => 'Failed to verify access: ' . $e->getMessage(),
+                    'message' => 'An unexpected error occurred',
                     'accounts_accessible' => false
                 ];
             }
@@ -352,7 +361,7 @@ class LinkedInIntegrationController extends Controller
             Log::error('LinkedIn sync failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to sync LinkedIn data',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -393,7 +402,7 @@ class LinkedInIntegrationController extends Controller
             Log::error('LinkedIn disconnect failed: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to disconnect LinkedIn integration',
-                'message' => $e->getMessage()
+                'message' => 'An unexpected error occurred'
             ], 500);
         }
     }
@@ -452,7 +461,7 @@ class LinkedInIntegrationController extends Controller
             Log::error('LinkedIn connection test failed: ' . $e->getMessage());
             return response()->json([
                 'connected' => false,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'tested_at' => now()
             ], 500);
         }

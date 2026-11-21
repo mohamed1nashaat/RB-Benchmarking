@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+use App\Models\Scopes\TenantScope;
 
+use App\Helpers\OAuthStateHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Integration;
 use App\Services\IndustryDetector;
@@ -41,10 +43,11 @@ class FacebookIntegrationController extends Controller
             'user_id' => $request->user()->id,
             'tenant_id' => $request->current_tenant ? $request->current_tenant->id : $request->user()->default_tenant_id,
             'timestamp' => time(),
-            'nonce' => Str::random(32)
+            'nonce' => Str::random(32),
+            'redirect_uri' => $this->redirectUri,
         ];
 
-        $state = base64_encode(json_encode($stateData));
+        $state = OAuthStateHelper::generate($stateData);
 
         // Facebook OAuth URL
         $oauthUrl = 'https://www.facebook.com/v23.0/dialog/oauth?' . http_build_query([
@@ -81,18 +84,30 @@ class FacebookIntegrationController extends Controller
         }
 
         try {
-            $stateData = json_decode(base64_decode($state), true);
-            
-            if (!$stateData || !isset($stateData['user_id'], $stateData['tenant_id'], $stateData['timestamp'])) {
-                throw new \Exception('Invalid state data');
+            $stateData = OAuthStateHelper::validate($state);
+
+            if (!$stateData || !isset($stateData['user_id'], $stateData['timestamp'])) {
+                throw new \Exception('Invalid state data: missing required fields');
             }
-            
+
+            // Default tenant_id to null if not present
+            $stateData['tenant_id'] = $stateData['tenant_id'] ?? null;
+
+            // Validate redirect URI matches expected value
+            if (($stateData['redirect_uri'] ?? null) !== $this->redirectUri) {
+                throw new \Exception('Invalid redirect URI in state');
+            }
+
             // Check if state is not too old (1 hour max)
             if (time() - $stateData['timestamp'] > 3600) {
                 throw new \Exception('State expired');
             }
-            
+
         } catch (\Exception $e) {
+            Log::error('Facebook OAuth state validation failed', [
+                'error' => 'An unexpected error occurred',
+                'state_raw' => substr($state, 0, 50),
+            ]);
             return redirect(config('app.url') . '/integrations?error=' . urlencode('Invalid state parameter'));
         }
 
@@ -177,8 +192,15 @@ class FacebookIntegrationController extends Controller
             foreach ($adAccounts as $adAccount) {
                 // Auto-detect industry based on account name
                 $detectedIndustry = IndustryDetector::detectIndustry($adAccount['name']);
-                
-                \App\Models\AdAccount::updateOrCreate(
+
+                // Sync bypass: We need to locate the existing ad account by external ID
+                // regardless of tenant, so we can preserve any manually-assigned tenant.
+                $existingAccount = \App\Models\AdAccount::withoutGlobalScope(TenantScope::class)->where([
+                    'integration_id' => $integration->id,
+                    'external_account_id' => $adAccount['id'],
+                ])->first();
+
+                \App\Models\AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                     [
                         'integration_id' => $integration->id,
                         'external_account_id' => $adAccount['id'],
@@ -186,8 +208,8 @@ class FacebookIntegrationController extends Controller
                     [
                         'account_name' => $adAccount['name'],
                         'status' => $adAccount['account_status'] === 1 ? 'active' : 'inactive',
-                        'industry' => $detectedIndustry,
-                        'tenant_id' => $stateData['tenant_id'],
+                        'industry' => $existingAccount?->industry ?? $detectedIndustry,
+                        'tenant_id' => \App\Models\AdAccount::syncTenantId($integration->id, $adAccount['id'], $stateData['tenant_id']),
                         'account_config' => [
                             'currency' => $adAccount['currency'] ?? 'USD',
                         ],
@@ -205,7 +227,7 @@ class FacebookIntegrationController extends Controller
                 'state' => $state,
             ]);
 
-            return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to connect Facebook: ' . $e->getMessage()));
+            return redirect(config('app.url') . '/integrations?error=' . urlencode('Failed to connect Facebook'));
         }
     }
 
@@ -251,12 +273,12 @@ class FacebookIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Facebook integration test failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Connection test failed: ' . $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 400);
         }
     }
@@ -286,9 +308,7 @@ class FacebookIntegrationController extends Controller
                 $config['access_token'] = $newToken;
                 $config['token_expires_at'] = now()->addDays(60);
                 
-                $integration->update([
-                    'app_config' => $config,
-                ]);
+                $integration->update(['app_config' => $config]);
 
                 return response()->json([
                     'status' => 'success',
@@ -301,12 +321,12 @@ class FacebookIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Facebook token refresh failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Token refresh failed: ' . $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 400);
         }
     }
@@ -377,9 +397,7 @@ class FacebookIntegrationController extends Controller
             $config['ad_accounts'] = $allAccounts;
             $config['last_sync'] = now()->toISOString();
             
-            $integration->update([
-                'app_config' => $config,
-            ]);
+            $integration->update(['app_config' => $config]);
 
             Log::info('Updated integration with all accounts', [
                 'integration_id' => $integration->id,
@@ -396,13 +414,11 @@ class FacebookIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Facebook refresh accounts failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+                'error' => 'An unexpected error occurred',]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to refresh accounts: ' . $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -486,19 +502,19 @@ class FacebookIntegrationController extends Controller
                         ]);
 
                     } else {
-                        $error = "API call failed for account {$adAccount->account_name}: " . $campaignsResponse->body();
-                        $errors[] = $error;
+                        $errors[] = "API call failed for account {$adAccount->account_name}";
+
                         Log::error('Campaign sync API error', [
                             'account_id' => $adAccount->id,
                             'response' => $campaignsResponse->body(),
                         ]);
                     }
                 } catch (\Exception $e) {
-                    $error = "Error syncing campaigns for account {$adAccount->account_name}: " . $e->getMessage();
-                    $errors[] = $error;
+                    $errors[] = "Error syncing campaigns for account {$adAccount->account_name}";
+
                     Log::error('Campaign sync exception', [
                         'account_id' => $adAccount->id,
-                        'error' => $e->getMessage(),
+                        'error' => 'An unexpected error occurred',
                     ]);
                 }
             }
@@ -514,12 +530,12 @@ class FacebookIntegrationController extends Controller
         } catch (\Exception $e) {
             Log::error('Campaign sync failed', [
                 'integration_id' => $integration->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Campaign sync failed: ' . $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }

@@ -168,12 +168,10 @@
     <div class="header">
         <div style="display: table; width: 100%;">
             <div style="display: table-cell; width: 70%;">
-                <h1>Client Dashboard Report</h1>
+                <h1>{{ __("Client Dashboard Report") }}</h1>
                 <div class="subtitle">{{ $date_range['from'] }} - {{ $date_range['to'] }}</div>
             </div>
-            <div style="display: table-cell; width: 30%; vertical-align: middle;" class="logo">
-                RB Benchmarks
-            </div>
+            <div style="display: table-cell; width: 30%; vertical-align: middle;" class="logo">{{ __("RB Benchmarks") }}</div>
         </div>
     </div>
 
@@ -186,11 +184,11 @@
                 <div class="info-value">{{ ucwords(str_replace('_', ' ', $client['industry'] ?? 'N/A')) }}</div>
             </div>
             <div class="info-row">
-                <div class="info-label">Export Date:</div>
+                <div class="info-label">{{ __("Export Date:") }}</div>
                 <div class="info-value">{{ $export_date }}</div>
             </div>
             <div class="info-row">
-                <div class="info-label">Data Period:</div>
+                <div class="info-label">{{ __("Data Period:") }}</div>
                 <div class="info-value">{{ $date_range['from'] }} to {{ $date_range['to'] }}</div>
             </div>
         </div>
@@ -198,19 +196,19 @@
 
     <!-- Key Metrics -->
     <div class="section">
-        <div class="section-title">Key Performance Metrics</div>
+        <div class="section-title">{{ __("Key Performance Metrics") }}</div>
         <div class="metrics-grid">
             <div class="metric-row">
                 <div class="metric-card">
-                    <div class="metric-label">Total Spend</div>
+                    <div class="metric-label">{{ __("Total Spend") }}</div>
                     <div class="metric-value">{{ number_format($metrics['total_spend'], 0) }} SAR</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Total Impressions</div>
+                    <div class="metric-label">{{ __("Total Impressions") }}</div>
                     <div class="metric-value">{{ number_format($metrics['total_impressions']) }}</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Total Clicks</div>
+                    <div class="metric-label">{{ __("Total Clicks") }}</div>
                     <div class="metric-value">{{ number_format($metrics['total_clicks']) }}</div>
                     <div class="metric-detail">CTR: {{ number_format($metrics['ctr'], 2) }}%</div>
                 </div>
@@ -224,7 +222,7 @@
                     <div class="metric-detail">CVR: {{ number_format($metrics['cvr'], 2) }}%</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-label">Cost Per Click</div>
+                    <div class="metric-label">{{ __("Cost Per Click") }}</div>
                     <div class="metric-value">{{ number_format($metrics['cpc'], 2) }} SAR</div>
                 </div>
                 <div class="metric-card">
@@ -237,13 +235,13 @@
 
     <!-- Platform Breakdown -->
     <div class="section">
-        <div class="section-title">Platform Breakdown</div>
+        <div class="section-title">{{ __("Platform Breakdown") }}</div>
         <table>
             <thead>
                 <tr>
                     <th>Platform</th>
                     <th>Accounts</th>
-                    <th>Spend (SAR)</th>
+                    <th>{{ __("Spend (SAR)") }}</th>
                     <th>Impressions</th>
                     <th>Clicks</th>
                     <th>Conversions</th>
@@ -266,14 +264,14 @@
 
     <!-- Ad Accounts -->
     <div class="section">
-        <div class="section-title">Advertising Accounts</div>
+        <div class="section-title">{{ __("Advertising Accounts") }}</div>
         <table>
             <thead>
                 <tr>
-                    <th>Account Name</th>
+                    <th>{{ __("Account Name") }}</th>
                     <th>Platform</th>
                     <th>Status</th>
-                    <th>Total Spend</th>
+                    <th>{{ __("Total Spend") }}</th>
                     <th>Health</th>
                 </tr>
             </thead>
@@ -301,13 +299,13 @@
 
     <!-- Top Campaigns -->
     <div class="section">
-        <div class="section-title">Top Performing Campaigns</div>
+        <div class="section-title">{{ __("Top Performing Campaigns") }}</div>
         <table>
             <thead>
                 <tr>
                     <th>Campaign</th>
                     <th>Account</th>
-                    <th>Spend (SAR)</th>
+                    <th>{{ __("Spend (SAR)") }}</th>
                     <th>Conversions</th>
                     <th>ROAS</th>
                 </tr>

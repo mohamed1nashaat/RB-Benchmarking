@@ -271,12 +271,12 @@ class TenantUserController extends Controller
                 ],
             ], 201);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => 'An unexpected error occurred'], 422);
         } catch (\Exception $e) {
             Log::error('Failed to invite user', [
                 'tenant_id' => $tenant->id,
                 'email' => $validated['email'],
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json(['message' => 'Failed to send invitation'], 500);
@@ -336,7 +336,7 @@ class TenantUserController extends Controller
 
             return response()->json(['message' => 'Invitation cancelled successfully']);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => 'An unexpected error occurred'], 422);
         }
     }
 
@@ -372,7 +372,7 @@ class TenantUserController extends Controller
                 ],
             ]);
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(['message' => 'An unexpected error occurred'], 422);
         }
     }
 }

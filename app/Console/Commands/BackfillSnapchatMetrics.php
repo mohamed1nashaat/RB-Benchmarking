@@ -85,10 +85,10 @@ class BackfillSnapchatMetrics extends Command
 
         foreach ($integrations as $integration) {
             $this->info("Processing Integration ID: {$integration->id}");
-            $this->info("Tenant: {$integration->tenant->name}");
+            $this->info("Tenant: " . ($integration->tenant?->name ?? 'No Tenant'));
 
             // Get valid access token (with auto-refresh)
-            $accessToken = $this->ensureValidToken($integration);
+            $accessToken = $this->snapchatAdsService->ensureValidToken($integration);
 
             if (!$accessToken) {
                 $error = "No valid access token for integration {$integration->id}";
@@ -124,6 +124,8 @@ class BackfillSnapchatMetrics extends Command
                 $this->info("    Found {$campaigns->count()} campaign(s)");
                 $totalCampaigns += $campaigns->count();
 
+                $timezone = $adAccount->account_config['time_zone'] ?? 'UTC';
+
                 foreach ($campaigns as $campaign) {
                     try {
                         $synced = $this->syncCampaignMetrics(
@@ -132,7 +134,8 @@ class BackfillSnapchatMetrics extends Command
                             $accessToken,
                             $startDate,
                             $endDate,
-                            $quickMode
+                            $quickMode,
+                            $timezone
                         );
 
                         $this->info("      ✓ {$campaign->name}: {$synced} metrics synced");
@@ -147,9 +150,7 @@ class BackfillSnapchatMetrics extends Command
                             'campaign_id' => $campaign->id,
                             'account_id' => $adAccount->id,
                             'integration_id' => $integration->id,
-                            'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString()
-                        ]);
+                            'error' => $e->getMessage(),]);
                     }
                 }
 
@@ -183,7 +184,8 @@ class BackfillSnapchatMetrics extends Command
         string $accessToken,
         string $startDate,
         string $endDate,
-        bool $quickMode = false
+        bool $quickMode = false,
+        string $timezone = 'UTC'
     ): int {
         $totalSynced = 0;
 
@@ -207,6 +209,10 @@ class BackfillSnapchatMetrics extends Command
                     $metricDate = $stat['end_date'] ?? $endDate;
                     $checksum = $this->generateChecksum($adAccount->id, $campaign->id, 'total_' . $metricDate);
 
+                    $signUps = $stat['sign_ups'] ?? 0;
+                    $swipes = $stat['swipes'] ?? 0;
+                    $purchases = $stat['purchases'] ?? 0;
+
                     AdMetric::updateOrCreate(
                         ['checksum' => $checksum],
                         [
@@ -221,15 +227,20 @@ class BackfillSnapchatMetrics extends Command
                             'has_pixel_data' => $campaign->has_pixel_data,
                             'spend' => $stat['spend'] ?? 0,
                             'impressions' => $stat['impressions'] ?? 0,
-                            'clicks' => $stat['swipes'] ?? 0,
+                            'clicks' => $swipes,
+                            'link_clicks' => $swipes,
+                            'swipes' => $swipes,
                             'video_views' => $stat['video_views'] ?? 0,
-                            'conversions' => 0,
-                            'leads' => 0,
-                            'revenue' => 0,
-                            'purchases' => 0,
+                            'conversions' => $purchases + $signUps,
+                            'leads' => $signUps,
+                            'native_leads' => $signUps,
+                            'blended_leads' => $signUps,
+                            'sign_ups' => $signUps,
+                            'revenue' => $stat['purchase_value'] ?? 0,
+                            'purchases' => $purchases,
                             'calls' => 0,
-                            'sessions' => $stat['swipes'] ?? 0,
-                            'atc' => 0,
+                            'sessions' => 0,
+                            'atc' => $stat['add_to_cart'] ?? 0,
                             'reach' => 0,
                         ]
                     );
@@ -245,87 +256,81 @@ class BackfillSnapchatMetrics extends Command
             return $totalSynced;
         }
 
-        // Normal mode: Snapchat API has 32-day max limit, so chunk into 30-day windows
-        $start = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
+        // Normal mode: pass full date range — service handles chunking internally
+        $stats = $this->snapchatAdsService->getCampaignStats(
+            $adAccount->external_account_id,
+            $accessToken,
+            [$campaign->external_campaign_id],
+            $startDate,
+            $endDate,
+            $timezone
+        );
 
-        while ($start->lt($end)) {
-            $chunkEnd = $start->copy()->addDays(29); // 30 days including start
-            if ($chunkEnd->gt($end)) {
-                $chunkEnd = $end->copy();
+        $metricsToUpsert = [];
+        $now = now();
+
+        foreach ($stats as $stat) {
+            if (($stat['campaign_id'] ?? '') !== $campaign->external_campaign_id) {
+                continue;
             }
 
-            $chunkStartStr = $start->format('Y-m-d');
-            $chunkEndStr = $chunkEnd->format('Y-m-d');
+            $metricDate = \Carbon\Carbon::parse($stat['date_range']['start'])->format('Y-m-d');
+            $checksum = $this->generateChecksum($adAccount->id, $campaign->id, $metricDate);
 
-            try {
-                // Fetch stats from Snapchat API using the service
-                $stats = $this->snapchatAdsService->getCampaignStats(
-                    $adAccount->external_account_id,
-                    $accessToken,
-                    [$campaign->external_campaign_id],
-                    $chunkStartStr,
-                    $chunkEndStr
+            $signUps = $stat['sign_ups'] ?? 0;
+            $swipes = $stat['swipes'] ?? 0;
+            $purchases = $stat['purchases'] ?? 0;
+
+            $metricsToUpsert[] = [
+                'checksum' => $checksum,
+                'tenant_id' => $adAccount->tenant_id,
+                'date' => $metricDate,
+                'platform' => 'snapchat',
+                'ad_account_id' => $adAccount->id,
+                'ad_campaign_id' => $campaign->id,
+                'objective' => $campaign->objective,
+                'funnel_stage' => $campaign->funnel_stage,
+                'user_journey' => $campaign->user_journey,
+                'has_pixel_data' => $campaign->has_pixel_data ?? false,
+                'spend' => $stat['spend'] ?? 0,
+                'impressions' => $stat['impressions'] ?? 0,
+                'clicks' => $swipes,
+                'link_clicks' => $swipes,
+                'swipes' => $swipes,
+                'video_views' => $stat['video_views'] ?? 0,
+                'conversions' => $purchases + $signUps,
+                'leads' => $signUps,
+                'native_leads' => $signUps,
+                'blended_leads' => $signUps,
+                'sign_ups' => $signUps,
+                'revenue' => $stat['purchase_value'] ?? 0,
+                'purchases' => $purchases,
+                'calls' => 0,
+                'sessions' => 0,
+                'atc' => $stat['add_to_cart'] ?? 0,
+                'reach' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        // Batch upsert in chunks of 500
+        if (!empty($metricsToUpsert)) {
+            foreach (array_chunk($metricsToUpsert, 500) as $chunk) {
+                AdMetric::upsert(
+                    $chunk,
+                    ['checksum'],
+                    [
+                        'tenant_id', 'date', 'platform', 'ad_account_id', 'ad_campaign_id',
+                        'objective', 'funnel_stage', 'user_journey', 'has_pixel_data',
+                        'spend', 'impressions', 'clicks', 'link_clicks', 'swipes', 'video_views', 'conversions',
+                        'leads', 'native_leads', 'blended_leads', 'sign_ups',
+                        'revenue', 'purchases', 'calls', 'sessions', 'atc', 'reach',
+                        'updated_at'
+                    ]
                 );
-
-                // Process each stat entry
-                foreach ($stats as $stat) {
-                    // Ensure this stat is for our campaign
-                    if (($stat['campaign_id'] ?? '') !== $campaign->external_campaign_id) {
-                        continue;
-                    }
-
-                    // Parse the date from the stat
-                    $metricDate = Carbon::parse($stat['date_range']['start'] ?? $chunkStartStr)->format('Y-m-d');
-
-                    // Generate checksum for deduplication
-                    $checksum = $this->generateChecksum($adAccount->id, $campaign->id, $metricDate);
-
-                    // Create or update metric
-                    AdMetric::updateOrCreate(
-                        [
-                            'checksum' => $checksum,
-                        ],
-                        [
-                            'tenant_id' => $adAccount->tenant_id,
-                            'date' => $metricDate,
-                            'platform' => 'snapchat',
-                            'ad_account_id' => $adAccount->id,
-                            'ad_campaign_id' => $campaign->id,
-                            'objective' => $campaign->objective,
-                            'funnel_stage' => $campaign->funnel_stage,
-                            'user_journey' => $campaign->user_journey,
-                            'has_pixel_data' => $campaign->has_pixel_data,
-                            'spend' => $stat['spend'] ?? 0,
-                            'impressions' => $stat['impressions'] ?? 0,
-                            'clicks' => $stat['swipes'] ?? 0, // Snapchat uses 'swipes' instead of 'clicks'
-                            'video_views' => $stat['video_views'] ?? 0,
-                            'conversions' => 0, // Snapchat doesn't provide conversions in basic stats
-                            'leads' => 0,
-                            'revenue' => 0,
-                            'purchases' => 0,
-                            'calls' => 0,
-                            'sessions' => $stat['swipes'] ?? 0, // Approximate sessions as swipes
-                            'atc' => 0,
-                            'reach' => 0,
-                        ]
-                    );
-
-                    $totalSynced++;
-                }
-
-            } catch (\Exception $e) {
-                // Log but continue to next chunk
-                Log::warning('Snapchat backfill chunk failed', [
-                    'campaign_id' => $campaign->id,
-                    'start' => $chunkStartStr,
-                    'end' => $chunkEndStr,
-                    'error' => $e->getMessage()
-                ]);
             }
-
-            // Move to next 30-day chunk
-            $start = $chunkEnd->copy()->addDay();
+            $totalSynced = count($metricsToUpsert);
         }
 
         return $totalSynced;
@@ -339,76 +344,4 @@ class BackfillSnapchatMetrics extends Command
         return hash('sha256', "snapchat_{$accountId}_{$campaignId}_{$date}");
     }
 
-    /**
-     * Ensure we have a valid access token, refreshing if needed
-     */
-    private function ensureValidToken(Integration $integration): ?string
-    {
-        $config = $integration->app_config;
-
-        if (is_string($config)) {
-            $config = json_decode($config, true);
-        }
-
-        $accessToken = $config['access_token'] ?? null;
-        $refreshToken = $config['refresh_token'] ?? null;
-        $expiresAt = $config['expires_at'] ?? $config['token_expires_at'] ?? null;
-
-        if (!$accessToken) {
-            $this->warn('No access token found');
-            return null;
-        }
-
-        // Check if token is expired or expiring soon (less than 10 minutes)
-        $needsRefresh = false;
-        if ($expiresAt) {
-            $expiresTimestamp = is_numeric($expiresAt) ? $expiresAt : strtotime($expiresAt);
-            $minutesUntilExpiry = ($expiresTimestamp - time()) / 60;
-
-            if ($minutesUntilExpiry < 10) {
-                $needsRefresh = true;
-                $this->info("Token expires in {$minutesUntilExpiry} minutes, refreshing...");
-            }
-        }
-
-        if ($needsRefresh && $refreshToken) {
-            $this->info('Refreshing Snapchat access token...');
-
-            $tokenResponse = $this->snapchatAdsService->refreshAccessToken($refreshToken);
-
-            if (isset($tokenResponse['access_token'])) {
-                // Update the integration with new tokens
-                $config['access_token'] = $tokenResponse['access_token'];
-
-                if (isset($tokenResponse['refresh_token'])) {
-                    $config['refresh_token'] = $tokenResponse['refresh_token'];
-                }
-
-                $expiresIn = $tokenResponse['expires_in'] ?? 3600;
-                $config['expires_at'] = time() + $expiresIn;
-                $config['token_expires_at'] = time() + $expiresIn;
-                $config['last_refreshed_at'] = now()->toISOString();
-
-                $integration->update(['app_config' => $config]);
-
-                $this->info('Token refreshed successfully');
-                Log::info('Snapchat token auto-refreshed during backfill', [
-                    'integration_id' => $integration->id,
-                    'expires_in' => $expiresIn
-                ]);
-
-                return $tokenResponse['access_token'];
-            } else {
-                $this->error('Token refresh failed: ' . ($tokenResponse['message'] ?? 'Unknown error'));
-                Log::error('Snapchat token refresh failed during backfill', [
-                    'integration_id' => $integration->id,
-                    'error' => $tokenResponse
-                ]);
-                // Try with existing token anyway
-                return $accessToken;
-            }
-        }
-
-        return $accessToken;
-    }
 }

@@ -38,19 +38,14 @@ class IndustryController extends Controller
                 ->orderBy('display_name')
                 ->get(['id', 'name', 'display_name']);
 
-            return response()->json([
-                'data' => $industries,
-            ]);
+            return response()->json(['data' => $industries]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching industries with data', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching industries with data', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch industries',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -90,19 +85,14 @@ class IndustryController extends Controller
                 }),
             ]);
 
-            return response()->json([
-                'data' => $industries,
-            ]);
+            return response()->json(['data' => $industries]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching industries', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Error fetching industries', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch industries',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -135,13 +125,13 @@ class IndustryController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error creating industry', [
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to create industry',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -172,13 +162,13 @@ class IndustryController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating industry', [
                 'industry_id' => $industry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to update industry',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -191,26 +181,22 @@ class IndustryController extends Controller
         try {
             // Check if industry has ad accounts
             if ($industry->adAccounts()->count() > 0) {
-                return response()->json([
-                    'error' => 'Cannot delete industry that has associated ad accounts',
-                ], 422);
+                return response()->json(['error' => 'Cannot delete industry that has associated ad accounts'], 422);
             }
 
             $industry->delete();
 
-            return response()->json([
-                'message' => 'Industry deleted successfully',
-            ]);
+            return response()->json(['message' => 'Industry deleted successfully']);
 
         } catch (\Exception $e) {
             Log::error('Error deleting industry', [
                 'industry_id' => $industry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to delete industry',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -227,19 +213,17 @@ class IndustryController extends Controller
                 ->orderBy('display_name')
                 ->get();
 
-            return response()->json([
-                'data' => $subIndustries,
-            ]);
+            return response()->json(['data' => $subIndustries]);
 
         } catch (\Exception $e) {
             Log::error('Error fetching sub-industries', [
                 'industry_id' => $industry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to fetch sub-industries',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -263,9 +247,7 @@ class IndustryController extends Controller
                 ->exists();
 
             if ($exists) {
-                return response()->json([
-                    'error' => 'Sub-industry name already exists for this industry',
-                ], 422);
+                return response()->json(['error' => 'Sub-industry name already exists for this industry'], 422);
             }
 
             $subIndustry = SubIndustry::create([
@@ -285,13 +267,13 @@ class IndustryController extends Controller
         } catch (\Exception $e) {
             Log::error('Error creating sub-industry', [
                 'industry_id' => $industry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to create sub-industry',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -317,9 +299,7 @@ class IndustryController extends Controller
                 ->exists();
 
             if ($exists) {
-                return response()->json([
-                    'error' => 'Sub-industry name already exists for this industry',
-                ], 422);
+                return response()->json(['error' => 'Sub-industry name already exists for this industry'], 422);
             }
 
             $subIndustry->update($request->only([
@@ -334,13 +314,13 @@ class IndustryController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating sub-industry', [
                 'sub_industry_id' => $subIndustry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to update sub-industry',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -353,26 +333,22 @@ class IndustryController extends Controller
         try {
             // Check if sub-industry has ad accounts
             if ($subIndustry->adAccounts()->count() > 0) {
-                return response()->json([
-                    'error' => 'Cannot delete sub-industry that has associated ad accounts',
-                ], 422);
+                return response()->json(['error' => 'Cannot delete sub-industry that has associated ad accounts'], 422);
             }
 
             $subIndustry->delete();
 
-            return response()->json([
-                'message' => 'Sub-industry deleted successfully',
-            ]);
+            return response()->json(['message' => 'Sub-industry deleted successfully']);
 
         } catch (\Exception $e) {
             Log::error('Error deleting sub-industry', [
                 'sub_industry_id' => $subIndustry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to delete sub-industry',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -389,18 +365,14 @@ class IndustryController extends Controller
                 ->orderBy('display_name')
                 ->get();
 
-            return response()->json([
-                'data' => $categories,
-            ]);
+            return response()->json(['data' => $categories]);
 
         } catch (\Exception $e) {
-            Log::error('Error fetching campaign categories', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::error('Error fetching campaign categories', ['error' => 'An unexpected error occurred']);
 
             return response()->json([
                 'error' => 'Failed to fetch campaign categories',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -424,9 +396,7 @@ class IndustryController extends Controller
                 ->exists();
 
             if ($exists) {
-                return response()->json([
-                    'error' => 'Campaign category name already exists for this industry',
-                ], 422);
+                return response()->json(['error' => 'Campaign category name already exists for this industry'], 422);
             }
 
             $category = CampaignCategory::create([
@@ -446,13 +416,13 @@ class IndustryController extends Controller
         } catch (\Exception $e) {
             Log::error('Error creating campaign category', [
                 'industry_id' => $industry->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to create campaign category',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -478,9 +448,7 @@ class IndustryController extends Controller
                 ->exists();
 
             if ($exists) {
-                return response()->json([
-                    'error' => 'Campaign category name already exists for this industry',
-                ], 422);
+                return response()->json(['error' => 'Campaign category name already exists for this industry'], 422);
             }
 
             $campaignCategory->update($request->only([
@@ -495,13 +463,13 @@ class IndustryController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating campaign category', [
                 'category_id' => $campaignCategory->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
                 'request_data' => $request->all(),
             ]);
 
             return response()->json([
                 'error' => 'Failed to update campaign category',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }
@@ -514,19 +482,17 @@ class IndustryController extends Controller
         try {
             $campaignCategory->delete();
 
-            return response()->json([
-                'message' => 'Campaign category deleted successfully',
-            ]);
+            return response()->json(['message' => 'Campaign category deleted successfully']);
 
         } catch (\Exception $e) {
             Log::error('Error deleting campaign category', [
                 'category_id' => $campaignCategory->id,
-                'error' => $e->getMessage(),
+                'error' => 'An unexpected error occurred',
             ]);
 
             return response()->json([
                 'error' => 'Failed to delete campaign category',
-                'message' => $e->getMessage(),
+                'message' => 'An unexpected error occurred',
             ], 500);
         }
     }

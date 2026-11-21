@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services;
+use App\Models\Scopes\TenantScope;
 
 use App\Models\AdAccount;
 use App\Models\AdCampaign;
@@ -8,12 +9,15 @@ use App\Models\AdMetric;
 use App\Models\Integration;
 use App\Services\CurrencyConversionService;
 use App\Services\IndustryDetector;
+use App\Traits\RefreshesOAuthToken;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class LinkedInAdsService
 {
+    use RefreshesOAuthToken;
+
     protected CurrencyConversionService $currencyService;
     protected IndustryDetector $industryDetector;
 
@@ -22,6 +26,40 @@ class LinkedInAdsService
     private const OAUTH_URL = 'https://www.linkedin.com/oauth/v2/authorization';
     private const TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
     private const REDIRECT_URI = 'https://rb-benchmarks.redbananas.com/api/linkedin/oauth/callback';
+
+    protected function getPlatformName(): string
+    {
+        return 'LinkedIn';
+    }
+
+    public function refreshAccessToken(string $refreshToken): ?array
+    {
+        try {
+            $response = Http::asForm()->post(self::TOKEN_URL, [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $refreshToken,
+                'client_id' => config('services.linkedin.client_id'),
+                'client_secret' => config('services.linkedin.client_secret'),
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'access_token' => $data['access_token'],
+                    'refresh_token' => $data['refresh_token'] ?? $refreshToken,
+                    'expires_in' => $data['expires_in'] ?? 5184000, // 60 days default
+                ];
+            }
+
+            Log::error('LinkedIn token refresh HTTP failed', [
+                'status' => $response->status(),
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('LinkedIn token refresh error', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
 
     public function __construct(CurrencyConversionService $currencyService, IndustryDetector $industryDetector)
     {
@@ -179,43 +217,49 @@ class LinkedInAdsService
         }
 
         try {
-            // Get ad accounts (LinkedIn calls them "accounts")
-            // Note: Using finder method instead of search to avoid parameter errors
-            // The 'search' finder with status was deprecated - now using basic query
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $accessToken,
-                'Content-Type' => 'application/json',
-                'X-Restli-Protocol-Version' => '2.0.0'
-            ])->get(self::API_BASE_URL . '/adAccountsV2', [
-                // Use account owner finder instead of search
-                'q' => 'search',
-                'start' => 0,
-                'count' => 100
-            ]);
+            $allAccounts = [];
+            $start = 0;
+            $count = 100;
 
-            if (!$response->successful()) {
-                $status = $response->status();
-                $body = $response->body();
-
-                Log::error('LinkedIn ad accounts fetch failed', [
-                    'status' => $status,
-                    'body' => $body
+            do {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Content-Type' => 'application/json',
+                    'X-Restli-Protocol-Version' => '2.0.0'
+                ])->get(self::API_BASE_URL . '/adAccountsV2', [
+                    'q' => 'search',
+                    'start' => $start,
+                    'count' => $count
                 ]);
 
-                // Provide specific error messages based on status code
-                if ($status === 403) {
-                    throw new \Exception('LinkedIn Marketing Developer Platform approval required. Please ensure your LinkedIn app has Marketing Platform access and the required scopes (r_ads, r_ads_reporting, r_organization_social) are approved. Apply at: https://www.linkedin.com/developers/apps');
+                if (!$response->successful()) {
+                    $status = $response->status();
+                    $body = $response->body();
+
+                    Log::error('LinkedIn ad accounts fetch failed', [
+                        'status' => $status,
+                        'body' => $body
+                    ]);
+
+                    if ($status === 403) {
+                        throw new \Exception('LinkedIn Marketing Developer Platform approval required. Please ensure your LinkedIn app has Marketing Platform access and the required scopes (r_ads, r_ads_reporting, r_organization_social) are approved. Apply at: https://www.linkedin.com/developers/apps');
+                    }
+
+                    if ($status === 401) {
+                        throw new \Exception('LinkedIn access token has expired or is invalid. Please reconnect your LinkedIn integration.');
+                    }
+
+                    throw new \Exception("Failed to fetch LinkedIn ad accounts: HTTP {$status}");
                 }
 
-                if ($status === 401) {
-                    throw new \Exception('LinkedIn access token has expired or is invalid. Please reconnect your LinkedIn integration.');
-                }
+                $data = $response->json();
+                $elements = $data['elements'] ?? [];
+                $allAccounts = array_merge($allAccounts, $elements);
+                $start += $count;
+                $total = $data['paging']['total'] ?? count($elements);
+            } while ($start < $total);
 
-                throw new \Exception("Failed to fetch LinkedIn ad accounts: HTTP {$status}");
-            }
-
-            $data = $response->json();
-            return $data['elements'] ?? [];
+            return $allAccounts;
 
         } catch (\Exception $e) {
             Log::error('LinkedIn ad accounts error: ' . $e->getMessage());
@@ -233,14 +277,13 @@ class LinkedInAdsService
 
         foreach ($linkedinAccounts as $account) {
             // Check if account already exists to preserve manually set industry
-            // Use withoutGlobalScopes() to avoid tenant scope interference in CLI context
-            $existingAccount = AdAccount::withoutGlobalScopes()->where([
+            $existingAccount = AdAccount::withoutGlobalScope(TenantScope::class)->where([
                 'integration_id' => $integration->id,
                 'external_account_id' => (string) $account['id']
             ])->first();
 
             $accountData = [
-                'tenant_id' => $integration->tenant_id,
+                'tenant_id' => AdAccount::syncTenantId($integration->id, (string) $account['id'], $integration->tenant_id),
                 'account_name' => $account['name'] ?? 'LinkedIn Account',
                 'currency' => $account['currency'] ?? 'USD',
                 'status' => 'active',
@@ -258,9 +301,7 @@ class LinkedInAdsService
 
             // Match on integration_id + external_account_id to align with the
             // database unique constraint (ad_accounts_integration_id_external_account_id_unique).
-            // Use withoutGlobalScopes() to bypass the tenant scope which can cause
-            // the lookup to miss existing records when running from CLI/artisan commands.
-            $adAccount = AdAccount::withoutGlobalScopes()->updateOrCreate(
+            $adAccount = AdAccount::withoutGlobalScope(TenantScope::class)->updateOrCreate(
                 [
                     'integration_id' => $integration->id,
                     'external_account_id' => (string) $account['id']
@@ -289,21 +330,30 @@ class LinkedInAdsService
 
         try {
             $url = self::API_BASE_URL . '/adCampaignsV2';
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $accessToken,
-                'X-Restli-Protocol-Version' => '2.0.0'
-            ])->get($url, [
-                'q' => 'search',
-                'start' => 0,
-                'count' => 500
-            ]);
+            $allCampaigns = [];
+            $start = 0;
+            $count = 500;
 
-            if (!$response->successful()) {
-                throw new \Exception("Failed to fetch LinkedIn ad sets: HTTP {$response->status()}");
-            }
+            do {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'X-Restli-Protocol-Version' => '2.0.0'
+                ])->get($url, [
+                    'q' => 'search',
+                    'start' => $start,
+                    'count' => $count
+                ]);
 
-            $data = $response->json();
-            $allCampaigns = $data['elements'] ?? [];
+                if (!$response->successful()) {
+                    throw new \Exception("Failed to fetch LinkedIn ad sets: HTTP {$response->status()}");
+                }
+
+                $data = $response->json();
+                $elements = $data['elements'] ?? [];
+                $allCampaigns = array_merge($allCampaigns, $elements);
+                $start += $count;
+                $total = $data['paging']['total'] ?? count($elements);
+            } while ($start < $total);
 
             // Filter by account
             $accountUrn = 'urn:li:sponsoredAccount:' . $adAccount->external_account_id;
@@ -335,29 +385,38 @@ class LinkedInAdsService
 
         try {
             $url = self::API_ANALYTICS_URL . '/adAccounts/' . $adAccount->external_account_id . '/adCampaignGroups';
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $accessToken,
-                'LinkedIn-Version' => '202501',
-                'X-Restli-Protocol-Version' => '2.0.0'
-            ])->get($url, [
-                'q' => 'search',
-                'start' => 0,
-                'count' => 500
-            ]);
+            $allGroups = [];
+            $start = 0;
+            $count = 500;
 
-            if (!$response->successful()) {
-                throw new \Exception("Failed to fetch LinkedIn campaign groups: HTTP {$response->status()}");
-            }
+            do {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'LinkedIn-Version' => '202607',
+                    'X-Restli-Protocol-Version' => '2.0.0'
+                ])->get($url, [
+                    'q' => 'search',
+                    'start' => $start,
+                    'count' => $count
+                ]);
 
-            $data = $response->json();
-            $groups = $data['elements'] ?? [];
+                if (!$response->successful()) {
+                    throw new \Exception("Failed to fetch LinkedIn campaign groups: HTTP {$response->status()}");
+                }
+
+                $data = $response->json();
+                $elements = $data['elements'] ?? [];
+                $allGroups = array_merge($allGroups, $elements);
+                $start += $count;
+                $total = $data['paging']['total'] ?? count($elements);
+            } while ($start < $total);
 
             Log::info('LinkedIn campaign groups fetched', [
                 'account_id' => $adAccount->external_account_id,
-                'count' => count($groups)
+                'count' => count($allGroups)
             ]);
 
-            return $groups;
+            return $allGroups;
         } catch (\Exception $e) {
             Log::error('LinkedIn campaign groups error: ' . $e->getMessage());
             throw $e;
@@ -381,23 +440,32 @@ class LinkedInAdsService
             $adSets = $this->getAdSets($integration, $adAccount);
             $adSetUrns = array_map(fn($c) => 'urn:li:sponsoredCampaign:' . $c['id'], $adSets);
 
-            // Fetch all creatives
+            // Fetch all creatives with pagination
             $url = self::API_BASE_URL . '/adCreativesV2';
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $accessToken,
-                'X-Restli-Protocol-Version' => '2.0.0'
-            ])->get($url, [
-                'q' => 'search',
-                'start' => 0,
-                'count' => 500
-            ]);
+            $allCreatives = [];
+            $start = 0;
+            $count = 500;
 
-            if (!$response->successful()) {
-                throw new \Exception("Failed to fetch LinkedIn creatives: HTTP {$response->status()}");
-            }
+            do {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'X-Restli-Protocol-Version' => '2.0.0'
+                ])->get($url, [
+                    'q' => 'search',
+                    'start' => $start,
+                    'count' => $count
+                ]);
 
-            $data = $response->json();
-            $allCreatives = $data['elements'] ?? [];
+                if (!$response->successful()) {
+                    throw new \Exception("Failed to fetch LinkedIn creatives: HTTP {$response->status()}");
+                }
+
+                $data = $response->json();
+                $elements = $data['elements'] ?? [];
+                $allCreatives = array_merge($allCreatives, $elements);
+                $start += $count;
+                $total = $data['paging']['total'] ?? count($elements);
+            } while ($start < $total);
 
             // Filter by ad sets belonging to this account
             $filtered = array_filter($allCreatives, fn($c) => in_array($c['campaign'] ?? '', $adSetUrns));
@@ -439,7 +507,7 @@ class LinkedInAdsService
             $detectedCategory = $categoryMapper->detectCategory($name, $adAccount->industry);
 
             $data = [
-                'tenant_id' => $integration->tenant_id,
+                'tenant_id' => $adAccount->tenant_id,
                 'ad_account_id' => $adAccount->id,
                 'external_campaign_id' => (string) $adSet['id'],
                 'name' => $name,
@@ -457,7 +525,6 @@ class LinkedInAdsService
 
             $synced[] = AdCampaign::updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
                     'ad_account_id' => $adAccount->id,
                     'external_campaign_id' => (string) $adSet['id']
                 ],
@@ -483,7 +550,7 @@ class LinkedInAdsService
             $detectedCategory = $categoryMapper->detectCategory($name, $adAccount->industry);
 
             $data = [
-                'tenant_id' => $integration->tenant_id,
+                'tenant_id' => $adAccount->tenant_id,
                 'ad_account_id' => $adAccount->id,
                 'external_campaign_id' => (string) $group['id'],
                 'name' => $name,
@@ -501,7 +568,6 @@ class LinkedInAdsService
 
             $synced[] = AdCampaign::updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
                     'ad_account_id' => $adAccount->id,
                     'external_campaign_id' => (string) $group['id']
                 ],
@@ -513,47 +579,137 @@ class LinkedInAdsService
     }
 
     /**
-     * Sync LinkedIn Creatives (ads) to database
+     * Sync LinkedIn Creatives (ads) to ad_creatives database table
      */
     public function syncCreatives(Integration $integration, AdAccount $adAccount): array
     {
         $creatives = $this->getCreativesData($integration, $adAccount);
         $synced = [];
-        $categoryMapper = app(CategoryMapper::class);
+
+        // Build campaign lookup map
+        $campaignMap = AdCampaign::where('ad_account_id', $adAccount->id)
+            ->where('linkedin_level', 'ad_set')
+            ->pluck('id', 'external_campaign_id')
+            ->toArray();
+
+        // Build campaign name map for better creative naming
+        $campaignNameMap = AdCampaign::where('ad_account_id', $adAccount->id)
+            ->where('linkedin_level', 'ad_set')
+            ->pluck('name', 'external_campaign_id')
+            ->toArray();
 
         foreach ($creatives as $creative) {
             $status = $this->mapLinkedInStatus($creative['intendedStatus'] ?? $creative['status'] ?? 'ACTIVE');
-            $name = $creative['name'] ?? ('LinkedIn Ad #' . ($creative['id'] ?? 'unknown'));
-            $detectedCategory = $categoryMapper->detectCategory($name, $adAccount->industry);
+            $creativeId = $creative['id'] ?? 'unknown';
+            $rawName = $creative['name'] ?? null;
 
-            $data = [
-                'tenant_id' => $integration->tenant_id,
-                'ad_account_id' => $adAccount->id,
-                'external_campaign_id' => (string) $creative['id'],
-                'name' => $name,
-                'objective' => 'awareness',
-                'status' => $status,
-                'channel_type' => 'LinkedIn',
-                'sub_industry' => $detectedCategory,
-                'category' => $detectedCategory,
-                'inherit_category_from_account' => $detectedCategory ? false : true,
-                'funnel_stage' => 'TOF',
-                'user_journey' => 'landing_page',
-                'has_pixel_data' => false,
-                'linkedin_level' => 'creative',
-            ];
+            // Extract campaign URN and map to internal campaign ID
+            $campaignUrn = $creative['campaign'] ?? null;
+            $externalCampaignId = null;
+            $adCampaignId = null;
+            $campaignName = null;
+            if ($campaignUrn && str_starts_with($campaignUrn, 'urn:li:sponsoredCampaign:')) {
+                $externalCampaignId = str_replace('urn:li:sponsoredCampaign:', '', $campaignUrn);
+                $adCampaignId = $campaignMap[$externalCampaignId] ?? null;
+                $campaignName = $campaignNameMap[$externalCampaignId] ?? null;
+            }
 
-            $synced[] = AdCampaign::updateOrCreate(
+            // Improve naming: use campaign name + creative ID when name is generic or missing
+            if ($rawName && !str_starts_with($rawName, 'LinkedIn Ad #')) {
+                $name = $rawName;
+            } elseif ($campaignName) {
+                $name = $campaignName . ' | Creative #' . $creativeId;
+            } else {
+                $name = 'LinkedIn Ad #' . $creativeId;
+            }
+
+            // Try to fetch thumbnail from content reference
+            $thumbnailUrl = null;
+            $imageUrl = null;
+            $videoUrl = null;
+            $contentReference = $creative['content'] ?? $creative['variables'] ?? null;
+            if (!empty($contentReference)) {
+                // LinkedIn creatives reference content via URN; store reference for potential future enrichment
+                $thumbnailUrl = $this->resolveLinkedInThumbnail($integration, $contentReference);
+            }
+
+            $synced[] = \App\Models\AdCreative::updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
-                    'ad_account_id' => $adAccount->id,
-                    'external_campaign_id' => (string) $creative['id']
+                    'platform' => 'linkedin',
+                    'external_creative_id' => (string) $creative['id'],
                 ],
-                $data
+                [
+                    'tenant_id' => $adAccount->tenant_id,
+                    'ad_account_id' => $adAccount->id,
+                    'ad_campaign_id' => $adCampaignId,
+                    'name' => $name,
+                    'thumbnail_url' => $thumbnailUrl,
+                    'image_url' => $imageUrl,
+                    'video_url' => $videoUrl,
+                    'status' => $status,
+                    'metadata' => [
+                        'external_campaign_id' => $externalCampaignId,
+                        'campaign_urn' => $campaignUrn,
+                        'content_reference' => $contentReference,
+                        'creative_type' => $creative['type'] ?? null,
+                        'review_status' => $creative['review'] ?? null,
+                    ],
+                ]
             );
         }
 
         return $synced;
+    }
+
+    /**
+     * Attempt to resolve a LinkedIn creative thumbnail from content reference.
+     * Returns null if unable to resolve (requires additional API permissions).
+     */
+    private function resolveLinkedInThumbnail(Integration $integration, mixed $contentReference): ?string
+    {
+        $credentials = $integration->getCredentials();
+        $accessToken = $credentials['access_token'] ?? null;
+        if (!$accessToken) {
+            return null;
+        }
+
+        try {
+            // Content can be a URN string or an array with URN keys
+            $urn = is_string($contentReference) ? $contentReference : ($contentReference['content'] ?? null);
+            if (!$urn || !str_starts_with((string) $urn, 'urn:li:')) {
+                return null;
+            }
+
+            // Try to fetch the content/dsc thumbnail via LinkedIn API
+            // Note: This endpoint may require additional permissions
+            $accountId = $integration->app_config['account_id'] ?? null;
+            if (!$accountId) {
+                return null;
+            }
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+                'LinkedIn-Version' => '202607',
+                'X-Restli-Protocol-Version' => '2.0.0',
+            ])->get(self::API_BASE_URL . '/adDirectSponsoredContents', [
+                'q' => 'account',
+                'account' => 'urn:li:sponsoredAccount:' . $accountId,
+            ]);
+
+            if ($response->successful()) {
+                $elements = $response->json()['elements'] ?? [];
+                foreach ($elements as $element) {
+                    $elementUrn = $element['content'] ?? $element['id'] ?? null;
+                    if ($elementUrn === $urn) {
+                        return $element['thumbnail'] ?? $element['thumbnailUrl'] ?? null;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('LinkedIn thumbnail resolve failed', ['error' => $e->getMessage()]);
+        }
+
+        return null;
     }
 
     /**
@@ -595,9 +751,11 @@ class LinkedInAdsService
             $startYear = (int) Carbon::parse($startDate)->format('Y');
             $startMonth = (int) Carbon::parse($startDate)->format('n');
             $startDay = (int) Carbon::parse($startDate)->format('j');
-            $endYear = (int) Carbon::parse($endDate)->format('Y');
-            $endMonth = (int) Carbon::parse($endDate)->format('n');
-            $endDay = (int) Carbon::parse($endDate)->format('j');
+            // LinkedIn dateRange end is exclusive — add 1 day so a single-day query covers that day
+            $endDateCarbon = Carbon::parse($endDate)->addDay();
+            $endYear = (int) $endDateCarbon->format('Y');
+            $endMonth = (int) $endDateCarbon->format('n');
+            $endDay = (int) $endDateCarbon->format('j');
 
             $url .= '&dateRange=(start:(year:' . $startYear . ',month:' . $startMonth . ',day:' . $startDay . ')';
             $url .= ',end:(year:' . $endYear . ',month:' . $endMonth . ',day:' . $endDay . '))';
@@ -612,16 +770,20 @@ class LinkedInAdsService
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $accessToken,
-                'LinkedIn-Version' => '202510',
+                'LinkedIn-Version' => '202607',
                 'X-Restli-Protocol-Version' => '2.0.0'
             ])->get($url);
 
             if (!$response->successful()) {
+                $status = $response->status();
                 Log::error('LinkedIn metrics fetch failed', [
                     'campaign_id' => $campaign->external_campaign_id,
-                    'status' => $response->status(),
+                    'status' => $status,
                     'body' => $response->body()
                 ]);
+                if ($status === 401 || $status === 403) {
+                    throw new \Exception("LinkedIn auth error ({$status}) for campaign {$campaign->external_campaign_id} — token may be expired");
+                }
                 return [];
             }
 
@@ -654,7 +816,7 @@ class LinkedInAdsService
     /**
      * Sync campaign metrics to database
      */
-    public function syncCampaignMetrics(Integration $integration, AdCampaign $campaign, string $date): void
+    public function syncCampaignMetrics(Integration $integration, AdCampaign $campaign, string $date): int
     {
         $startDate = $date;
         $endDate = $date;
@@ -662,7 +824,7 @@ class LinkedInAdsService
         $metricsData = $this->getCampaignMetrics($integration, $campaign, $startDate, $endDate);
 
         if (empty($metricsData)) {
-            return;
+            return 0;
         }
 
         Log::info('Processing LinkedIn metrics', ['campaign_id' => $campaign->id, 'metrics_count' => count($metricsData)]);
@@ -676,7 +838,7 @@ class LinkedInAdsService
             $checksum = hash('sha256', "linkedin_{$campaign->ad_account_id}_{$campaign->id}_{$date}");
 
             $metricData = [
-                'tenant_id' => $integration->tenant_id,
+                'tenant_id' => $campaign->tenant_id,
                 'date' => $date,
                 'platform' => 'linkedin',
                 'ad_account_id' => $campaign->ad_account_id,
@@ -688,12 +850,12 @@ class LinkedInAdsService
                 'spend' => $spendOriginal,
                 'impressions' => $metrics['impressions'] ?? 0,
                 'clicks' => $metrics['clicks'] ?? 0,
-                'conversions' => ($metrics['externalWebsiteConversions'] ?? 0) + ($metrics['oneClickLeads'] ?? 0),
+                'conversions' => $metrics['externalWebsiteConversions'] ?? 0,
                 'leads' => $metrics['oneClickLeads'] ?? 0,
                 'revenue' => 0, // LinkedIn doesn't provide revenue data directly
                 'purchases' => 0,
                 'calls' => 0,
-                'sessions' => $metrics['clicks'] ?? 0, // Approximate sessions as clicks
+                'sessions' => 0, // LinkedIn doesn't provide session data
                 'atc' => 0,
                 'reach' => 0, // LinkedIn doesn't provide reach in basic metrics
                 'video_views' => 0,
@@ -704,7 +866,6 @@ class LinkedInAdsService
 
             $metric = AdMetric::updateOrCreate(
                 [
-                    'tenant_id' => $integration->tenant_id,
                     'date' => $date,
                     'platform' => 'linkedin',
                     'ad_account_id' => $campaign->ad_account_id,
@@ -717,6 +878,8 @@ class LinkedInAdsService
         }
 
         Log::info('LinkedIn metrics sync completed for campaign', ['campaign_id' => $campaign->id, 'total_metrics' => count($metricsData)]);
+
+        return count($metricsData);
     }
 
     /**
@@ -736,7 +899,7 @@ class LinkedInAdsService
         $checksum = hash('sha256', "linkedin_{$campaign->ad_account_id}_{$campaign->id}_{$date}");
 
         $metricData = [
-            'tenant_id' => $integration->tenant_id,
+            'tenant_id' => $campaign->tenant_id,
             'date' => $date,
             'platform' => 'linkedin',
             'ad_account_id' => $campaign->ad_account_id,
@@ -748,12 +911,12 @@ class LinkedInAdsService
             'spend' => $spendOriginal,
             'impressions' => $metricsData['impressions'] ?? 0,
             'clicks' => $metricsData['clicks'] ?? 0,
-            'conversions' => ($metricsData['externalWebsiteConversions'] ?? 0) + ($metricsData['oneClickLeads'] ?? 0),
+            'conversions' => $metricsData['externalWebsiteConversions'] ?? 0,
             'leads' => $metricsData['oneClickLeads'] ?? 0,
             'revenue' => 0, // LinkedIn doesn't provide revenue data directly
             'purchases' => 0,
             'calls' => 0,
-            'sessions' => $metricsData['clicks'] ?? 0, // Approximate sessions as clicks
+            'sessions' => 0, // LinkedIn doesn't provide session data
             'atc' => 0,
             'reach' => 0, // LinkedIn doesn't provide reach in basic metrics
             'video_views' => 0,
@@ -762,7 +925,6 @@ class LinkedInAdsService
 
         $metric = AdMetric::updateOrCreate(
             [
-                'tenant_id' => $integration->tenant_id,
                 'date' => $date,
                 'platform' => 'linkedin',
                 'ad_account_id' => $campaign->ad_account_id,
@@ -830,6 +992,65 @@ class LinkedInAdsService
         } catch (\Exception $e) {
             Log::error('LinkedIn connection test failed: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Fetch total lifetime spend for an ad account directly from LinkedIn API.
+     * Returns spend in the account's original currency.
+     */
+    public function fetchAccountTotalSpend(AdAccount $account): ?float
+    {
+        try {
+            $integration = $account->integration;
+            if (!$integration) {
+                Log::warning('LinkedIn fetchAccountTotalSpend: no integration', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $accessToken = $this->ensureValidToken($integration);
+            if (!$accessToken) {
+                Log::warning('LinkedIn fetchAccountTotalSpend: no valid token', ['account_id' => $account->id]);
+                return null;
+            }
+
+            $campaigns = $this->getCampaigns($integration, $account);
+            if (empty($campaigns)) {
+                return 0.0;
+            }
+
+            $startDate = '2000-01-01';
+            $endDate = now()->format('Y-m-d');
+            $totalSpend = 0.0;
+
+            foreach ($campaigns as $campaignData) {
+                $campaign = new AdCampaign([
+                    'ad_account_id' => $account->id,
+                    'external_campaign_id' => $campaignData['id'],
+                    'name' => $campaignData['name'] ?? 'Unknown',
+                    'status' => $campaignData['status'] ?? 'active',
+                    'objective' => $campaignData['objective'] ?? 'awareness',
+                ]);
+
+                $metrics = $this->getCampaignTotalMetrics($integration, $campaign, $startDate, $endDate);
+                foreach ($metrics as $metric) {
+                    $totalSpend += (float) ($metric['costInLocalCurrency'] ?? 0);
+                }
+            }
+
+            Log::info('LinkedIn fetchAccountTotalSpend success', [
+                'account_id' => $account->id,
+                'spend' => $totalSpend,
+                'campaigns' => count($campaigns),
+            ]);
+
+            return $totalSpend;
+        } catch (\Exception $e) {
+            Log::error('LinkedIn fetchAccountTotalSpend error', [
+                'account_id' => $account->id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
         }
     }
 }

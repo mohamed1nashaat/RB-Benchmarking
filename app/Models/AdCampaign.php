@@ -3,18 +3,33 @@
 namespace App\Models;
 
 use App\Events\CampaignCreated;
+use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\SubIndustry;
 
 class AdCampaign extends Model
 {
+    use HasFactory, BelongsToTenant;
     public const OBJECTIVE_FUNNEL_MAP = [
-        'awareness' => 'TOF',
-        'leads'     => 'BOF',
-        'sales'     => 'BOF',
-        'calls'     => 'BOF',
+        'awareness'     => 'TOF',
+        'reach'         => 'TOF',
+        'video_views'   => 'TOF',
+        'engagement'    => 'TOF',
+        'page_likes'    => 'TOF',
+        'traffic'       => 'MOF',
+        'link_clicks'   => 'MOF',
+        'store_visits'  => 'MOF',
+        'leads'         => 'BOF',
+        'sales'         => 'BOF',
+        'calls'         => 'BOF',
+        'conversions'   => 'BOF',
+        'catalog_sales' => 'BOF',
+        'app_installs'  => 'BOF',
+        'app_events'    => 'BOF',
     ];
 
     public const NAME_FUNNEL_KEYWORDS = [
@@ -77,7 +92,9 @@ class AdCampaign extends Model
         'name',
         'objective',
         'sub_industry',
+        'sub_industry_id',
         'category',
+        'sub_category',
         'inherit_category_from_account',
         'channel_type',
         'linkedin_level',
@@ -98,6 +115,7 @@ class AdCampaign extends Model
         'pixel_config',
         'conversion_tracking_enabled',
         'conversion_pixel_id',
+        'campaign_config',
     ];
 
     protected $casts = [
@@ -107,53 +125,30 @@ class AdCampaign extends Model
         'conversion_tracking_enabled' => 'boolean',
         'sheet_mapping' => 'array',
         'pixel_config' => 'array',
+        'campaign_config' => 'array',
         'last_sheet_sync' => 'datetime',
     ];
 
     protected static function booted()
     {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check()) {
-                $user = auth()->user();
-
-                // Robust super admin detection
-                $isSuperAdmin = (app()->bound('is_super_admin') && app('is_super_admin'))
-                               || $user->id === 1
-                               || $user->email === 'technical@redbananas.com';
-
-                if ($isSuperAdmin) {
-                    // Super admins can optionally filter to specific tenant
-                    $tenantId = session('current_tenant_id')
-                               ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
-                    if ($tenantId) {
-                        $builder->where('tenant_id', $tenantId);
-                    }
-                    // Otherwise show all data without filtering
-                    return;
-                }
-
-                // Regular users see only their tenant's data
-                $tenantId = session('current_tenant_id')
-                           ?? (app()->bound('current_tenant_id') ? app('current_tenant_id') : null);
-                if ($tenantId) {
-                    $builder->where('tenant_id', $tenantId);
-                }
-            }
-        });
-
-        // Fire event when a new campaign is created
+        // Fire event when a new campaign is created (skip for auto-created placeholders)
         static::created(function (AdCampaign $campaign) {
+            if ($campaign->status === 'archived' && !$campaign->channel_type) {
+                return;
+            }
             // Load relationships needed for sheet creation
             $campaign->load('adAccount.integration');
             event(new CampaignCreated($campaign));
         });
 
-        // Auto-derive funnel_stage: objective → name keywords → keep existing
+        // Auto-derive funnel_stage: name keywords first, then objective, then keep existing.
+        // Name takes priority because platform objectives (e.g. "awareness") are often set
+        // broadly while the campaign name explicitly records the funnel intent (e.g. "Traffic").
         static::saving(function (AdCampaign $campaign) {
             if ($campaign->isDirty('objective') || $campaign->isDirty('name') || !$campaign->funnel_stage) {
                 $campaign->funnel_stage =
-                    self::funnelStageForObjective($campaign->objective)
-                    ?? self::funnelStageFromName($campaign->name)
+                    self::funnelStageFromName($campaign->name)
+                    ?? self::funnelStageForObjective($campaign->objective)
                     ?? $campaign->funnel_stage;
             }
         });
@@ -172,6 +167,11 @@ class AdCampaign extends Model
     public function adMetrics(): HasMany
     {
         return $this->hasMany(AdMetric::class);
+    }
+
+    public function subIndustry(): BelongsTo
+    {
+        return $this->belongsTo(SubIndustry::class);
     }
 
     public function scopeActive(Builder $query): Builder

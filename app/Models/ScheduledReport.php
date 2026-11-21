@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Carbon\Carbon;
 
 class ScheduledReport extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
         'tenant_id',
@@ -53,16 +54,7 @@ class ScheduledReport extends Model
      */
     protected static function booted(): void
     {
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            if (auth()->check() && auth()->user()->tenant_id) {
-                $builder->where('tenant_id', auth()->user()->tenant_id);
-            }
-        });
-
         static::creating(function ($report) {
-            if (!$report->tenant_id && auth()->check()) {
-                $report->tenant_id = auth()->user()->tenant_id;
-            }
             if (!$report->user_id && auth()->check()) {
                 $report->user_id = auth()->id();
             }

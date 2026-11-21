@@ -101,7 +101,7 @@ class BackfillLinkedInMetrics extends Command
     private function processIntegration(Integration $integration, string $startDate, string $endDate, ?string $accountId = null, bool $quickMode = false): void
     {
         $this->info("Processing Integration ID: {$integration->id}");
-        $this->info("Tenant: {$integration->tenant->name}");
+        $this->info("Tenant: " . ($integration->tenant?->name ?? 'No Tenant'));
 
         // Get ad accounts for this integration (filter by specific ID if provided)
         $query = AdAccount::where('integration_id', $integration->id);

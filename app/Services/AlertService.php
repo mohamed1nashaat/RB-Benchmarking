@@ -59,9 +59,7 @@ class AlertService
             } catch (\Exception $e) {
                 Log::error('Alert evaluation failed', [
                     'alert_id' => $alert->id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
+                    'error' => $e->getMessage(),]);
                 $results['errors']++;
             }
         }

@@ -33,7 +33,7 @@ class AuthController extends Controller
         $user->updateLastLogin();
 
         // Check if user is super admin
-        $isSuperAdmin = $user->id === 1 || $user->email === 'technical@redbananas.com';
+        $isSuperAdmin = $user->isSuperAdmin();
 
         return response()->json([
             'user' => $user->load(['defaultTenant', 'tenants']),
@@ -63,7 +63,7 @@ class AuthController extends Controller
         $currentTenant = $request->current_tenant ?? $user->defaultTenant;
 
         // Check if user is super admin
-        $isSuperAdmin = $user->id === 1 || $user->email === 'technical@redbananas.com';
+        $isSuperAdmin = $user->isSuperAdmin();
 
         return response()->json([
             'user' => $user,
@@ -83,9 +83,7 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
+        $request->validate(['name' => 'required|string|max:255']);
 
         $user = $request->user();
         $user->update(['name' => $request->name]);
@@ -113,9 +111,7 @@ class AuthController extends Controller
 
         $user->update(['password' => Hash::make($request->new_password)]);
 
-        return response()->json([
-            'message' => 'Password updated successfully',
-        ]);
+        return response()->json(['message' => 'Password updated successfully']);
     }
 
     public function updateAvatar(Request $request)
@@ -133,7 +129,7 @@ class AuthController extends Controller
 
         // Store new avatar
         $file = $request->file('avatar');
-        $filename = 'user_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $filename = 'user_' . $user->id . '_' . time() . '.' . $file->getExtension();
 
         try {
             // Ensure avatars directory exists
@@ -149,9 +145,7 @@ class AuthController extends Controller
                     'user_id' => $user->id,
                     'filename' => $filename,
                 ]);
-                return response()->json([
-                    'message' => 'Failed to upload avatar',
-                ], 500);
+                return response()->json(['message' => 'Failed to upload avatar'], 500);
             }
 
             $user->update(['avatar' => $filename]);
@@ -163,12 +157,8 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             \Log::error('Avatar upload exception', [
                 'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return response()->json([
-                'message' => 'Failed to upload avatar: ' . $e->getMessage(),
-            ], 500);
+                'error' => 'An unexpected error occurred',]);
+            return response()->json(['message' => 'An unexpected error occurred'], 500);
         }
     }
 
